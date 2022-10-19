@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundErrorPage from './pages/NotFoundErrorPage';
 
+import pandaLogo from './assets/panda.svg';
+
 function Layout() {
   const { euiTheme } = useEuiTheme();
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ function Layout() {
         sections={[
           {
             items: [
-              <EuiHeaderLogo>Elastic</EuiHeaderLogo>,
+              <EuiHeaderLogo iconType={pandaLogo}>PANDA Studio</EuiHeaderLogo>,
               <EuiHeaderLinks aria-label="App navigation dark theme example">
                 <EuiHeaderLink isActive>Docs</EuiHeaderLink>
                 <EuiHeaderLink>Code</EuiHeaderLink>
