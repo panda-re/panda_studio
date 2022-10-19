@@ -1,20 +1,14 @@
 import { EuiAvatar, EuiBadge, EuiButton, EuiCode, EuiCollapsibleNav, EuiCollapsibleNavGroup, EuiHeader, EuiHeaderLink, EuiHeaderLinks, EuiHeaderLogo, EuiHeaderSectionItemButton, EuiIcon, EuiPageTemplate, EuiPinnableListGroup, EuiPinnableListGroupItemProps, EuiProvider, EuiSideNav, EuiSpacer, EuiText, EuiTitle, useEuiTheme } from '@elastic/eui'
 
-
-
 function Layout() {
   const { euiTheme } = useEuiTheme();
 
   const topNavLinks: EuiPinnableListGroupItemProps[] = [
     {
-      label: 'Home',
+      label: 'Dashboard',
+      pinned: true,
       iconType: 'home',
       isActive: true,
-      pinnable: false
-    },
-    {
-      label: 'Dashboard',
-      pinned: true
     },
     {
       label: 'Images',
@@ -66,17 +60,17 @@ function Layout() {
         isDocked={true}
         size={240}
         button={
-          <EuiButton onClick={() => {}}>Toggle nav</EuiButton>
+          <EuiButton onClick={() => { }}>Toggle nav</EuiButton>
         }
-        onClose={() => {}}
+        onClose={() => { }}
       >
         <EuiCollapsibleNavGroup background='light'>
           <EuiPinnableListGroup
             listItems={topNavLinks}
             onPinClick={function (item: EuiPinnableListGroupItemProps): void {
               throw new Error('Function not implemented.');
-            } }            />
-            <EuiIcon type="alert" />
+            }} />
+          <EuiIcon type="alert" />
         </EuiCollapsibleNavGroup>
       </EuiCollapsibleNav>
 

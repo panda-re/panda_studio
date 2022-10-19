@@ -2,7 +2,7 @@ diff --git a/node_modules/@elastic/eui/es/components/icon/icon.js b/node_modules
 index d9678d6..882a47a 100644
 --- a/node_modules/@elastic/eui/es/components/icon/icon.js
 +++ b/node_modules/@elastic/eui/es/components/icon/icon.js
-@@ -130,13 +130,14 @@ export var EuiIconClass = /*#__PURE__*/function (_PureComponent) {
+@@ -130,13 +130,13 @@ export var EuiIconClass = /*#__PURE__*/function (_PureComponent) {
          return;
        }
  
@@ -15,7 +15,6 @@ index d9678d6..882a47a 100644
 -      './assets/' + typeToPathMap[iconType]).then(function (_ref) {
 +      typeToPathMap[iconType]()).then(function (_ref) {
          var icon = _ref.icon;
-+        console.log(icon)
          iconComponentCache[iconType] = icon;
          enqueueStateChange(function () {
            if (_this.isMounted && _this.props.type === iconType) {
