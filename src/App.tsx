@@ -4,11 +4,7 @@ import Layout from './Layout';
 
 const router = createBrowserRouter([
   {
-    path: '/nut',
-    element: <div><Link to="/" >NUT</Link></div>
-  },
-  {
-    path: '/',
+    path: '*',
     element: <Layout />,
   },
 ])

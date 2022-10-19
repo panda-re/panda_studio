@@ -1,94 +1,99 @@
-import { EuiAvatar, EuiBadge, EuiButton, EuiCode, EuiCollapsibleNav, EuiCollapsibleNavGroup, EuiHeader, EuiHeaderLink, EuiHeaderLinks, EuiHeaderLogo, EuiHeaderSectionItemButton, EuiIcon, EuiPageTemplate, EuiPinnableListGroup, EuiPinnableListGroupItemProps, EuiProvider, EuiSideNav, EuiSpacer, EuiText, EuiTitle, useEuiTheme } from '@elastic/eui'
+import { EuiAvatar, EuiBadge, EuiButton, EuiCode, EuiCollapsibleNav, EuiCollapsibleNavGroup, EuiEmptyPrompt, EuiHeader, EuiHeaderLink, EuiHeaderLinks, EuiHeaderLogo, EuiHeaderSectionItemButton, EuiIcon, EuiListGroup, EuiPage, EuiPageHeader, EuiPageSection, EuiPageSidebar, EuiPageTemplate, EuiPinnableListGroup, EuiPinnableListGroupItemProps, EuiProvider, EuiSideNav, EuiSpacer, EuiText, EuiTitle, useEuiTheme } from '@elastic/eui'
+import { Navigate, Route, Routes, useNavigate } from 'react-router';
+import DashboardPage from './pages/DashboardPage';
+import NotFoundErrorPage from './pages/NotFoundErrorPage';
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
+  const navigate = useNavigate();
 
   const topNavLinks: EuiPinnableListGroupItemProps[] = [
     {
       label: 'Dashboard',
-      pinned: true,
       iconType: 'home',
       isActive: true,
     },
     {
       label: 'Images',
-      pinned: true,
+      iconType: 'storage',
+      onClick: () => navigate('/nut'),
+    },
+    {
+      label: 'Recordings',
+      iconType: 'layers',
     },
   ];
 
   return (<>
-    <EuiHeader
-      theme="dark"
-      sections={[
-        {
-          items: [
-            <EuiHeaderLogo>Elastic</EuiHeaderLogo>,
-            <EuiHeaderLinks aria-label="App navigation dark theme example">
-              <EuiHeaderLink isActive>Docs</EuiHeaderLink>
-              <EuiHeaderLink>Code</EuiHeaderLink>
-              <EuiHeaderLink iconType="help"> Help</EuiHeaderLink>
-            </EuiHeaderLinks>,
-          ],
-          borders: 'right',
-        },
-        {
-          items: [
-            <EuiBadge
-              color={euiTheme.colors.darkestShade}
-              iconType="arrowDown"
-              iconSide="right"
-            >
-              Production logs
-            </EuiBadge>,
-            <EuiHeaderSectionItemButton
-              aria-label="2 Notifications"
-              notification={'2'}
-            >
-              <EuiIcon type="cheer" size="m" />
-            </EuiHeaderSectionItemButton>,
-            <EuiHeaderSectionItemButton aria-label="Account menu">
-              <EuiAvatar name="John Username" size="s" />
-            </EuiHeaderSectionItemButton>,
-          ],
-          borders: 'none',
-        },
-      ]}
-    />
     <EuiPageTemplate>
-      <EuiCollapsibleNav
-        isOpen={true}
-        isDocked={true}
-        size={240}
-        button={
-          <EuiButton onClick={() => { }}>Toggle nav</EuiButton>
-        }
-        onClose={() => { }}
-      >
+      <EuiHeader
+        sections={[
+          {
+            items: [
+              <EuiHeaderLogo>Elastic</EuiHeaderLogo>,
+              <EuiHeaderLinks aria-label="App navigation dark theme example">
+                <EuiHeaderLink isActive>Docs</EuiHeaderLink>
+                <EuiHeaderLink>Code</EuiHeaderLink>
+                <EuiHeaderLink iconType="help"> Help</EuiHeaderLink>
+              </EuiHeaderLinks>,
+            ],
+            borders: 'right',
+          },
+          {
+            items: [
+              <EuiBadge
+                color={euiTheme.colors.darkestShade}
+                iconType="arrowDown"
+                iconSide="right"
+              >
+                Production logs
+              </EuiBadge>,
+              <EuiHeaderSectionItemButton
+                aria-label="2 Notifications"
+                notification={'2'}
+              >
+                <EuiIcon type="cheer" size="m" />
+              </EuiHeaderSectionItemButton>,
+              <EuiHeaderSectionItemButton aria-label="Account menu">
+                <EuiAvatar name="John Username" size="s" />
+              </EuiHeaderSectionItemButton>,
+            ],
+            borders: 'none',
+          },
+        ]}
+      />
+      {/* Breadcrumb example
+      <EuiHeader
+        sections={[{
+          breadcrumbs: [
+            {
+              text: 'Management',
+              href: '#',
+              onClick: (e) => {
+                e.preventDefault();
+              },
+            },
+            {
+              text: 'Users',
+            },
+          ]
+        }]}
+      />
+      */}
+      <EuiPageTemplate.Sidebar>
         <EuiCollapsibleNavGroup background='light'>
-          <EuiPinnableListGroup
+          <EuiListGroup
             listItems={topNavLinks}
-            onPinClick={function (item: EuiPinnableListGroupItemProps): void {
-              throw new Error('Function not implemented.');
-            }} />
-          <EuiIcon type="alert" />
+          />
         </EuiCollapsibleNavGroup>
-      </EuiCollapsibleNav>
+      </EuiPageTemplate.Sidebar>
 
-      <EuiPageTemplate.Header pageTitle='header 1' rightSideItems={[<>hello</>]} />
+      <Routes>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
+        <Route path="*" element={<NotFoundErrorPage />} />
+      </Routes>
 
-      <EuiPageTemplate.Section>
-        <EuiText textAlign='center'>
-          <strong>Some strong text</strong>
-        </EuiText>
-      </EuiPageTemplate.Section>
-
-      <EuiPageTemplate.Header pageTitle='Header 2' rightSideItems={[<>hello</>]} />
-
-      <EuiPageTemplate.Section>
-        <EuiText textAlign='center'>
-          <strong>Some strong text</strong>
-        </EuiText>
-      </EuiPageTemplate.Section>
     </EuiPageTemplate>
   </>)
 }
