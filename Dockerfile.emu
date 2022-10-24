@@ -1,0 +1,10 @@
+FROM pandare/panda
+
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+        qemu-system \
+        libguestfs-tools
+
+RUN mkdir /work
+
+WORKDIR /work
