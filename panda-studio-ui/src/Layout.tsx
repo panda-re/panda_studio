@@ -5,6 +5,7 @@ import NotFoundErrorPage from './pages/NotFoundErrorPage';
 
 import pandaLogo from './assets/panda.svg';
 import ImagesPage from './pages/ImagesPage';
+import CreateRecordingPage from "./pages/CreateRecording";
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
@@ -26,6 +27,11 @@ function Layout() {
       label: 'Recordings',
       iconType: 'layers',
       onClick: () => navigate('/recordings'),
+    },
+    {
+      label:'Create Recording',
+      iconType: 'play',
+      onClick: () => navigate('/createRecording')
     },
   ];
 
@@ -96,6 +102,7 @@ function Layout() {
       <Routes>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/images" element={<ImagesPage />} />
+        <Route path="/createRecording" element={<CreateRecordingPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
       </Routes>
