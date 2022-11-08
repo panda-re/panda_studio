@@ -4,7 +4,7 @@ import sys
 import time
 import os
 
-base = "~/panda_class_materials"
+base = "~/panda_studio"
 
 #extra = [f"-kernel {base}/vmlinux-4.20-versatile", f"-initrd {base}/initramfz.eabi", "-append console=ttyAMA0 quiet", "-M versatilepb", f"-dtb {base}/versatile-pb-4.20.dtb", "-nographic"]
     #"-nographic", "-machine akita"]
@@ -39,7 +39,7 @@ prompt = None
 
 commands = []
 if True:
-    Image_File = open("/panda_class_materials/imageSpec.txt", "r")
+    Image_File = open("/panda_studio/backend/imageSpec.txt", "r")
     for line in Image_File :
         halves = line.split(",")
         print(halves)
@@ -71,7 +71,7 @@ if True:
         elif(halves[0] == "Other Descriptions Passed in"):
            architecture = halves[1]    
 
-    Interaction_File = open("/panda_class_materials/interactions.txt", "r")
+    Interaction_File = open("/panda_studio/backend/interactions.txt", "r")
 
     for line in Interaction_File :
         halves = line.split(",")
@@ -102,7 +102,7 @@ if True:
 
 
 panda = Panda(arch = architecture, qcow=cow, extra_args=extra, 
-         mem= '256', expect_prompt=bytes(prompt,'utf-8'), serial_kwargs={"unansi": False},
+         mem= msize, expect_prompt=bytes(prompt,'utf-8'), serial_kwargs={"unansi": False},
          os_version=osv)
 # Counter of the number of basic blocks
 # blocks = 0
