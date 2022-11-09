@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 app = Flask(__name__)
@@ -10,5 +11,6 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 def runPanda():
     params = request.get_json(force=True)
     print(params)
-    command = "docker run -it -v " + params['image'] + " -v " + params['name'] + " pandare/panda " + params['commands']
+    command = "docker run -it -v " + params['image'] + " pandare/panda " + params['commands']
+    os.system(command)
     return jsonify(message=command)
