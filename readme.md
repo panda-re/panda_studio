@@ -4,6 +4,7 @@ Prerequisites:
 - For building/running the web ui, you will need node 14.15.1.
 - You may also need node 14.13.1 to install dependencies. If 14.15.1 doesn't work, switch to 14.13.1 to install dependencies then
 switch back to 14.15.1 to build.
+- With node 14.13.1, run "npm install --force" to install necessary dependencies
 - Python 3.10 for the server project.
 - Python 3.7 for the backend project.
 - You should create a separate venv in each of these projects to install respective dependencies. A tutorial on how to do
