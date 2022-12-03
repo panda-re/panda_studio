@@ -5,6 +5,6 @@ Extra,-kernel /panda_studio/backend/vmlinux-4.20-versatile -initrd /panda_studio
 prompt,/ #,
 kwargs,{"unansi": False},
 os_version,linux-32-os:0,
-
+Name,boom,
 
 
