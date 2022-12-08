@@ -1,4 +1,4 @@
-package main
+package executor
 
 import (
 	"bufio"
@@ -17,14 +17,7 @@ import (
 
 const imageName = "pandare/panda"
 
-func main() {
-	err := runDocker()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func runDocker() error {
+func RunDocker() error {
 
 	ctx := context.Background()
 
