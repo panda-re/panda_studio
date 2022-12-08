@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "github.com/panda-re/panda_studio/executor/proto";
+
+package panda_studio.executor;
+
+service PandaExecutor {
+    rpc BootMachine (BootMachineRequest) returns (BootMachineReply) {}
+    rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
+}
+
+message BootMachineRequest {}
+message BootMachineReply {}
+
+message RunCommandRequest {
+    string command = 1;
+}
+
+message RunCommandReply {
+    int statusCode = 1;
+}
