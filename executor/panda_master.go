@@ -15,11 +15,14 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	pb "github.com/panda-re/panda_studio/executor/proto"
+	python "github.com/panda-re/panda_studio/executor/python"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 const imageName = "pandare/panda"
+
+//go:generate ./generate_stubs.sh
 
 func RunDocker() error {
 
@@ -100,6 +103,8 @@ func RunDocker() error {
 	}
 
 	dialGrpc()
+
+	python.ExtractPythonScript("/tmp/pandapython")
 
 	return nil
 }
