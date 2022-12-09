@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/ahmetalpbalkan/dlog"
 	"github.com/docker/docker/api/types"
@@ -13,6 +14,9 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	pb "github.com/panda-re/panda_studio/executor/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const imageName = "pandare/panda"
@@ -95,5 +99,29 @@ func RunDocker() error {
 		return err
 	}
 
+	dialGrpc()
+
 	return nil
+}
+
+func dialGrpc() {
+	addr := "localhost:50051"
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewPandaExecutorClient(conn)
+
+	// Contact the server and print out its response.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := c.RunCommand(ctx, &pb.RunCommandRequest{
+		Command: "echo hello",
+	})
+	if err != nil {
+		log.Fatalf("could not run command: %v", err)
+	}
+	log.Printf("status code: %d", r.GetStatusCode())
 }
