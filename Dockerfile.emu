@@ -5,6 +5,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         qemu-system \
         libguestfs-tools
 
-RUN mkdir /work
+RUN mkdir /panda
 
-WORKDIR /work
+WORKDIR /panda
