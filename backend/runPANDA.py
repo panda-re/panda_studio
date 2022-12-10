@@ -85,6 +85,7 @@ panda = Panda(arch=architecture, qcow=cow, extra_args=extra,
               os_version=osv)
 
 
+
 # This 'blocking' function is queued to run in a seperate thread from the main CPU loop
 # which allows for it to wait for the guest to complete commands
 @panda.queue_blocking
