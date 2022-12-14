@@ -18,4 +18,5 @@ message RunCommandRequest {
 
 message RunCommandReply {
     int32 statusCode = 1;
+    string output = 2;
 }

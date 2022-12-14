@@ -39,15 +39,7 @@ func (a *pandaAgent) Start() {
 //go:generate ./generate_stubs.sh
 
 func RunDocker() error {
-
 	ctx := context.Background()
-
-	err := dialGrpc()
-	if err != nil {
-		return err
-	}
-
-	return nil
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
@@ -121,7 +113,7 @@ func RunDocker() error {
 	}()
 
 	time.Sleep(time.Second)
-	if err = dialGrpc(); err != nil {
+	if err = RunCommand(ctx, "uname -a"); err != nil {
 		return err
 	}
 
@@ -155,7 +147,8 @@ func RunDocker() error {
 	return nil
 }
 
-func dialGrpc() error {
+func RunCommand(ctx context.Context, command string) error {
+
 	addr := "localhost:50051"
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -166,8 +159,6 @@ func dialGrpc() error {
 	c := pb.NewPandaExecutorClient(conn)
 
 	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	r1, err := c.BootMachine(ctx, &pb.BootMachineRequest{})
 	if err != nil {
 		return err
@@ -181,12 +172,13 @@ func dialGrpc() error {
 	log.Printf("BootResponse: %s", resp.String())
 
 	r2, err := c.RunCommand(ctx, &pb.RunCommandRequest{
-		Command: "echo hello",
+		Command: command,
 	})
 	if err != nil {
 		return err
 	}
 	log.Printf("status code: %d", r2.GetStatusCode())
+	log.Printf("output: %s", r2.GetOutput())
 
 	return nil
 }

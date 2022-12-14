@@ -5,6 +5,9 @@ import threading
 import queue
 import multiprocessing
 
+# important for pickling functions
+import dill
+
 from pandare import Panda
 
 import panda_interface_pb2_grpc as pb_grpc
@@ -15,30 +18,67 @@ PORT = '[::]:50051'
 executor = futures.ThreadPoolExecutor(max_workers=10)
 
 class PandaAgent:
+    # sentinel object to signal end of queue
+    STOP_PANDA = object()
+
     def __init__(self, panda: Panda):
         self.panda = panda
+        # Queue your thunks you want executed in the PANDA loop here!
+        self.cmdQueue = None
+        self.hasStarted = False
+        self.isRunning = False
     
     # This function is meant to run in a different thread
     def start(self):
+        self.hasStarted = False
         panda = self.panda
 
-        agentPipe, pandaPipe = multiprocessing.Pipe(duplex=True)
+        self.cmdQueue = queue.Queue()
 
         @panda.queue_blocking
         def process_commands():
+            print("started panda!")
+            self.isRunning = True
             # revert to the qcow's root snapshot
             panda.revert_sync("root")
+
+            # receive and process command
+            while True:
+                cmd = self.cmdQueue.get(block=True)
+                if cmd is PandaAgent.STOP_PANDA:
+                    break
+                
+                cmd(panda)
+            
+            panda.end_analysis()
         
+        print("starting panda")
         panda.run()
     
-    def run_command(cmd):
+    def _queue_command(self, msg):
+        if self.cmdQueue is None:
+            raise RuntimeError("PANDA must be running to send commands")
+        self.cmdQueue.put(msg)
+    
+    def run_command(self, cmd):
+        retQueue = queue.Queue()
+
+        def panda_run_command(panda: Panda):
+            print(f'running command {cmd}')
+            output = panda.run_serial_cmd(cmd)
+            print(f'output: {output}')
+            retQueue.put(output)
+        
         # Send message to queue
+        self._queue_command(panda_run_command)
 
         # Receive message from queue
-        pass
+        resp = retQueue.get(block=True, timeout=None)
+        print(f'got response {resp}')
+        return resp
 
 class PandaExecutorServicer(pb_grpc.PandaExecutorServicer):
-    def __init__(self, agent):
+    def __init__(self, agent: PandaAgent):
         self.agent = agent
         self.agent_thread = None
     
@@ -46,16 +86,18 @@ class PandaExecutorServicer(pb_grpc.PandaExecutorServicer):
         return self.agent_thread is not None
     
     def BootMachine(self, request, context):
-        print("starting panda")
+        if self.agent.hasStarted:
+            return
+
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
-        print("started panda!")
         yield pb.BootMachineReply()
         return
     
     def RunCommand(self, request, context):
         print(request.command)
-        return pb.RunCommandReply(statusCode=32)
+        output = self.agent.run_command(request.command)
+        return pb.RunCommandReply(statusCode=0, output=output)
         # return super().RunCommand(request, context)
 
 def serve():
