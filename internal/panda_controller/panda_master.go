@@ -164,12 +164,7 @@ func RunCommand(ctx context.Context, command string) error {
 		return err
 	}
 
-	resp, err := r1.Recv()
-	if err != nil {
-		return err
-	}
-
-	log.Printf("BootResponse: %s", resp.String())
+	log.Printf("BootResponse: %s", r1.String())
 
 	r2, err := c.RunCommand(ctx, &pb.RunCommandRequest{
 		Command: command,
@@ -179,6 +174,11 @@ func RunCommand(ctx context.Context, command string) error {
 	}
 	log.Printf("status code: %d", r2.GetStatusCode())
 	log.Printf("output: %s", r2.GetOutput())
+
+	_, err = c.Shutdown(ctx, &pb.ShutdownRequest{})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -31,7 +31,7 @@ class PandaAgent:
 
         @panda.queue_blocking
         def process_commands():
-            print("started panda!")
+            print("panda agent started")
             self.isRunning = True
             # revert to the qcow's root snapshot
             panda.revert_sync("root")
@@ -46,8 +46,13 @@ class PandaAgent:
             
             panda.end_analysis()
         
-        print("starting panda")
+        print("starting panda agent ")
         panda.run()
+        print("panda agent stopped")
+        self.isRunning = False
+    
+    def stop(self):
+        self._queue_command(PandaAgent.STOP_PANDA)
     
     def _queue_command(self, msg):
         if self.cmdQueue is None:
@@ -60,7 +65,6 @@ class PandaAgent:
         def panda_run_command(panda: Panda):
             print(f'running command {cmd}')
             output = panda.run_serial_cmd(cmd)
-            print(f'output: {output}')
             retQueue.put(output)
         
         # Send message to queue
@@ -68,11 +72,11 @@ class PandaAgent:
 
         # Receive message from queue
         resp = retQueue.get(block=True, timeout=None)
-        print(f'got response {resp}')
         return resp
 
 class PandaExecutorServicer(pb_grpc.PandaExecutorServicer):
-    def __init__(self, agent: PandaAgent):
+    def __init__(self, server, agent: PandaAgent):
+        self.server = server
         self.agent = agent
         self.agent_thread = None
     
@@ -85,40 +89,27 @@ class PandaExecutorServicer(pb_grpc.PandaExecutorServicer):
 
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
-        yield pb.BootMachineReply()
-        return
+        return pb.BootMachineReply()
+    
+    def Shutdown(self, request, context):
+        self.agent.stop()
+        self.server.stop(grace=5)
+        return pb.ShutdownReply()
     
     def RunCommand(self, request, context):
-        print(request.command)
         output = self.agent.run_command(request.command)
         return pb.RunCommandReply(statusCode=0, output=output)
-        # return super().RunCommand(request, context)
 
 def serve():
     panda = Panda(generic='x86_64')
     agent = PandaAgent(panda)
     server = grpc.server(executor)
     pb_grpc.add_PandaExecutorServicer_to_server(
-        PandaExecutorServicer(agent), server)
+        PandaExecutorServicer(server, agent), server)
     server.add_insecure_port(PORT)
     print(f'panda agent grpc server listening on port {PORT}')
     server.start()
     server.wait_for_termination()
 
-def runPanda():
-    panda = Panda(generic='i386')
-
-    @panda.queue_blocking
-    def run_cmd():
-        # First revert to the qcow's root snapshot (synchronously)
-        panda.revert_sync("root")
-        # Then type a command via the serial port and print its results
-        print(panda.run_serial_cmd("uname -a"))
-        # When the command finishes, terminate the panda.run() call
-        panda.end_analysis()
-    
-    panda.run()
-
 if __name__ == "__main__":
     serve()
-    # runPanda()

@@ -1,16 +1,18 @@
 syntax = "proto3";
 
-option go_package = "github.com/panda-re/panda_studio/executor/proto";
-
-package panda_studio.executor;
+package panda_studio.panda_agent;
+option go_package = "github.com/panda-re/panda_studio/panda_agent/pb";
 
 service PandaExecutor {
-    rpc BootMachine (BootMachineRequest) returns (stream BootMachineReply) {}
+    rpc BootMachine (BootMachineRequest) returns (BootMachineReply) {}
+    rpc Shutdown (ShutdownRequest) returns (ShutdownReply) {}
     rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
 }
 
 message BootMachineRequest {}
 message BootMachineReply {}
+message ShutdownRequest {}
+message ShutdownReply {}
 
 message RunCommandRequest {
     string command = 1;
