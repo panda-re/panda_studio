@@ -2,15 +2,6 @@ from pandare import Panda
 import shutil
 import parsePANDA
 
-base = "~/panda_studio"
-extra = ["-nographic"]
-architecture = 'arm'
-msize = "256"
-cow = None
-osv = None
-kwargs = None
-prompt = None
-
 PANDA_RECORD = "exampleRecording"
 PANDA_DEST = "/panda_studio/recordings/"
 
@@ -62,6 +53,7 @@ def run_cmd():
 
     # Wait until the first prompt
     panda.serial_read_until(bytes(inputs.prompt, 'utf_8'))
+    panda.copy_to_guest("/panda_studio")
 
     print(panda.run_serial_cmd("uname -a"))
 
@@ -71,6 +63,7 @@ def run_cmd():
     panda.end_record()
     # When the command finishes, terminate the panda.run() call
     panda.end_analysis()
+
 
 
 # Start the guest
