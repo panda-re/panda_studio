@@ -12,7 +12,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	pb "github.com/panda-re/panda_studio/executor/proto"
+	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

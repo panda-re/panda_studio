@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/panda-re/panda_studio/executor"
+	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
 func main() {
@@ -12,7 +12,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
 
-	err := executor.RunCommand(ctx, "uname -a")
+	err := controller.RunCommand(ctx, "uname -a")
 	if err != nil {
 		panic(err)
 	}
