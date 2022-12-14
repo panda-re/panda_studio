@@ -11,12 +11,14 @@ COPY requirements.txt .
 
 RUN pip3 install -r requirements.txt
 
-COPY proto/panda_interface.proto ./
+RUN mkdir proto pb
+COPY proto/* ./proto
+RUN ls /panda/proto
 
-RUN python -m grpc_tools.protoc --python_out=. --grpc_python_out=. -I. ./*.proto
+RUN python -m grpc_tools.protoc --python_out=pb --grpc_python_out=pb -I./proto ./proto/*.proto
 
-COPY panda_agent.py ./
+COPY *.py ./
 
 EXPOSE 50051
 
-ENTRYPOINT ["python3", "/panda/panda_agent.py"]
+ENTRYPOINT ["python3", "/panda/server.py"]

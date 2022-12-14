@@ -3,16 +3,16 @@ syntax = "proto3";
 package panda_studio.panda_agent;
 option go_package = "github.com/panda-re/panda_studio/panda_agent/pb";
 
-service PandaExecutor {
-    rpc BootMachine (BootMachineRequest) returns (BootMachineReply) {}
-    rpc Shutdown (ShutdownRequest) returns (ShutdownReply) {}
+service PandaAgent {
+    rpc StartAgent (StartAgentRequest) returns (StartAgentResponse) {}
+    rpc StopAgent (StopAgentRequest) returns (StopAgentResponse) {}
     rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
 }
 
-message BootMachineRequest {}
-message BootMachineReply {}
-message ShutdownRequest {}
-message ShutdownReply {}
+message StartAgentRequest {}
+message StartAgentResponse {}
+message StopAgentRequest {}
+message StopAgentResponse {}
 
 message RunCommandRequest {
     string command = 1;

@@ -25,7 +25,7 @@ type PandaAgent interface {
 
 type pandaAgent struct {
 	dockerClient *client.Client;
-	grpcCient *pb.PandaExecutorClient;
+	grpcCient *pb.PandaAgentClient;
 }
 
 func CreateDockerPandaAgent() (PandaAgent, error) {
@@ -156,10 +156,10 @@ func RunCommand(ctx context.Context, command string) error {
 		return err
 	}
 	defer conn.Close()
-	c := pb.NewPandaExecutorClient(conn)
+	c := pb.NewPandaAgentClient(conn)
 
 	// Contact the server and print out its response.
-	r1, err := c.BootMachine(ctx, &pb.BootMachineRequest{})
+	r1, err := c.StartAgent(ctx, &pb.StartAgentRequest{})
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func RunCommand(ctx context.Context, command string) error {
 	log.Printf("status code: %d", r2.GetStatusCode())
 	log.Printf("output: %s", r2.GetOutput())
 
-	_, err = c.Shutdown(ctx, &pb.ShutdownRequest{})
+	_, err = c.StopAgent(ctx, &pb.StopAgentRequest{})
 	if err != nil {
 		return err
 	}
