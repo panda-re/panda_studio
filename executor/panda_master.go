@@ -42,6 +42,13 @@ func RunDocker() error {
 
 	ctx := context.Background()
 
+	err := dialGrpc()
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return err
@@ -161,13 +168,25 @@ func dialGrpc() error {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.RunCommand(ctx, &pb.RunCommandRequest{
+	r1, err := c.BootMachine(ctx, &pb.BootMachineRequest{})
+	if err != nil {
+		return err
+	}
+
+	resp, err := r1.Recv()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("BootResponse: %s", resp.String())
+
+	r2, err := c.RunCommand(ctx, &pb.RunCommandRequest{
 		Command: "echo hello",
 	})
 	if err != nil {
 		return err
 	}
-	log.Printf("status code: %d", r.GetStatusCode())
+	log.Printf("status code: %d", r2.GetStatusCode())
 
 	return nil
 }
