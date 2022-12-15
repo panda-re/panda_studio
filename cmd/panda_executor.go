@@ -2,17 +2,44 @@ package main
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
 func main() {
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	//defer cancel()
 
-	err := controller.RunCommand(ctx, "uname -a")
+	agent, err := controller.CreateDefaultGrpcPandaAgent()
+	if err != nil {
+		panic(err)
+	}
+
+	commands := []string{
+		"uname -a",
+		"ls /",
+		"touch /NEW_FILE.txt",
+		"ls /",
+	}
+
+	fmt.Println("Starting agent")
+	err = agent.StartAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, cmd := range commands {
+		fmt.Printf("> %s\n", cmd)
+		cmdResult, err := agent.RunCommand(ctx, cmd)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s\n", cmdResult.Logs)
+	}
+
+	err = agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}

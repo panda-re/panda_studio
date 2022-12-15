@@ -1,4 +1,4 @@
-package executor
+package panda_controller
 
 import (
 	"bufio"
@@ -12,29 +12,9 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	pb "github.com/panda-re/panda_studio/panda_agent/pb"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const imageName = "pandare/pandaagent"
-
-type PandaAgent interface {
-
-}
-
-type pandaAgent struct {
-	dockerClient *client.Client;
-	grpcCient *pb.PandaAgentClient;
-}
-
-func CreateDockerPandaAgent() (PandaAgent, error) {
-	return pandaAgent {}, nil
-}
-
-func (a *pandaAgent) Start() {
-
-}
 
 //go:generate ./generate_stubs.sh
 
@@ -113,10 +93,6 @@ func RunDocker() error {
 	}()
 
 	time.Sleep(time.Second)
-	if err = RunCommand(ctx, "uname -a"); err != nil {
-		return err
-	}
-
 	// statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 
 	// select {
@@ -143,42 +119,6 @@ func RunDocker() error {
 	}
 
 	time.Sleep(time.Second)
-
-	return nil
-}
-
-func RunCommand(ctx context.Context, command string) error {
-
-	addr := "localhost:50051"
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	c := pb.NewPandaAgentClient(conn)
-
-	// Contact the server and print out its response.
-	r1, err := c.StartAgent(ctx, &pb.StartAgentRequest{})
-	if err != nil {
-		return err
-	}
-
-	log.Printf("BootResponse: %s", r1.String())
-
-	r2, err := c.RunCommand(ctx, &pb.RunCommandRequest{
-		Command: command,
-	})
-	if err != nil {
-		return err
-	}
-	log.Printf("status code: %d", r2.GetStatusCode())
-	log.Printf("output: %s", r2.GetOutput())
-
-	_, err = c.StopAgent(ctx, &pb.StopAgentRequest{})
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
