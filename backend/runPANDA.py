@@ -1,6 +1,7 @@
 from pandare import Panda
 import shutil
 import parsePANDA
+import sys
 
 PANDA_RECORD = "exampleRecording"
 PANDA_DEST = "/panda_studio/recordings/"
