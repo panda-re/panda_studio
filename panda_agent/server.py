@@ -12,7 +12,10 @@ import pb.panda_agent_pb2_grpc as pb_grpc
 import pb.panda_agent_pb2 as pb
 from agent import PandaAgent
 
-PORT = '[::]:50051'
+PORTS = [
+    "[::]:50051",
+    "unix:///panda/shared/panda-agent.sock"
+]
 
 executor = futures.ThreadPoolExecutor(max_workers=10)
 
@@ -48,8 +51,10 @@ def serve():
     server = grpc.server(executor)
     pb_grpc.add_PandaAgentServicer_to_server(
         PandaAgentServicer(server, agent), server)
-    server.add_insecure_port(PORT)
-    print(f'panda agent grpc server listening on port {PORT}')
+
+    for port in PORTS:
+        server.add_insecure_port(port)
+        print(f'panda agent grpc server listening on port {port}')
     server.start()
     server.wait_for_termination()
 
