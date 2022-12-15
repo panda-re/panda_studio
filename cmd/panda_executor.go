@@ -12,7 +12,13 @@ func main() {
 	// ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	//defer cancel()
 
-	agent, err := controller.CreateDefaultGrpcPandaAgent()
+	// agent, err := controller.CreateDefaultGrpcPandaAgent()
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+	// defer agent.Close()
+
 	if err != nil {
 		panic(err)
 	}

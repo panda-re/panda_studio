@@ -2,6 +2,9 @@ package panda_controller
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -11,15 +14,24 @@ import (
 )
 
 type dockerGrpcPandaAgent struct {
-	grpcAgent *grpcPandaAgent
+	grpcAgent PandaAgent
 	cli       *docker.Client
 	containerId *string
+	sharedDir *string
 }
 
-const DOCKER_IMAGE = "pandare/pandaagent"
+const DOCKER_IMAGE = "pandare/panda_agent"
+const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
 func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
+	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a shared temporary directory
+	sharedDir, err := os.MkdirTemp("", "panda-agent")
 	if err != nil {
 		return nil, err
 	}
@@ -28,12 +40,26 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 		grpcAgent: nil,
 		cli: cli,
 		containerId: nil,
+		sharedDir: &sharedDir,
 	}
 
+	// Start the container
 	err = agent.startContainer(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// Wait for container startup
+	time.Sleep(time.Millisecond*1000)
+
+	// Connect to grpc over unix socket
+	grpcSocket := fmt.Sprintf(DOCKER_GRPC_SOCKET_PATTERN, *agent.sharedDir)
+	grpcAgent, err := CreateGrpcPandaAgent(grpcSocket)
+	if err != nil {
+		return nil, err
+	}	
+
+	agent.grpcAgent = grpcAgent
 
 	return agent, nil
 }
@@ -52,10 +78,18 @@ func (pa *dockerGrpcPandaAgent) Close() error {
 		return err
 	}
 
-	// Finally
+	// Close docker connection
 	err = pa.cli.Close()
 	if err != nil {
 		return err
+	}
+
+	// Remove temp dir
+	if pa.sharedDir != nil {
+		err = os.RemoveAll(*pa.sharedDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -79,12 +113,24 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) error {
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
-		Image: imageName,
+		Image: DOCKER_IMAGE,
 		Tty: true,
 		AttachStdout: true,
 		AttachStderr: true,
 	}, &container.HostConfig{
-		Mounts: []mount.Mount{},
+		Mounts: []mount.Mount{
+			{
+				Type: "bind",
+				Source: *pa.sharedDir,
+				Target: "/panda/shared",
+			},
+			// So PANDA doesn't need to download the same image
+			{
+				Type: "bind",
+				Source: "/home/nick/.panda",
+				Target: "/root/.panda",
+			},
+		},
 		// make sure the container is removed on exit
 		AutoRemove: true,
 	}, &network.NetworkingConfig{}, nil, "")
@@ -95,6 +141,10 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	pa.containerId = &ccResp.ID
 
 	// Start the container
+	err = pa.cli.ContainerStart(ctx, *pa.containerId, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
 
 	// Use ContainerAttach to get container logs
 	// Use CopyFromContainer and CopyToContainer to copy files

@@ -15,8 +15,8 @@ type grpcPandaAgent struct {
 
 const DEFAULT_GRPC_ADDR = "localhost:50051"
 
-func CreateDefaultGrpcPandaAgent() (PandaAgent, error) {
-	conn, err := grpc.Dial(DEFAULT_GRPC_ADDR, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func CreateGrpcPandaAgent(endpoint string) (PandaAgent, error) {
+	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +27,10 @@ func CreateDefaultGrpcPandaAgent() (PandaAgent, error) {
 		cc:         conn,
 		cli: client,
 	}, nil
+}
+
+func CreateDefaultGrpcPandaAgent() (PandaAgent, error) {
+	return CreateGrpcPandaAgent(DEFAULT_GRPC_ADDR)
 }
 
 func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
