@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+bin/
 
 # Editor directories and files
 .vscode/*
@@ -28,5 +29,9 @@ images/
 
 # Generated protobuf files
 *_pb2*
-pb/
+panda_agent/pb/
 panda_agent/shared/
+
+# Generated frontend files
+frontend/dist/
+frontend/node_modules/
