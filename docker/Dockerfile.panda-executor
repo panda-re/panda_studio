@@ -1,0 +1,17 @@
+ARG GOLANG_VERSION="1.19-bullseye"
+
+# First cache the modules
+FROM golang:${GOLANG_VERSION} as builder
+COPY go.mod go.sum /modules/
+WORKDIR /modules
+RUN go mod download
+
+# Next build it
+COPY . /app
+WORKDIR /app
+RUN go build -o /app/panda_executor ./cmd/panda_executor
+
+FROM ubuntu:20.04
+WORKDIR /app
+COPY --from=builder /app/panda_executor /app/
+ENTRYPOINT [ "/app/panda_executor" ]
