@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// defer agent.Close()
+	defer agent.Close()
 
 	if err != nil {
 		panic(err)
