@@ -31,7 +31,7 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 	}
 
 	// Create a shared temporary directory
-	sharedDir, err := os.MkdirTemp("", "panda-agent")
+	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "panda-agent")
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 		return nil, err
 	}
 
-	// Wait for container startup
-	time.Sleep(time.Millisecond*1000)
+	// Wait for container startup - we need a better method
+	time.Sleep(time.Millisecond*2000)
 
 	// Connect to grpc over unix socket
 	grpcSocket := fmt.Sprintf(DOCKER_GRPC_SOCKET_PATTERN, *agent.sharedDir)
@@ -127,7 +127,7 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 			// So PANDA doesn't need to download the same image
 			{
 				Type: "bind",
-				Source: "/home/nick/.panda",
+				Source: "/root/.panda",
 				Target: "/root/.panda",
 			},
 		},
