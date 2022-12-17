@@ -36,6 +36,11 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("Starting recording")
+	if err := agent.StartRecording(ctx, "test"); err != nil {
+		panic(err)
+	}
+
 	for _, cmd := range commands {
 		fmt.Printf("> %s\n", cmd)
 		cmdResult, err := agent.RunCommand(ctx, cmd)
@@ -44,6 +49,15 @@ func main() {
 		}
 		fmt.Printf("%s\n", cmdResult.Logs)
 	}
+
+	fmt.Println("Stopping recording")
+	recording, err := agent.StopRecording(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileName())
+	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
 
 	err = agent.StopAgent(ctx)
 	if err != nil {

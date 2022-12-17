@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -14,11 +15,12 @@ import (
 )
 
 type dockerGrpcPandaAgent struct {
-	grpcAgent PandaAgent
-	cli       *docker.Client
+	grpcAgent   PandaAgent
+	cli         *docker.Client
 	containerId *string
-	sharedDir *string
+	sharedDir   *string
 }
+
 
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
@@ -37,10 +39,10 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 	}
 
 	agent := &dockerGrpcPandaAgent{
-		grpcAgent: nil,
-		cli: cli,
+		grpcAgent:   nil,
+		cli:         cli,
 		containerId: nil,
-		sharedDir: &sharedDir,
+		sharedDir:   &sharedDir,
 	}
 
 	// Start the container
@@ -50,14 +52,14 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 	}
 
 	// Wait for container startup - we need a better method
-	time.Sleep(time.Millisecond*2000)
+	time.Sleep(time.Millisecond * 2000)
 
 	// Connect to grpc over unix socket
 	grpcSocket := fmt.Sprintf(DOCKER_GRPC_SOCKET_PATTERN, *agent.sharedDir)
 	grpcAgent, err := CreateGrpcPandaAgent(grpcSocket)
 	if err != nil {
 		return nil, err
-	}	
+	}
 
 	agent.grpcAgent = grpcAgent
 
@@ -110,23 +112,46 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) error {
 	return pa.grpcAgent.StopAgent(ctx)
 }
 
+// StartRecording implements PandaAgent
+func (pa *dockerGrpcPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
+	// Tell the agent to save the snapshot file in the shared folder rather than the current directory
+	newRecordingName := fmt.Sprintf("./shared/%s", recordingName)
+	return pa.grpcAgent.StartRecording(ctx, newRecordingName)
+}
+
+// StopRecording implements PandaAgent
+func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
+	recording, err := pa.grpcAgent.StopRecording(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip off the shared folder prefix so that paths are correct on this system
+	recordingName := strings.Replace(recording.RecordingName, "./shared/", "", 1)
+
+	return &PandaAgentRecording{
+		RecordingName: recordingName,
+		Location: *pa.sharedDir,
+	}, nil
+}
+
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
-		Image: DOCKER_IMAGE,
-		Tty: true,
+		Image:        DOCKER_IMAGE,
+		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
 	}, &container.HostConfig{
 		Mounts: []mount.Mount{
 			{
-				Type: "bind",
+				Type:   "bind",
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
 			},
 			// So PANDA doesn't need to download the same image
 			{
-				Type: "bind",
+				Type:   "bind",
 				Source: "/root/.panda",
 				Target: "/root/.panda",
 			},

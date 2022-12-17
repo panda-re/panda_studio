@@ -9,6 +9,7 @@ class PandaAgent:
         self.panda = panda
         self.hasStarted = False
         self.isRunning = False
+        self.current_recording = None
     
     # This function is meant to run in a different thread
     def start(self):
@@ -56,3 +57,24 @@ class PandaAgent:
             return panda.revert_sync(snapshot)
         
         return self._run_function(panda_revert_snapshot)
+    
+    def start_recording(self, recording_name):
+        if self.current_recording is not None:
+            raise RuntimeError("Cannot start new recording while recording in progress")
+
+        self.current_recording = recording_name
+        def panda_start_recording(panda: Panda):
+            print(f'starting recording {recording_name}')
+            return panda.record(recording_name)
+        
+        return self._run_function(panda_start_recording)
+    
+    def stop_recording(self):
+        def panda_stop_recording(panda: Panda):
+            print(f'stopping recording')
+            panda.end_record()
+        
+        recording_name = self.current_recording
+        self._run_function(panda_stop_recording)
+        self.current_recording = None
+        return recording_name

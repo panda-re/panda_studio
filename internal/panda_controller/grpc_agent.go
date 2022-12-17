@@ -9,7 +9,7 @@ import (
 )
 
 type grpcPandaAgent struct {
-	cc         *grpc.ClientConn
+	cc  *grpc.ClientConn
 	cli pb.PandaAgentClient
 }
 
@@ -24,7 +24,7 @@ func CreateGrpcPandaAgent(endpoint string) (PandaAgent, error) {
 	client := pb.NewPandaAgentClient(conn)
 
 	return &grpcPandaAgent{
-		cc:         conn,
+		cc:  conn,
 		cli: client,
 	}, nil
 }
@@ -61,6 +61,32 @@ func (pa *grpcPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaAge
 
 	return &PandaAgentRunCommandResult{
 		Logs: resp.GetOutput(),
+	}, nil
+}
+
+// StartRecording implements PandaAgent
+func (pa *grpcPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
+	_, err := pa.cli.StartRecording(ctx, &pb.StartRecordingRequest{
+		RecordingName: recordingName,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// StopRecording implements PandaAgent
+func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
+	resp, err := pa.cli.StopRecording(ctx, &pb.StopRecordingRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PandaAgentRecording{
+		RecordingName: resp.RecordingName,
+		// We cannot know the location with the information we have
+		Location:      "??",
 	}, nil
 }
 

@@ -28,7 +28,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def isAgentRunning(self):
         return self.agent_thread is not None
     
-    def StartAgent(self, request, context):
+    def StartAgent(self, request: pb.StartAgentRequest, context):
         if self.agent.hasStarted:
             return
 
@@ -36,14 +36,26 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         executor.submit(self.agent.start)
         return pb.StartAgentResponse()
     
-    def StopAgent(self, request, context):
+    def StopAgent(self, request: pb.StopAgentRequest, context):
         self.agent.stop()
         self.server.stop(grace=5)
         return pb.StopAgentResponse()
     
-    def RunCommand(self, request, context):
+    def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)
         return pb.RunCommandReply(statusCode=0, output=output)
+    
+    def StartRecording(self, request: pb.StartRecordingRequest, context):
+        self.agent.start_recording(recording_name=request.recording_name)
+        return pb.StartRecordingResponse()
+    
+    def StopRecording(self, request: pb.StopRecordingRequest, context):
+        recording_name = self.agent.stop_recording()
+        return pb.StopRecordingResponse(
+            recording_name=recording_name,
+            snapshot_filename=f"{recording_name}-rr-snp",
+            ndlog_filename=f"{recording_name}-rr-nondet.log"
+        )
 
 def serve():
     panda = Panda(generic='x86_64')

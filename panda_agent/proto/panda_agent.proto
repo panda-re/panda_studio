@@ -7,6 +7,8 @@ service PandaAgent {
     rpc StartAgent (StartAgentRequest) returns (StartAgentResponse) {}
     rpc StopAgent (StopAgentRequest) returns (StopAgentResponse) {}
     rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
+    rpc StartRecording (StartRecordingRequest) returns (StartRecordingResponse) {}
+    rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
 }
 
 message StartAgentRequest {}
@@ -21,4 +23,16 @@ message RunCommandRequest {
 message RunCommandReply {
     int32 statusCode = 1;
     string output = 2;
+}
+
+message StartRecordingRequest {
+    string recording_name = 1;
+}
+message StartRecordingResponse {}
+
+message StopRecordingRequest {}
+message StopRecordingResponse {
+    string recording_name = 1;
+    string snapshot_filename = 2;
+    string ndlog_filename = 3;
 }
