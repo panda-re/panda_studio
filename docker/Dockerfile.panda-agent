@@ -1,0 +1,24 @@
+FROM pandare/panda
+
+RUN mkdir /panda
+WORKDIR /panda
+
+# Uncomment the following lines if any system packages need to be installed
+# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+#     && apt-get -y install --no-install-recommends \
+#         protobuf-compiler
+
+# Install python dependencies
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+# Generate/compile protobuf files
+RUN mkdir proto pb
+COPY proto/* ./proto
+RUN python -m grpc_tools.protoc --python_out=pb --grpc_python_out=pb -I./proto ./proto/*.proto
+
+# Copy server files to container
+COPY *.py ./
+
+EXPOSE 50051
+ENTRYPOINT ["python3", "/panda/server.py"]

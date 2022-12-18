@@ -1,0 +1,3 @@
+serial, echo help me,
+serial, echo testing uname,
+serial, uname -h,
