@@ -1,12 +1,11 @@
 import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {MutableRefObject, Ref, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
-
+import {EuiInnerText} from "@elastic/eui";
 
 function CreateRecordingPage() {
   const nameRef = useRef(null)
-  const memoryRef = useRef(null)
-  const imageRef = useRef(null)
+  const volumeRef = useRef(null)
   const programRef = useRef(null)
 
   return (<>
@@ -29,26 +28,12 @@ function CreateRecordingPage() {
     <EuiPageTemplate.Section>
       <EuiFlexGroup>
         <EuiFlexItem grow={2}>
-          <EuiText>Memory size: </EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem grow={8}>
-          <EuiFieldText
-            placeholder="eg, 2G"
-            inputRef={memoryRef}
-          />
-        </EuiFlexItem>
-      </EuiFlexGroup>
-    </EuiPageTemplate.Section>
-
-    <EuiPageTemplate.Section>
-      <EuiFlexGroup>
-        <EuiFlexItem grow={2}>
           <EuiText>Image: </EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
           <EuiFieldText
             placeholder="eg, guest.img"
-            inputRef={imageRef}
+            inputRef={volumeRef}
           />
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -57,11 +42,11 @@ function CreateRecordingPage() {
     <EuiPageTemplate.Section>
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={2}>
-          <EuiText>Specify program to run:</EuiText>
+          <EuiText>Specify commands to run:</EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
           <EuiFieldText
-            placeholder="eg, python script.py arg1 arg2..."
+            placeholder="eg, uname -a, ls..."
             inputRef={programRef}
           />
         </EuiFlexItem>
@@ -73,7 +58,22 @@ function CreateRecordingPage() {
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={false}>
           <div>
-            <EuiButton onClick={() => sendAPICall(nameRef, memoryRef, imageRef, programRef)}>Create Recording</EuiButton>
+            <EuiButton onClick={() => sendAPICall(nameRef, volumeRef, programRef)}>Create Recording</EuiButton>
+          </div>
+        </EuiFlexItem>
+      </EuiFlexGroup>
+    </EuiPageTemplate.Section>
+
+    <EuiPageTemplate.Section>
+      <EuiFlexGroup justifyContent={"spaceAround"}>
+        <EuiFlexItem grow={false}>
+          <div>
+            <EuiInnerText>
+              {(ref, innerText) => (
+                <span id="inner" title={innerText}>
+                </span>
+              )}
+            </EuiInnerText>
           </div>
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -81,17 +81,16 @@ function CreateRecordingPage() {
   </>)
 }
 
-let sendAPICall = function (nameInput: MutableRefObject<any>, memoryInput: MutableRefObject<any>, imageInput: MutableRefObject<any>, programInput: MutableRefObject<any>) {
+let sendAPICall = function (nameInput: MutableRefObject<any>, volumeInput: MutableRefObject<any>, programInput: MutableRefObject<any>) {
+  let commands = JSON.parse("[" + programInput.current.value + "]")
   let recordingDetails = {
-    name: nameInput.current.value,
-    image: imageInput.current.value,
-    memory: memoryInput.current.value,
-    commands: programInput.current.value
+    volume: volumeInput.current.value,
+    commands: commands,
+    name: nameInput.current.value
   }
   console.log(recordingDetails)
-  console.log("This is where we run the recording in PANDA")
 
-  fetch('http://127.0.0.1:5000/runPanda', {
+  fetch('http://127.0.0.1:8080/panda', {
     method: 'POST',
     headers: {
       'Access-Control-Allow-Origin': '*',
@@ -101,7 +100,15 @@ let sendAPICall = function (nameInput: MutableRefObject<any>, memoryInput: Mutab
     body: JSON.stringify(recordingDetails)
   })
     .then(response => response.json())
-    .then(response => console.log(JSON.stringify(response)))
+    .then(response => displayResponse(response))
+}
+
+let displayResponse = function (response: any) {
+  console.log(response)
+  const element = document.getElementById("inner")
+  if (element != null) {
+    element.innerText = response['response']
+  }
 }
 
 export default CreateRecordingPage;
