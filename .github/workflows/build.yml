@@ -1,5 +1,9 @@
-name: Build Panda Agent Docker Container
-on: [push]
+name: Build PANDA Studio
+on:
+  pull_request:
+  push:
+    branches:
+      - main
 jobs:
   build_agent :
     runs-on: ubuntu-20.04
