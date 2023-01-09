@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
-	"net/http"
-	"time"
 )
 
 type parameters struct {
@@ -21,6 +22,12 @@ type responses struct {
 }
 
 func main() {
+	if err := runServer(); err != nil {
+		panic(err)
+	}
+}
+
+func runServer() error {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -35,7 +42,11 @@ func main() {
 	}))
 	router.POST("/panda", postRecording)
 
-	router.Run("localhost:8080")
+	if err := router.Run("localhost:8080"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func postRecording(c *gin.Context) {

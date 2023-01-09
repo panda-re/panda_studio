@@ -1,0 +1,9 @@
+s3:
+  endpoint: localhost:9000
+  ssl: false
+  access_key: UZgFLiypw2yKUqfm
+  secret_key: HaGTqhqSRfjmjrD3patK5HBtJyyUgyMC
+  buckets:
+    recordings: panda-recordings
+    images: panda-images
+    logs: panda-logs

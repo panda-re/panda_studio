@@ -27,6 +27,9 @@ bin/
 # qcow image folder
 images/
 
+# minio data folder
+minio/
+
 # Generated protobuf files
 *_pb2*
 pb/
