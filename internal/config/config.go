@@ -62,3 +62,16 @@ func (config *Config) GetS3BucketsConfig() (*S3BucketsConfig, error) {
 
 	return &bucketsConfig, nil
 }
+
+type MongoDBConfig struct {
+	Uri string
+}
+
+func (config *Config) GetMongoConfig() (*MongoDBConfig, error) {
+	var mongoConfig MongoDBConfig
+	if err := config.v.UnmarshalKey("mongodb", &mongoConfig); err != nil {
+		return nil, err
+	}
+
+	return &mongoConfig, nil
+}

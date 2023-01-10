@@ -28,7 +28,8 @@ bin/
 images/
 
 # minio data folder
-minio/
+data/minio/
+data/mongo
 
 # Generated protobuf files
 *_pb2*

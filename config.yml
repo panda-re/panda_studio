@@ -1,3 +1,4 @@
+# Note - change these credentials for production use!
 s3:
   endpoint: localhost:9000
   ssl: false
@@ -7,3 +8,5 @@ s3:
     recordings: panda-recordings
     images: panda-images
     logs: panda-logs
+mongodb:
+  uri: mongodb://admin:abc123def456@localhost:27017
