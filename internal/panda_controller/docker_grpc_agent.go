@@ -205,7 +205,6 @@ func copyFileHelper(file_path string, shared_dir string) (int64, error) {
 		return 0, fmt.Errorf("%s is not a regular file", file_path)
 	}
 
-	println(shared_dir + "/system_image.qcow2")
 	source, err := os.Open(file_path)
 	if err != nil {
 		return 0, err
@@ -221,6 +220,5 @@ func copyFileHelper(file_path string, shared_dir string) (int64, error) {
 
 	destination.Close()
 
-	println(nBytes)
 	return nBytes, err
 }

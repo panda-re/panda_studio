@@ -61,7 +61,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 def serve():
     panda = Panda(arch='x86_64', qcow='/panda/shared/system_image.qcow2', mem='1024',
                  os='linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr', expect_prompt='root@ubuntu:.*# ',
-                 extra_args="-display none ")
+                 extra_args='-display none')
     agent = PandaAgent(panda)
     server = grpc.server(executor)
     pb_grpc.add_PandaAgentServicer_to_server(
