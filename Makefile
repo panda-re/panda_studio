@@ -1,6 +1,6 @@
 
 
-all: panda_executor panda_agent_protoc panda_agent_protoc_go panda_agent_protoc_py
+all: full_initial_setup panda_executor panda_agent_protoc panda_agent_protoc_go panda_agent_protoc_py
 
 full_initial_setup: initial_setup_priviliged initial_setup
 
