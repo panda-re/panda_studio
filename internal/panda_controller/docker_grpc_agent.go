@@ -3,6 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -21,11 +22,10 @@ type dockerGrpcPandaAgent struct {
 	sharedDir   *string
 }
 
-
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
-func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
+func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (PandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -45,8 +45,15 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 		sharedDir:   &sharedDir,
 	}
 
+	// Copy given image into shared directory
+	nBytes, err := copyFileHelper(file_path, sharedDir)
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		print("Error in copying")
+		return nil, err
+	}
+
 	// Start the container
-	err = agent.startContainer(ctx)
+	err = agent.startContainer(ctx, sharedDir, file_path)
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +138,11 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 
 	return &PandaAgentRecording{
 		RecordingName: recordingName,
-		Location: *pa.sharedDir,
+		Location:      *pa.sharedDir,
 	}, nil
 }
 
-func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
+func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context, shared_dir string, file_path string) error {
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
 		Image:        DOCKER_IMAGE,
@@ -148,12 +155,6 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 				Type:   "bind",
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
-			},
-			// So PANDA doesn't need to download the same image
-			{
-				Type:   "bind",
-				Source: "/root/.panda",
-				Target: "/root/.panda",
 			},
 		},
 		// make sure the container is removed on exit
@@ -191,4 +192,35 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func copyFileHelper(file_path string, shared_dir string) (int64, error) {
+
+	sourceFileStat, err := os.Stat(file_path)
+	if err != nil {
+		return 0, err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", file_path)
+	}
+
+	println(shared_dir + "/system_image.qcow2")
+	source, err := os.Open(file_path)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(shared_dir + "/system_image.qcow2")
+	if err != nil {
+		return 0, err
+	}
+
+	nBytes, err := io.Copy(destination, source)
+
+	destination.Close()
+
+	println(nBytes)
+	return nBytes, err
 }
