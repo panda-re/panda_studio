@@ -1,7 +1,6 @@
 import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {MutableRefObject, Ref, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
-import {EuiInnerText} from "@elastic/eui";
 import React, { Component } from 'react'
 import Terminal from 'react-console-emulator'
 
@@ -110,7 +109,7 @@ let sendAPICall = function (nameInput: MutableRefObject<any>, volumeInput: Mutab
 
 let displayResponse = function (response: any) {
   console.log(response)
-  const term = terminal.current
+  const term:any = terminal.current
   for (let i =0; i < response['response'].length; i++) {
     term.pushToStdout('panda@panda:~$ ' + commands[i] + '\n')
     term.pushToStdout(response['response'][i])
