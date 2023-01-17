@@ -7,13 +7,13 @@ class PandaAgent:
 
     def __init__(self, panda: Panda):
         self.panda = panda
-        self.hasStarted = False
         self.isRunning = False
         self.current_recording = None
     
     # This function is meant to run in a different thread
     def start(self):
-        self.hasStarted = False
+        if self.isRunning: 
+            raise RuntimeError("Cannot start another instance of PANDA while one is already running")
         panda = self.panda
 
         @panda.queue_blocking
@@ -29,13 +29,18 @@ class PandaAgent:
         self.isRunning = False
     
     def stop(self):
+        if not self.isRunning: 
+            raise RuntimeError("Can't stop won't stop (can't stop a recording that hasn't started)")
         @self.panda.queue_blocking
         def panda_stop():
             self.panda.end_analysis()
+        self.isRunning = False
     
     def _run_function(self, func, block=True, timeout=None):
         # Since the queued function will be running in another thread, we need
         # a queue in order to pass the return value back to this thread
+        if not self.isRunning: 
+            raise RuntimeError("Can't run if you don't have legs (can't run a function when PANDA isn't running)")
         returnChannel = queue.Queue()
 
         @self.panda.queue_blocking

@@ -23,15 +23,8 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def __init__(self, server, agent: PandaAgent):
         self.server = server
         self.agent = agent
-        self.agent_thread = None
-    
-    def isAgentRunning(self):
-        return self.agent_thread is not None
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
-        if self.agent.hasStarted:
-            return
-
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         return pb.StartAgentResponse()
@@ -58,6 +51,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         )
 
 def serve():
+    #TODO remove hardcoding to replace with param solution and move into agent
     panda = Panda(generic='x86_64')
     agent = PandaAgent(panda)
     server = grpc.server(executor)
