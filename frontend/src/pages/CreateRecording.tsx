@@ -2,6 +2,11 @@ import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {MutableRefObject, Ref, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {EuiInnerText} from "@elastic/eui";
+import React, { Component } from 'react'
+import Terminal from 'react-console-emulator'
+
+const terminal = React.createRef()
+let commands = ""
 
 function CreateRecordingPage() {
   const nameRef = useRef(null)
@@ -66,23 +71,23 @@ function CreateRecordingPage() {
 
     <EuiPageTemplate.Section>
       <EuiFlexGroup justifyContent={"spaceAround"}>
-        <EuiFlexItem grow={false}>
-          <div>
-            <EuiInnerText>
-              {(ref, innerText) => (
-                <span id="inner" title={innerText}>
-                </span>
-              )}
-            </EuiInnerText>
-          </div>
+        <EuiFlexItem>
+          <Terminal
+            ref={terminal}
+            commands={{}}
+            promptLabel={'panda@panda:~$'}
+            errorText={"\n"}
+            readOnly={true}
+          />
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
   </>)
 }
 
+
 let sendAPICall = function (nameInput: MutableRefObject<any>, volumeInput: MutableRefObject<any>, programInput: MutableRefObject<any>) {
-  let commands = JSON.parse("[" + programInput.current.value + "]")
+  commands = JSON.parse("[" + programInput.current.value + "]")
   let recordingDetails = {
     volume: volumeInput.current.value,
     commands: commands,
@@ -105,9 +110,10 @@ let sendAPICall = function (nameInput: MutableRefObject<any>, volumeInput: Mutab
 
 let displayResponse = function (response: any) {
   console.log(response)
-  const element = document.getElementById("inner")
-  if (element != null) {
-    element.innerText = response['response']
+  const term = terminal.current
+  for (let i =0; i < response['response'].length; i++) {
+    term.pushToStdout('panda@panda:~$ ' + commands[i] + '\n')
+    term.pushToStdout(response['response'][i])
   }
 }
 
