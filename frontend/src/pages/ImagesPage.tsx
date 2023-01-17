@@ -1,5 +1,6 @@
-import {EuiButton, EuiFieldText, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiFieldText, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
 import ImagesDataGrid from '../components/ImagesDataGrid';
+import {EuiFlexGrid} from "@elastic/eui";
 
 function ImagesPage() {
 
@@ -7,7 +8,8 @@ function ImagesPage() {
     <EuiPageTemplate.Header pageTitle="Image Dashboard" />
 
     <EuiPageTemplate.Section>
-      <EuiFlexGroup>
+
+      <EuiFlexGrid columns={4}>
         <EuiFlexItem>
           <EuiText>Image ID</EuiText>
         </EuiFlexItem>
@@ -17,9 +19,8 @@ function ImagesPage() {
         <EuiFlexItem>
           <EuiText>Date</EuiText>
         </EuiFlexItem>
-      </EuiFlexGroup>
-
-      <EuiFlexGroup>
+        <EuiFlexItem>
+        </EuiFlexItem>
         <EuiFlexItem>
           <EuiFieldText
             placeholder="Enter Image ID"
@@ -35,13 +36,16 @@ function ImagesPage() {
             placeholder="Date"
           />
         </EuiFlexItem>
-        <EuiFlexItem >
-          <EuiButton>Upload Base Image</EuiButton>
+        <EuiFlexItem>
+          <EuiButton iconType={'plusInCircle'}>Upload Base Image</EuiButton>
         </EuiFlexItem>
-      </EuiFlexGroup>
+      </EuiFlexGrid>
+
+      <EuiSpacer size="xl" />
 
       <ImagesDataGrid />
     </EuiPageTemplate.Section>
+
   </>)
 }
 
