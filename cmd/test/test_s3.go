@@ -3,14 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	config "github.com/panda-re/panda_studio/internal/config"
+	config "github.com/panda-re/panda_studio/internal/configuration"
+	"github.com/panda-re/panda_studio/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 func main() {
@@ -18,7 +21,20 @@ func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
-	if err := testMongo(); err != nil {
+
+	fmt.Printf("%+v\n", config.GetConfig())
+
+	ctx := context.TODO()
+
+	client, err := db.GetMongoDatabase(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := testMongo(ctx, client); err != nil {
+		panic(err)
+	}
+	if err := testMongoGridFS(ctx, client); err != nil {
 		panic(err)
 	}
 	if err := testS3(); err != nil {
@@ -26,27 +42,28 @@ func main() {
 	}
 }
 
-func testS3() error {
-
-	s3Config, err := config.GetConfig().GetS3Config()
-	if err != nil {
-		return err
-	}
-	bucketConfig, err := config.GetConfig().GetS3BucketsConfig()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("S3 Config - %+v\n", s3Config)
-	fmt.Printf("Buckets Config - %+v\n", bucketConfig)
+func connectMinio() (*minio.Client, error) {
+	s3Config := config.GetConfig().S3
 
 	minioClient, err := minio.New(s3Config.Endpoint, &minio.Options{
 		Creds: credentials.NewStaticV4(s3Config.AccessKey, s3Config.SecretKey, ""),
 		Secure: s3Config.SslEnabled,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	return minioClient, err
+}
+
+func testS3() error {
+
+	minioClient, err := connectMinio()
+	if err != nil {
+		return nil
+	}
+
+	bucketConfig := config.GetConfig().S3.Buckets
 
 	ctx := context.TODO()
 
@@ -76,25 +93,8 @@ func testS3() error {
 	return nil
 }
 
-func testMongo() error {
-	ctx := context.TODO()
-
-	mongoUri, err := config.GetConfig().GetMongoConfig()
-	if err != nil {
-		return err
-	}
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUri.Uri))
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Pinging Mongodb!")
-	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		return err
-	}
-
-	userCollection := client.Database("testing").Collection("users")
+func testMongo(ctx context.Context, client *mongo.Database) error {
+	userCollection := client.Collection("users")
 	user := bson.D{{Key: "fullName", Value: "User 1"}, {Key: "age", Value: 30}}
 	result, err := userCollection.InsertOne(ctx, user)
 	if err != nil {
@@ -102,7 +102,6 @@ func testMongo() error {
 	}
 
 	fmt.Printf("Mongo Insert Result: %+v\n", result)
-	return nil
 
 	result2, err := userCollection.DeleteOne(ctx, bson.D{{"_id", result.InsertedID}})
 	if err != nil {
@@ -110,5 +109,28 @@ func testMongo() error {
 	}
 
 	fmt.Printf("Mongo Delete Result: %+v\n", result2)
+	return nil
+}
+
+func testMongoGridFS(ctx context.Context, db *mongo.Database) error {
+	opts := options.GridFSBucket().SetName("files")
+	bucket, err := gridfs.NewBucket(db, opts)
+	if err != nil {
+		return nil
+	}
+
+	file, err := os.Open("./random.bin")
+	if err != nil {
+		return err
+	}
+	uploadOpts := options.GridFSUpload().SetMetadata(bson.D{{"tag", "first"}})
+
+	objectId, err := bucket.UploadFromStream("folder1/random.bin", io.Reader(file), uploadOpts)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("New file uploaded with ID %s\n", objectId)
+
 	return nil
 }

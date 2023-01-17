@@ -25,11 +25,7 @@ bin/
 *.sw?
 
 # qcow image folder
-images/
-
-# minio data folder
-data/minio/
-data/mongo
+/images/
 
 # Generated protobuf files
 *_pb2*

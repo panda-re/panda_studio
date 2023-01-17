@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/panda-re/panda_studio/internal/images"
+	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
@@ -28,8 +30,8 @@ func main() {
 }
 
 func runServer() error {
-	router := gin.Default()
-	router.Use(cors.New(cors.Config{
+	r := gin.Default()
+	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST"},
 		AllowHeaders:     []string{"*"},
@@ -40,9 +42,15 @@ func runServer() error {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	router.POST("/panda", postRecording)
 
-	if err := router.Run("localhost:8080"); err != nil {
+	r.Use(middleware.ErrorHandler())
+
+	apiGroup := r.Group("/api")
+	images.ImagesRegister(apiGroup.Group("/images"))
+
+	r.POST("/panda", postRecording)
+
+	if err := r.Run(); err != nil {
 		return err
 	}
 

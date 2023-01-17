@@ -10,3 +10,4 @@ s3:
     logs: panda-logs
 mongodb:
   uri: mongodb://admin:abc123def456@localhost:27017
+  database: panda_studio
