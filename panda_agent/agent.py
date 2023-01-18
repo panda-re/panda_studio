@@ -19,18 +19,19 @@ class PandaAgent:
         @panda.queue_blocking
         def panda_start():
             print("panda agent started")
-            self.isRunning = True
+            
             # revert to the qcow's root snapshot
             panda.revert_sync("root")
         
         print("starting panda agent ")
+        self.isRunning = True
         panda.run()
         print("panda agent stopped")
-        self.isRunning = False
+        #self.isRunning = False
     
     def stop(self):
-        if not self.isRunning: 
-            raise RuntimeError("Can't stop won't stop (can't stop a recording that hasn't started)")
+        if self.isRunning is False: 
+            raise RuntimeError("Can't stop a recording that hasn't started")
         @self.panda.queue_blocking
         def panda_stop():
             self.panda.end_analysis()
@@ -39,8 +40,8 @@ class PandaAgent:
     def _run_function(self, func, block=True, timeout=None):
         # Since the queued function will be running in another thread, we need
         # a queue in order to pass the return value back to this thread
-        if not self.isRunning: 
-            raise RuntimeError("Can't run if you don't have legs (can't run a function when PANDA isn't running)")
+        if self.isRunning is False: 
+            raise RuntimeError("Can't run a function when PANDA isn't running")
         returnChannel = queue.Queue()
 
         @self.panda.queue_blocking

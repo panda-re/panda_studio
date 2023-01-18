@@ -3,6 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -20,7 +21,6 @@ type dockerGrpcPandaAgent struct {
 	containerId *string
 	sharedDir   *string
 }
-
 
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
@@ -129,10 +129,25 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	// Strip off the shared folder prefix so that paths are correct on this system
 	recordingName := strings.Replace(recording.RecordingName, "./shared/", "", 1)
 
-	return &PandaAgentRecording{
+	new_recording := PandaAgentRecording{
 		RecordingName: recordingName,
-		Location: *pa.sharedDir,
-	}, nil
+		Location:      *pa.sharedDir,
+	}
+
+	// Copy given image into shared directory
+	//TODO: Replace destination with filesystem target
+	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio", "/RecordingSnapshot")
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		print("Error in copying snapshot")
+		return nil, err
+	}
+
+	nBytesJuan, err := copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio", "/RecordingNDLog.log")
+	if (err != nil && err != io.EOF) || nBytesJuan == 0 {
+		print("Error in copying Ndlog")
+		return nil, err
+	}
+	return &new_recording, nil
 }
 
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
@@ -191,4 +206,33 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func copyFileHelper(source_path string, destination_path string, file_name string) (int64, error) {
+
+	sourceFileStat, err := os.Stat(source_path)
+	if err != nil {
+		return 0, err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", source_path)
+	}
+
+	source, err := os.Open(source_path)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(destination_path + file_name)
+	if err != nil {
+		return 0, err
+	}
+
+	nBytes, err := io.Copy(destination, source)
+
+	destination.Close()
+
+	return nBytes, err
 }
