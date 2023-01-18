@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	config "github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/images"
 	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
@@ -24,6 +25,9 @@ type responses struct {
 }
 
 func main() {
+	if err := config.LoadConfig(); err != nil {
+		panic(err)
+	}
 	if err := runServer(); err != nil {
 		panic(err)
 	}
