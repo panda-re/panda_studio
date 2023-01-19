@@ -5,10 +5,10 @@ import React, { useState, Fragment, MutableRefObject } from 'react';
 // entities: list of "stringified" entities to let user select from
 // returnSelected: callback function (hook) defined by parent component to retrieve the selected item from the child component
 // ------------------------------------------------------------
-// create a callback like this in the parent's component construction method: 
-// const [message, setMessage] = React.useState<String | undefined>("No Recording Selected");
+//    create a callback like this in the parent's component construction method: 
+// const [selectedRecording, setSelectedRecording] = React.useState<String | undefined>("NONE SELECTED MESSAGE");
 // function returnSelected(message: String){
-//     setMessage(message);
+//    setSelectedRecording(message);
 // }
 interface EntitySearchBarProps{
     name: String;
