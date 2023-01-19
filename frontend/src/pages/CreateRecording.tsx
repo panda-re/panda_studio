@@ -9,9 +9,9 @@ function CreateRecordingPage() {
   const [volume, setVolume] = useState('');
   const [program, setProgram] = useState('');
   const [commands, setCommands] = useState('');
-  const terminal = React.createRef()
+  const terminal = useRef(null)
 
-  const sendAPICall = useCallback(function (name:string, volume:string, program:string) {
+  const sendAPICall = useCallback(function () {
     setCommands(JSON.parse("[" + program + "]"))
     let recordingDetails = {
       volume: volume,
@@ -94,7 +94,7 @@ function CreateRecordingPage() {
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={false}>
           <div>
-            <EuiButton onClick={() => sendAPICall(name, volume, program)}>Create Recording</EuiButton>
+            <EuiButton onClick={sendAPICall}>Create Recording</EuiButton>
           </div>
         </EuiFlexItem>
       </EuiFlexGroup>
