@@ -6,6 +6,7 @@ import NotFoundErrorPage from './pages/NotFoundErrorPage';
 import pandaLogo from './assets/panda.svg';
 import ImagesPage from './pages/ImagesPage';
 import CreateRecordingPage from "./pages/CreateRecording";
+import ImageDetails from "./pages/ImageDetails";
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
@@ -105,6 +106,7 @@ function Layout() {
         <Route path="/createRecording" element={<CreateRecordingPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
+        <Route path="/imageDetails" element={<ImageDetails />} />
       </Routes>
 
     </EuiPageTemplate>
