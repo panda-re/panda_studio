@@ -142,8 +142,8 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 		return nil, err
 	}
 
-	nBytesJuan, err := copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
-	if (err != nil && err != io.EOF) || nBytesJuan == 0 {
+	nBytes, err = copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
 		print("Error in copying Ndlog")
 		return nil, err
 	}
