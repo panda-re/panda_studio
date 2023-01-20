@@ -136,13 +136,13 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 
 	// Copy given image into shared directory
 	//TODO: Replace destination with filesystem target
-	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio", "/RecordingSnapshot")
+	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		print("Error in copying snapshot")
 		return nil, err
 	}
 
-	nBytesJuan, err := copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio", "/RecordingNDLog.log")
+	nBytesJuan, err := copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytesJuan == 0 {
 		print("Error in copying Ndlog")
 		return nil, err
