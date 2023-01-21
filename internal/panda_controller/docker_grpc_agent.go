@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	"github.com/pkg/errors"
 )
 
 type dockerGrpcPandaAgent struct {
@@ -138,14 +139,12 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	//TODO: Replace destination with filesystem target
 	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
-		print("Error in copying snapshot")
-		return nil, err
+		return nil, errors.Wrap(err, "Error in copying snapshot")
 	}
 
 	nBytes, err = copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
-		print("Error in copying Ndlog")
-		return nil, err
+		return nil, errors.Wrap(err, "Error in copying nondeterministic log")
 	}
 	return &new_recording, nil
 }
