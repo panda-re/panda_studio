@@ -31,7 +31,12 @@ class PandaAgent:
     
     def stop(self):
         if self.isRunning is False: 
-            raise RuntimeError("Can't stop a recording that hasn't started")
+            raise RuntimeError("Cannot stop a PANDA instance when one is not running")
+        if self.current_recording is not None:
+            # Stop recording for user, then stop PANDA
+            print("Request for PANDA stop before recording ended. Stopping recording automatically")
+            self.stop_recording()
+        
         @self.panda.queue_blocking
         def panda_stop():
             self.panda.end_analysis()
@@ -76,6 +81,9 @@ class PandaAgent:
         return self._run_function(panda_start_recording)
     
     def stop_recording(self):
+        if self.current_recording is None:
+            raise RuntimeError("Must start a recording before stopping one")
+        
         def panda_stop_recording(panda: Panda):
             print(f'stopping recording')
             panda.end_record()
