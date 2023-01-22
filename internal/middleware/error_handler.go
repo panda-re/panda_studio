@@ -10,7 +10,18 @@ import (
 )
 
 var ErrorMapping = map[error]int{
+	// MongoDB could not find documents
 	mongo.ErrNoDocuments: http.StatusNotFound,
+	// Trying to upload a file
+	http.ErrNotMultipart: http.StatusBadRequest,
+}
+
+func getErrorCode(err error) int {
+	code, ok := ErrorMapping[err]
+	if !ok {
+		code = 500
+	}
+	return code
 }
 
 type ErrorMessage struct {
@@ -30,16 +41,10 @@ func ErrorHandler() gin.HandlerFunc {
 			return
 		}
 
-
 		err := c.Errors[0]
 		details := ""
 
-		fmt.Printf("%T %T", err, errors.Cause(err.Err))
-
-		statusCode, ok := ErrorMapping[errors.Cause(err.Err)];
-		if !ok {
-			statusCode = 500
-		}
+		statusCode := 500//getErrorCode(errors.Cause(err.Err))
 
 		if err, ok := err.Err.(stackTracer); ok {
 			stack := err.StackTrace()

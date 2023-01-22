@@ -10,10 +10,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-type ObjectID string
+type ObjectID = *primitive.ObjectID
 
 func NewObjectID() ObjectID {
-	return ObjectID(primitive.NewObjectID().Hex())
+	newId := primitive.NewObjectID()
+	return &newId
+}
+
+func ParseObjectID(id string) ObjectID {
+	parsed, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil
+	}
+	return &parsed
 }
 
 var mongoDbClient *mongo.Client = nil

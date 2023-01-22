@@ -11,6 +11,7 @@ const (
 	AARCH64 Architecture = "aarch64"
 )
 
+// Entities
 type Image struct {
 	ID db.ObjectID `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
@@ -21,16 +22,28 @@ type Image struct {
 
 type ImageFile struct {
 	ID db.ObjectID `bson:"_id" json:"id"`
-	FileName string `bson:"file_name" json:"filename"`
+	FileName string `bson:"file_name" json:"file_name"`
 	FileType string `bson:"file_type" json:"file_type"`
 	IsUploaded bool `bson:"is_uploaded" json:"is_uploaded"`
-	SHA256 string `bson:"sha256,omitempty" json:"sha256,omitempty"`
+	SHA256 string `bson:"sha256" json:"sha256,omitempty"`
 }
 
 type ImageConfiguration struct {
 	Architecture Architecture `bson:"arch" json:"arch"`
-	DiskImage string `bson:"disk_image" json:"disk_image"`
+	DiskImage db.ObjectID `bson:"disk_image" json:"disk_image"`
 	// Kernel string
 	// Initrd string
 	// DeviceTree string
+}
+
+// Data transfer objects
+type ImageFileCreateRequest struct {
+	ImageID db.ObjectID `json:"image_id"`
+	FileName string `json:"file_name"`
+	FileType string `json:"file_type"`
+}
+
+type ImageFileUploadRequest struct {
+	ImageId db.ObjectID
+	FileId db.ObjectID
 }
