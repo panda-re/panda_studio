@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/pkg/errors"
 
 	"github.com/gin-gonic/gin"
@@ -23,11 +24,11 @@ func ImagesRegister(router *gin.RouterGroup) {
 	}
 
 	router.GET("/", controller.ImageList)
-	router.GET("/:id", controller.ImageGet)
+	router.GET("/:imageId", controller.ImageGet)
 	// In the future, images may have more than one file attached
-	router.GET("/:id/download", controller.ImageDownload)
+	router.GET("/:imageId/files/:fileId", controller.ImageFile)
 	router.POST("/", controller.ImageCreate)
-	router.DELETE("/:id", controller.ImageDelete)
+	router.DELETE("/imageId", controller.ImageDelete)
 }
 
 func (ic *imagesController) ImageList(ctx *gin.Context) {
@@ -41,15 +42,28 @@ func (ic *imagesController) ImageList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, images)
 }
 
-func (*imagesController) ImageGet(ctx *gin.Context) {
-	ctx.Error(errors.New("not implemented"))
+func (ic *imagesController) ImageGet(ctx *gin.Context) {
+	id := ctx.Param("imageId")
+
+	image, err := ic.imageRepo.FindOne(ctx, db.ObjectID(id))
+	if err != nil {
+		ctx.Status(http.StatusNotFound)
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, image)
 }
 
-func (*imagesController) ImageDownload(ctx *gin.Context) {
+func (*imagesController) ImageFile(ctx *gin.Context) {
 	ctx.Error(errors.New("not implemented"))
 }
 
 func (*imagesController) ImageCreate(ctx *gin.Context) {
+	ctx.Error(errors.New("not implemented"))
+}
+
+func (*imagesController) ImageUploadFile(ctx *gin.Context) {
 	ctx.Error(errors.New("not implemented"))
 }
 

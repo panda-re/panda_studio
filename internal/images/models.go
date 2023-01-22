@@ -1,19 +1,36 @@
 package images
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+import "github.com/panda-re/panda_studio/internal/db"
+
+type Architecture string
+
+const (
+	X86_64 Architecture = "x86_64"
+	I386 Architecture = "i386"
+	ARM Architecture = "arm"
+	AARCH64 Architecture = "aarch64"
 )
 
 type Image struct {
-	ID primitive.ObjectID `bson:"_id" json:"id"`
+	ID db.ObjectID `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
 	Description string `bson:"description" json:"description"`
-	Files []ImageFile `bson:"files" json:"files"`
+	Files []*ImageFile `bson:"files" json:"files"`
 	Config *ImageConfiguration `bson:"config" json:"config"`
 }
 
 type ImageFile struct {
-
+	ID db.ObjectID `bson:"_id" json:"id"`
+	FileName string `bson:"file_name" json:"filename"`
+	FileType string `bson:"file_type" json:"file_type"`
+	IsUploaded bool `bson:"is_uploaded" json:"is_uploaded"`
+	SHA256 string `bson:"sha256,omitempty" json:"sha256,omitempty"`
 }
 
-type ImageConfiguration struct {}
+type ImageConfiguration struct {
+	Architecture Architecture `bson:"arch" json:"arch"`
+	DiskImage string `bson:"disk_image" json:"disk_image"`
+	// Kernel string
+	// Initrd string
+	// DeviceTree string
+}

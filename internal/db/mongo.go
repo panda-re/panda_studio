@@ -10,7 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-type ObjectID primitive.ObjectID
+type ObjectID string
+
+func NewObjectID() ObjectID {
+	return ObjectID(primitive.NewObjectID().Hex())
+}
 
 var mongoDbClient *mongo.Client = nil
 
@@ -27,6 +31,8 @@ func getMongoConnection(ctx context.Context) (*mongo.Client, error) {
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		return nil, err
 	}
+
+	mongoDbClient = client
 
 	return client, nil
 }
