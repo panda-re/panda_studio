@@ -95,7 +95,6 @@ class PandaAgent:
         return recording_name
 
     def start_replay(self, recording_name):
-        print("Agent start replay")
         # TODO checks (recording?)
         if self.current_replay is not None:
             raise RuntimeError("Cannot start a new replay while replay is in progress")
@@ -109,7 +108,6 @@ class PandaAgent:
 
     def stop_replay(self):
         # TODO checks
-        print("Agent stop replay")
         if self.current_replay is None:
             raise RuntimeError("Must start a replay before stopping one")
 

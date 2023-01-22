@@ -93,7 +93,6 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 
 func (pa *grpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
 	// TODO
-	print("grpc start replay")
 	a, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
 		RecordingName: recordingName,
 		SnapshotFilename: fmt.Sprintf("%s-rr-snp", recordingName),
