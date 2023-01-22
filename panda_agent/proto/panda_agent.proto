@@ -9,6 +9,8 @@ service PandaAgent {
     rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
     rpc StartRecording (StartRecordingRequest) returns (StartRecordingResponse) {}
     rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
+    rpc StartReplay (StartReplayRequest) returns (StartReplayResponse) {}
+    rpc StopReplay (StopReplayRequest) returns (StopReplayResponse) {}
 }
 
 message StartAgentRequest {}
@@ -19,7 +21,7 @@ message StopAgentResponse {}
 message RunCommandRequest {
     string command = 1;
 }
-
+// TODO Request not reply?
 message RunCommandReply {
     int32 statusCode = 1;
     string output = 2;
@@ -36,3 +38,16 @@ message StopRecordingResponse {
     string snapshot_filename = 2;
     string ndlog_filename = 3;
 }
+
+message StartReplayRequest {
+    string recording_name = 1;
+    string snapshot_filename = 2;
+    string ndlog_filename = 3;
+}
+message StartReplayResponse {
+    int32 statusCode = 1;
+    string output = 2;
+}
+
+message StopReplayRequest {}
+message StopReplayResponse {}

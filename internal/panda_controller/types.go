@@ -13,6 +13,8 @@ type PandaAgent interface {
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (*PandaAgentRecording, error)
+	StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error)
+	StopReplay(ctx context.Context) error
 	Close() error
 }
 

@@ -2,6 +2,7 @@ package panda_controller
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 	"google.golang.org/grpc"
@@ -88,6 +89,32 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 		// We cannot know the location with the information we have
 		Location:      "??",
 	}, nil
+}
+
+func (pa *grpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
+	// TODO
+	print("grpc start replay")
+	a, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
+		RecordingName: recordingName,
+		SnapshotFilename: fmt.Sprintf("%s-rr-snp", recordingName),
+		NdlogFilename: fmt.Sprintf("%s-rr-nondet.log", recordingName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PandaAgentRunCommandResult{
+		Logs: a.String(),
+	}, nil
+}
+
+func (pa *grpcPandaAgent) StopReplay(ctx context.Context) error {
+	// TODO
+	_, err := pa.cli.StopReplay(ctx, &pb.StopReplayRequest{})
+	if err != nil {
+		return err
+	}
+	return nil;
 }
 
 

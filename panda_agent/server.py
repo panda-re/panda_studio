@@ -52,6 +52,17 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             ndlog_filename=f"{recording_name}-rr-nondet.log"
         )
 
+    def StartReplay(self, request: pb.StartReplayRequest, context):
+        print("server start replay")
+        output = self.agent.start_replay(request.recording_name)
+        return pb.StartReplayResponse(statusCode=0, output=output)
+
+    def StopReplay(self, request: pb.StopReplayRequest, context):
+        print("server stop replay")
+        self.agent.stop_replay()
+        return pb.StopReplayResponse()
+
+
 def serve():
     #TODO remove hardcoding to replace with param solution and move into agent
     panda = Panda(generic='x86_64')

@@ -149,6 +149,28 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	return &new_recording, nil
 }
 
+func (pa *dockerGrpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
+	// TODO
+	// Copy file into shared directory
+	print("Starting replay")
+	nBytes, err := copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s-rr-snp", recordingName,), *pa.sharedDir, fmt.Sprintf("%s-rr-snp", recordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying snapshot for replay")
+	}
+
+	nBytes, err = copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s-rr-nondet.log", recordingName), *pa.sharedDir, fmt.Sprintf("%s-rr-nondet.log", recordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying nondeterministic log for replay")
+	}
+	return pa.grpcAgent.StartReplay(ctx, recordingName)
+}
+
+func (pa *dockerGrpcPandaAgent) StopReplay(ctx context.Context) error {
+	print("Stopping replay TODO")
+	// TODO
+	return pa.grpcAgent.StopReplay(ctx)
+}
+
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{

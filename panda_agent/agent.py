@@ -9,6 +9,7 @@ class PandaAgent:
         self.panda = panda
         self.isRunning = False
         self.current_recording = None
+        self.current_replay = None
     
     # This function is meant to run in a different thread
     def start(self):
@@ -92,3 +93,33 @@ class PandaAgent:
         self._run_function(panda_stop_recording)
         self.current_recording = None
         return recording_name
+
+    def start_replay(self, recording_name):
+        print("Agent start replay")
+        # TODO checks (recording?)
+        if self.current_replay is not None:
+            raise RuntimeError("Cannot start a new replay while replay is in progress")
+        
+        def panda_start_replay(panda: Panda):
+            print(f'starting replay {recording_name}')
+            panda.run_replay(recording_name)
+        
+        self.current_replay = recording_name
+        return self._run_function(panda_start_replay)
+
+    def stop_replay(self):
+        # TODO checks
+        print("Agent stop replay")
+        if self.current_replay is None:
+            raise RuntimeError("Must start a replay before stopping one")
+
+        def panda_stop_replay(panda: Panda):
+            print('stopping replay')
+            panda.end_replay()
+        
+        self.current_replay = None
+        return self._run_function(panda_stop_replay)
+        
+
+    def stop_replay(self):
+        pass
