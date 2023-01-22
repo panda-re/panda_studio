@@ -152,17 +152,21 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 func (pa *dockerGrpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
 	// TODO
 	// Copy file into shared directory
-	print("Starting replay")
-	nBytes, err := copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s-rr-snp", recordingName,), *pa.sharedDir, fmt.Sprintf("%s-rr-snp", recordingName))
+	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
+	snapshotName := fmt.Sprintf("%s-rr-snp", recordingName)
+	nBytes, err := copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s", snapshotName), sharedFolder, snapshotName)
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying snapshot for replay")
 	}
 
-	nBytes, err = copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s-rr-nondet.log", recordingName), *pa.sharedDir, fmt.Sprintf("%s-rr-nondet.log", recordingName))
+	ndLogName := fmt.Sprintf("%s-rr-nondet.log", recordingName)
+	nBytes, err = copyFileHelper(fmt.Sprintf("/tmp/panda-studio/%s", ndLogName), sharedFolder, ndLogName)
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying nondeterministic log for replay")
 	}
-	return pa.grpcAgent.StartReplay(ctx, recordingName)
+	// Location of the recording for PANDA/container
+	recordingLocation := fmt.Sprintf("./shared/%s", recordingName)
+	return pa.grpcAgent.StartReplay(ctx, recordingLocation)
 }
 
 func (pa *dockerGrpcPandaAgent) StopReplay(ctx context.Context) error {

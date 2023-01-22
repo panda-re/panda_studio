@@ -58,7 +58,7 @@ func main() {
 
 	// fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileName())
 	// fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
-
+	fmt.Println("Starting replay")
 	replay, err := agent.StartReplay(ctx, "test")
 	if err != nil {
 		panic(err)
