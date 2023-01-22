@@ -2,11 +2,11 @@ package images
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"io"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,6 +30,7 @@ type ImageRepository interface {
 type mongoS3ImageRespository struct {
 	coll *mongo.Collection
 	s3Client *minio.Client
+	imagesBucket string
 }
 
 func GetRepository(ctx context.Context) (ImageRepository, error) {
@@ -46,6 +47,7 @@ func GetRepository(ctx context.Context) (ImageRepository, error) {
 	return &mongoS3ImageRespository {
 		coll: mongoClient.Collection(IMAGES_TABLE),
 		s3Client: s3Client,
+		imagesBucket: configuration.GetConfig().S3.Buckets.ImagesBucket,
 	}, nil
 }
 
@@ -97,46 +99,45 @@ func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *Imag
 	var img Image
 	err := r.coll.FindOne(ctx, bson.D{
 		{"_id", req.ImageId},
-		{"files._id", req.FileId},
+		{"files",
+			bson.D{{"$elemMatch",
+				bson.D{{"_id", req.FileId}},
+			}},
+		},
 	}, options.FindOne().SetProjection(bson.D{
-		{"files", bson.E{"$elemMatch", bson.E{"_id", req.FileId}}},
+		// Filters the files to just the one we want
+		{"files.$", 1},
 	})).Decode(&img)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "db error")
 	}
 
-	var imgFile *ImageFile
-	for _, imgF := range img.Files {
-		if imgF == nil || req.FileId == nil {
-			continue
-		}
-		if *imgF.ID == *req.FileId {
-			imgFile = imgF
-		}
+	// Our query should only return one element but just in case
+	if len(img.Files) > 1 {
+		return nil, errors.New("Something is off with the query")
 	}
-	if imgFile == nil {
-		return nil, errors.New("Something is wrong")
-	}
+	imgFile := img.Files[0]
 
 	objectName := fmt.Sprintf("%s/%s", req.ImageId.Hex(), imgFile.FileName)
 
-	hasher := sha256.New()
-	readPipe, writePipe := io.Pipe()
-	multiWriter := io.MultiWriter(writePipe, hasher)
-
-	go func() {
-		io.Copy(multiWriter, reader)
-		readPipe.Close()
-	}()
-
 	// Upload file and compute hash
-	// todo: don't hardcode bucket name!
-	info, err := r.s3Client.PutObject(ctx, "images", objectName, readPipe, -1, minio.PutObjectOptions{})
+	info, err := r.s3Client.PutObject(ctx, r.imagesBucket, objectName, reader, -1, minio.PutObjectOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "file upload failed")
 	}
-	fmt.Printf("%+v", info)
+
+	hash := info.ChecksumSHA256
+	// set isUploaded to true and the hash
+	_, err = r.coll.UpdateOne(ctx, bson.D{
+		{"_id", req.ImageId},
+		{"files._id", req.FileId},
+	}, bson.D{
+		{"$set", bson.E{"files.$.is_uploaded", true}},
+		{"$set", bson.E{"files.$.sha256", hash}},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
 
 	return nil, errors.New("Not implemented")
 }
