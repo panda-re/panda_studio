@@ -1,5 +1,5 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-import { Navigate, Route, Routes, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import prettyBytes from 'pretty-bytes';
 

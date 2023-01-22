@@ -1,5 +1,5 @@
 import { EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText } from '@elastic/eui';
-import { useLocation, useParams } from 'react-router';
+import { useLocation } from 'react-router';
 
 import prettyBytes from 'pretty-bytes';
 
