@@ -2,12 +2,15 @@ package images
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db"
+	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -95,13 +98,13 @@ func (r *mongoS3ImageRespository) CreateImageFile(ctx context.Context, req *Imag
 	return &newFile, err
 }
 
-func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error) {
+func (r *mongoS3ImageRespository) FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error) {
 	var img Image
 	err := r.coll.FindOne(ctx, bson.D{
-		{"_id", req.ImageId},
+		{"_id", imageId},
 		{"files",
 			bson.D{{"$elemMatch",
-				bson.D{{"_id", req.FileId}},
+				bson.D{{"_id", fileId}},
 			}},
 		},
 	}, options.FindOne().SetProjection(bson.D{
@@ -116,28 +119,46 @@ func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *Imag
 	if len(img.Files) > 1 {
 		return nil, errors.New("Something is off with the query")
 	}
-	imgFile := img.Files[0]
+	return img.Files[0], nil
+}
+
+func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error) {
+
+	imgFile, err := r.FindOneImageFile(ctx, req.ImageId, req.FileId)
+	if err != nil {
+		return nil, err
+	}
 
 	objectName := fmt.Sprintf("%s/%s", req.ImageId.Hex(), imgFile.FileName)
 
+	hasher := sha256.New()
+	hashReader := util.NewReaderHasher(reader, hasher)
+
 	// Upload file and compute hash
-	info, err := r.s3Client.PutObject(ctx, r.imagesBucket, objectName, reader, -1, minio.PutObjectOptions{})
+	_, err = r.s3Client.PutObject(ctx, r.imagesBucket, objectName, hashReader, -1, minio.PutObjectOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "file upload failed")
 	}
+	hash := hex.EncodeToString(hasher.Sum(nil))
 
-	hash := info.ChecksumSHA256
-	// set isUploaded to true and the hash
+	// Update the file information
 	_, err = r.coll.UpdateOne(ctx, bson.D{
 		{"_id", req.ImageId},
 		{"files._id", req.FileId},
 	}, bson.D{
-		{"$set", bson.E{"files.$.is_uploaded", true}},
-		{"$set", bson.E{"files.$.sha256", hash}},
+		{"$set", bson.D{
+			bson.E{"files.$.is_uploaded", true},
+			bson.E{"files.$.sha256", hash},
+		}},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "db error")
 	}
 
-	return nil, errors.New("Not implemented")
+	imgFile, err = r.FindOneImageFile(ctx, req.ImageId, req.FileId)
+	if err != nil {
+		return nil, err
+	}
+
+	return imgFile, nil
 }
