@@ -30,6 +30,27 @@ func main() {
 		"ls /",
 	}
 
+	for _, cmd := range commands {
+		fmt.Printf("> %s\n", cmd)
+		cmdResult, err := agent.RunCommand(ctx, cmd)
+		if err != nil {
+			fmt.Println("Test Passed. Prevented running Commands before Panda Starts")
+			break
+		} else {
+			fmt.Println("Test Failed. Command Run Without Starting PANDA")
+			panic(err)
+		}
+		fmt.Printf("%s\n", cmdResult.Logs)
+	}
+
+	err = agent.StopAgent(ctx)
+	if err != nil {
+		fmt.Println("Test Passed. Prevented Stopping PANDA before PANDA Starts")
+	} else {
+		fmt.Println("Test Failed. Stopped Nonexistent PANDA")
+		panic(err)
+	}
+
 	fmt.Println("Starting agent")
 	err = agent.StartAgent(ctx)
 	if err != nil {
@@ -45,8 +66,17 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Starting recording")
-	if err := agent.StartRecording(ctx, "test"); err != nil {
+	fmt.Println("Stopping recording before starting it")
+	recording, err := agent.StopRecording(ctx)
+	if err != nil {
+		fmt.Println("Test Passed. Prevented Stopping of a non-existent recording")
+	} else {
+		fmt.Println("Test Failed. Stopped Nothing From ever Recording")
+		panic(err)
+	}
+
+	fmt.Println("Starting recording with Spaces as the name, it will work")
+	if err := agent.StartRecording(ctx, "         "); err != nil {
 		panic(err)
 	}
 	fmt.Println("Starting second recording")
@@ -67,7 +97,7 @@ func main() {
 	}
 
 	fmt.Println("Stopping recording")
-	recording, err := agent.StopRecording(ctx)
+	recording, err = agent.StopRecording(ctx)
 	if err != nil {
 		panic(err)
 	}
