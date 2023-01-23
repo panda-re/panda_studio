@@ -2,7 +2,7 @@
 
 all: panda_executor panda_agent_protoc build_agent build_executor
 
-test: panda_executor_test panda_agent_protoc build_agent build_executor_test
+test: build_agent build_executor_test
 
 full_initial_setup: initial_setup_priviliged initial_setup
 
