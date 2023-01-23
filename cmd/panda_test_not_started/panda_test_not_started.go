@@ -35,17 +35,25 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	// TODO tests
 	fmt.Println("Starting Second Panda agent")
 	err = agent.StartAgent(ctx)
 	if err != nil {
-		fmt.Println("Test Passed")
+		fmt.Println("Test Passed. Prevented second PANDA agent creation")
 	} else {
-		fmt.Println("Test Failed")
+		fmt.Println("Test Failed. Created second PANDA agent creation")
+		panic(err)
 	}
 
 	fmt.Println("Starting recording")
 	if err := agent.StartRecording(ctx, "test"); err != nil {
+		panic(err)
+	}
+	fmt.Println("Starting second recording")
+	if err := agent.StartRecording(ctx, "testing"); err != nil {
+		fmt.Println("Test Passed. Prevented starting a second recording")
+	} else {
+		fmt.Println("Test Failed. Started a second recording")
 		panic(err)
 	}
 
