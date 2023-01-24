@@ -1,4 +1,4 @@
-.PHONY: all full_initial_setup initial_setup_priviliged initial_setup build_agent panda_agent_protoc build_executor panda_executor
+.PHONY: all test full_initial_setup initial_setup_priviliged initial_setup build_agent panda_agent_protoc build_executor panda_executor
 
 all: panda_executor panda_agent_protoc build_agent build_executor
 
@@ -21,13 +21,13 @@ build_executor:
 	docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 
 build_executor_test:
-	docker build -f docker/Dockerfile.panda-executor-test -t pandare/panda_test_not_started .
+	docker build -f docker/Dockerfile.panda-executor-test -t pandare/panda_test_executor .
 
 panda_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_executor
 
 panda_executor_test: panda_agent_protoc_go
-	go build -o ./bin/panda_executor ./cmd/panda_test_not_started
+	go build -o ./bin/panda_executor ./cmd/panda_test_executor
 
 panda_agent_protoc: panda_agent_protoc_go panda_agent_protoc_py
 
