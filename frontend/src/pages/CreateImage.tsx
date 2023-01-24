@@ -2,12 +2,18 @@ import {EuiButton, EuiPageTemplate, EuiText, EuiFlexGroup, EuiFlexItem, EuiField
 import React, {ChangeEvent, SetStateAction, useState} from 'react';
 
 //image creation needs:
+// - Name
+// - Size definition
 // - ability to select image from docker hub
 // - ability to select source files from computer
-// - Size definition
-// - Name
-// - OS / Architecture
 function CreateImagePage() {
+    
+    //TODO:
+    // - need to be able to get details from image when deriving new image
+    //      - add functionality to 'Derive Image' page in Image Details page to support this.
+    // - get current date
+    // - pull image from docker hub
+
     //hook for getting size option for image size
     const sizeOptions = [
         { value: 'kb', text: 'KB' },
@@ -24,11 +30,6 @@ function CreateImagePage() {
     function onFileChange(newFile: File){
         console.log(newFile);
         setFile(newFile);
-    }
-
-    //upload data to storage: send File to object storage, and store metadata in database
-    function createImage(){
-
     }
 
     return (<>
@@ -48,36 +49,29 @@ function CreateImagePage() {
         <br />
         <EuiFlexGroup>
             <EuiFlexItem grow={2}>
-            <EuiText>OS: </EuiText>
+                <EuiText>Size: </EuiText>
             </EuiFlexItem>
+
             <EuiFlexItem grow={8}>
-            <EuiFieldText
-                placeholder="eg, macOS x.x.x"
-            />
-            </EuiFlexItem>
+                <EuiFlexGroup>
+                    <EuiFlexItem >
+                        <EuiFieldNumber/>
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                        <EuiSelect
+                            options={sizeOptions}
+                            value={value}
+                            onChange={value => onSizeChange(value) }
+                        />
+                    </EuiFlexItem>
+                </EuiFlexGroup>
+            </EuiFlexItem>     
         </EuiFlexGroup>
         </EuiPageTemplate.Section>
 
         <EuiPageTemplate.Section>
             <EuiFlexGroup>
-                <EuiFlexItem grow={2}>
-                    <EuiText>Size: </EuiText>
-                </EuiFlexItem>
-
-                <EuiFlexItem grow={8}>
-                    <EuiFlexGroup>
-                        <EuiFlexItem >
-                            <EuiFieldNumber/>
-                        </EuiFlexItem>
-                        <EuiFlexItem>
-                            <EuiSelect
-                                options={sizeOptions}
-                                value={value}
-                                onChange={value => onSizeChange(value) }
-                            />
-                        </EuiFlexItem>
-                    </EuiFlexGroup>
-                </EuiFlexItem>                
+                           
             </EuiFlexGroup>
         </EuiPageTemplate.Section>
 
@@ -90,7 +84,6 @@ function CreateImagePage() {
                     <EuiFieldText
                         placeholder="placeholder"
                     >
-
                     </EuiFieldText>
                 </EuiFlexItem>
             </EuiFlexGroup>
@@ -102,6 +95,7 @@ function CreateImagePage() {
                 <EuiFlexItem grow={8}>
                     <EuiFilePicker
                         multiple={false}
+                        accept={".qcow2"}
                         onChange={
                             files => {if(files!=null) onFileChange(files[0]);}}
                     >
