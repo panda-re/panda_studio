@@ -1,6 +1,8 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-
 import prettyBytes from 'pretty-bytes';
+import { useNavigate } from 'react-router-dom';
+
+
 
 // image ID, name, OS, Timestamp, Size, view specs
 interface Image {
@@ -45,17 +47,17 @@ const data: Image[] = [
   }
 ];
 
-const getRowProps = (item: Image) => {
-  const { id } = item;
-  return {
-    'data-test-subj': `image-row-${id}`,
-    onClick: () => {
-      alert(`View Image with id ${id}`)
-    },
-  }
-};
-
 function ImagesDataGrid() {
+  const navigate = useNavigate();
+  const getRowProps = (item: Image) => {
+    const { id } = item;
+    return {
+      'data-test-subj': `image-row-${id}`,
+      onClick: () => {
+        navigate('/imageDetails', {state:{item: item}})
+      },
+    }
+  }
 
   return (<>
     <EuiBasicTable
