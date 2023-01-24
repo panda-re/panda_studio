@@ -8,6 +8,7 @@ import ImagesPage from './pages/ImagesPage';
 import CreateRecordingPage from "./pages/CreateRecording";
 import RecordingDashboardPage from './pages/RecordingDashboard';
 import RecordingDetailsPage from './pages/RecordingDetailsPage';
+import ImageDetails from "./pages/ImageDetails";
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
@@ -109,6 +110,7 @@ function Layout() {
         <Route path="/recordingDetails" element={<RecordingDetailsPage />}/>
         <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
+        <Route path="/imageDetails" element={<ImageDetails />} />
       </Routes>
 
     </EuiPageTemplate>
