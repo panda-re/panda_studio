@@ -8,11 +8,11 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	// ctx, cancel := context.WithTimeout(ctx, time.Second*15)
-	//defer cancel()
+	// Variables for keeping track of pass/fail of test
+	num_tests := 0
+	num_passed := 0
 
-	// agent, err := controller.CreateDefaultGrpcPandaAgent()
+	ctx := context.Background()
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
 	if err != nil {
 		panic(err)
@@ -30,24 +30,28 @@ func main() {
 		"ls /",
 	}
 
+	// Running a command before PANDA starts
+	num_tests++
 	for _, cmd := range commands {
-		fmt.Printf("> %s\n", cmd)
-		cmdResult, err := agent.RunCommand(ctx, cmd)
+		_, err := agent.RunCommand(ctx, cmd)
 		if err != nil {
-			fmt.Println("Test Passed. Prevented running Commands before Panda Starts")
+			println("Test Passed. Prevented running command before PANDA starts")
+			num_passed++
 			break
 		} else {
-			fmt.Println("Test Failed. Command Run Without Starting PANDA")
+			println("Test Failed. Command ran without starting PANDA")
 			panic(err)
 		}
-		fmt.Printf("%s\n", cmdResult.Logs)
 	}
 
+	// Stopping PANDA before starting
+	num_tests++
 	err = agent.StopAgent(ctx)
 	if err != nil {
-		fmt.Println("Test Passed. Prevented Stopping PANDA before PANDA Starts")
+		println("Test Passed. Prevented stopping PANDA before PANDA starts")
+		num_passed++
 	} else {
-		fmt.Println("Test Failed. Stopped Nonexistent PANDA")
+		println("Test Failed. Stopped nonexistent PANDA")
 		panic(err)
 	}
 
@@ -56,55 +60,55 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// TODO tests
-	fmt.Println("Starting Second Panda agent")
+
+	// Starting second PANDA agent
+	num_tests++
 	err = agent.StartAgent(ctx)
 	if err != nil {
 		fmt.Println("Test Passed. Prevented second PANDA agent creation")
+		num_passed++
 	} else {
 		fmt.Println("Test Failed. Created second PANDA agent creation")
 		panic(err)
 	}
 
-	fmt.Println("Stopping recording before starting it")
-	recording, err := agent.StopRecording(ctx)
+	// Stopping recording before starting
+	num_tests++
+	_, err = agent.StopRecording(ctx)
 	if err != nil {
-		fmt.Println("Test Passed. Prevented Stopping of a non-existent recording")
+		println("Test Passed. Prevented stopping of a non-existent recording")
+		num_passed++
 	} else {
-		fmt.Println("Test Failed. Stopped Nothing From ever Recording")
+		println("Test Failed. Stopped nothing from ever recording")
 		panic(err)
 	}
 
-	fmt.Println("Starting recording with Spaces as the name, it will work")
-	if err := agent.StartRecording(ctx, "         "); err != nil {
+	if err := agent.StartRecording(ctx, "test"); err != nil {
 		panic(err)
 	}
-	fmt.Println("Starting second recording")
+	// Starting second recording while one is in progress
+	num_tests++
 	if err := agent.StartRecording(ctx, "testing"); err != nil {
-		fmt.Println("Test Passed. Prevented starting a second recording")
+		println("Test Passed. Prevented starting a second concurrent recording")
+		num_passed++
 	} else {
-		fmt.Println("Test Failed. Started a second recording")
+		println("Test Failed. Started a second recording")
 		panic(err)
 	}
 
 	for _, cmd := range commands {
-		fmt.Printf("> %s\n", cmd)
-		cmdResult, err := agent.RunCommand(ctx, cmd)
+		_, err = agent.RunCommand(ctx, cmd)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("%s\n", cmdResult.Logs)
 	}
 
-	fmt.Println("Stopping recording")
-	recording, err = agent.StopRecording(ctx)
+	_, err = agent.StopRecording(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileName())
-	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
-
+	fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
 	err = agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
