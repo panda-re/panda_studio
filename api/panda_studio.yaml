@@ -20,14 +20,14 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Image'
-  /images/{id}:
+  /images/{imageId}:
     get:
       tags:
         - image
       summary: Get image with specified ID
       operationId: findImageById
       parameters:
-        - name: id
+        - name: imageId
           in: path
           description: ID of image to find
           required: true
@@ -42,6 +42,36 @@ paths:
                 $ref: '#/components/schemas/Image'
         '404':
           description: Not Found
+  /images/{imageId}/files:
+    post:
+      tags:
+        - image
+        - file
+      summary: Create new image file
+      operationId: createImageFile
+      parameters:
+        - name: imageId
+          in: path
+          description: ID of image
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageFileCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageFile'
+        '404':
+          description: Image not found
+        '409':
+          description: Image already contains file
 components:
   schemas:
     Image:
@@ -58,7 +88,8 @@ components:
           items:
             $ref: '#/components/schemas/ImageFile'
         config:
-          $ref: '#/components/schemas/ImageConfiguration'
+          type: object
+          # $ref: '#/components/schemas/ImageConfiguration'
 
     ImageFile:
       type: object
@@ -68,9 +99,21 @@ components:
         file_name:
           type: string
         file_type:
-          type: string
+          $ref: '#/components/schemas/ImageFileType'
         sha256:
           type: string
+    
+    ImageFileType:
+      type: string
+      enum: [qcow2, dtb, kernel]
 
-    ImageConfiguration:
+    ImageFileCreateRequest:
       type: object
+      properties:
+        file_name:
+          type: string
+        file_type:
+          $ref: '#/components/schemas/ImageFileType'
+        file:
+          type: string
+          format: binary

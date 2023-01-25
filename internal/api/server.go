@@ -2,10 +2,7 @@ package api
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/images"
 )
 
@@ -28,27 +25,4 @@ func NewPandaStudioServer() (*PandaStudioServer, error) {
 	return &PandaStudioServer{
 		imageRepo: imageRepo,
 	}, nil
-}
-
-func (s *PandaStudioServer) FindAllImages(ctx *gin.Context) {
-	// todo: allow search criteria
-	images, err := s.imageRepo.FindAll(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	// todo: convert to dto
-	ctx.JSON(http.StatusOK, images)
-}
-
-func (s *PandaStudioServer) FindImageById(ctx *gin.Context, id string) {
-	image, err := s.imageRepo.FindOne(ctx, db.ParseObjectID(id))
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	// todo: convert to dto
-	ctx.JSON(http.StatusOK, image)
 }
