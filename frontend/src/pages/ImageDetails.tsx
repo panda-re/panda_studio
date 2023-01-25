@@ -2,10 +2,11 @@ import {EuiButton, EuiFlexGrid, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {MutableRefObject, Ref, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {EuiInnerText} from "@elastic/eui";
-import {useLocation} from "react-router";
+import {useLocation, useNavigate} from "react-router";
 
 function CreateImageDetailsPage() {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const buttonStyle = {
     marginRight: "25px",
@@ -66,7 +67,14 @@ function CreateImageDetailsPage() {
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
           <EuiFlexItem grow={false}>
-            <EuiButton style={buttonStyle}>Derive New Image</EuiButton>
+            <EuiButton 
+            style={buttonStyle}
+            onClick={() => {
+              navigate('/createImage', {state:{item:location.state.item}})
+            }}
+            >
+              Derive New Image
+              </EuiButton>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
             <EuiButton style={buttonStyle}>Delete Image</EuiButton>

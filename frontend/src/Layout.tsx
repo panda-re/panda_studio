@@ -35,11 +35,6 @@ function Layout() {
       iconType: 'play',
       onClick: () => navigate('/createRecording')
     },
-    {
-      label:'Create Image',
-      iconType: 'documentEdit',
-      onClick: () => navigate('/createImage')
-    }
   ];
 
   return (<>
