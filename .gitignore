@@ -31,3 +31,6 @@ bin/
 *_pb2*
 pb/
 panda_agent/shared/
+
+# Generated go files
+*.gen.go
