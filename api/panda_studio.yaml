@@ -1,10 +1,11 @@
-openapi: '3.0.2'
+openapi: "3.0.2"
 info:
   title: PANDA Studio API
-  version: '0.1'
+  version: "0.1"
 servers:
   - url: http://localhost:8080/api
 paths:
+  # todo: create image, delete image, update image
   /images:
     get:
       tags:
@@ -12,14 +13,14 @@ paths:
       summary: Finds all Images
       operationId: findAllImages
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Image'
+                  $ref: "#/components/schemas/Image"
   /images/{imageId}:
     get:
       tags:
@@ -27,20 +28,15 @@ paths:
       summary: Get image with specified ID
       operationId: findImageById
       parameters:
-        - name: imageId
-          in: path
-          description: ID of image to find
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/ImageId"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Image'
-        '404':
+                $ref: "#/components/schemas/Image"
+        "404":
           description: Not Found
   /images/{imageId}/files:
     post:
@@ -50,29 +46,75 @@ paths:
       summary: Create new image file
       operationId: createImageFile
       parameters:
-        - name: imageId
-          in: path
-          description: ID of image
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/ImageId"
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ImageFileCreateRequest'
+              $ref: "#/components/schemas/ImageFileCreateRequest"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImageFile'
-        '404':
+                $ref: "#/components/schemas/ImageFile"
+        "404":
           description: Image not found
-        '409':
+        "409":
           description: Image already contains file
+  /images/{imageId}/files/{fileId}:
+    get:
+      tags:
+        - image
+        - file
+      summary: Download image file
+      operationId: downloadImageFile
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not Found
+    delete:
+      tags:
+        - image
+        - file
+      summary: Delete image file
+      operationId: deleteImageFile
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageFile"
 components:
+  parameters:
+    ImageId:
+      name: imageId
+      in: path
+      description: ID of image
+      required: true
+      schema:
+        type: string
+    FileId:
+      name: fileId
+      in: path
+      description: ID of file
+      required: true
+      schema:
+        type: string
   schemas:
     Image:
       type: object
@@ -86,10 +128,10 @@ components:
         files:
           type: array
           items:
-            $ref: '#/components/schemas/ImageFile'
+            $ref: "#/components/schemas/ImageFile"
         config:
           type: object
-          # $ref: '#/components/schemas/ImageConfiguration'
+          # $ref: "#/components/schemas/ImageConfiguration"
 
     ImageFile:
       type: object
@@ -99,7 +141,7 @@ components:
         file_name:
           type: string
         file_type:
-          $ref: '#/components/schemas/ImageFileType'
+          $ref: "#/components/schemas/ImageFileType"
         sha256:
           type: string
     
@@ -113,7 +155,7 @@ components:
         file_name:
           type: string
         file_type:
-          $ref: '#/components/schemas/ImageFileType'
+          $ref: "#/components/schemas/ImageFileType"
         file:
           type: string
           format: binary
