@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/panda-re/panda_studio/internal/api"
 	config "github.com/panda-re/panda_studio/internal/configuration"
-	"github.com/panda-re/panda_studio/internal/images"
 	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
@@ -49,8 +49,21 @@ func runServer() error {
 
 	r.Use(middleware.ErrorHandler())
 
-	apiGroup := r.Group("/api")
-	images.ImagesRegister(apiGroup.Group("/images"))
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		return err
+	}
+	swagger.Servers = nil
+	server, err := api.NewPandaStudioServer()
+	if err != nil {
+		return err
+	}
+
+	// r.Use(oapimiddleware.OapiRequestValidator(swagger))
+	api.RegisterHandlersWithOptions(r, server, api.GinServerOptions{
+		BaseURL: "/api",
+	})
+	//images.ImagesRegister(apiGroup.Group("/images"))
 
 	r.POST("/panda", postRecording)
 

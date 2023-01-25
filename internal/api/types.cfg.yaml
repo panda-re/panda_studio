@@ -1,4 +1,4 @@
 package: api
 generate:
   models: true
-output: panda_studio_types.gen.go
+output: server_types.gen.go

@@ -2,4 +2,4 @@ package: api
 generate:
   gin-server: true
   embedded-spec: true
-output: panda_studio_server.gen.go
+output: server_stub.gen.go
