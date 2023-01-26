@@ -1,46 +1,42 @@
-import {EuiButton, EuiFieldText, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
+import {
+  EuiButton,
+  EuiFieldSearch,
+  EuiFieldText,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiPageTemplate,
+  EuiSpacer,
+  EuiText
+} from '@elastic/eui';
 import ImagesDataGrid from '../components/ImagesDataGrid';
 import {EuiFlexGrid} from "@elastic/eui";
 
 function ImagesPage() {
 
   return (<>
-    <EuiPageTemplate.Header pageTitle="Image Dashboard" />
+    <EuiPageTemplate.Header pageTitle='Image Dashboard' rightSideItems={[]} />
 
     <EuiPageTemplate.Section>
-
       <EuiFlexGrid columns={4}>
         <EuiFlexItem>
-          <EuiText>Image ID</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText>Image Name</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText>Date</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiFieldText
+          <EuiFieldSearch
             placeholder="Enter Image ID"
           />
         </EuiFlexItem>
         <EuiFlexItem>
-          <EuiFieldText
+          <EuiFieldSearch
             placeholder="Enter Image Name"
           />
         </EuiFlexItem>
         <EuiFlexItem>
-          <EuiFieldText
-            placeholder="Date"
+          <EuiFieldSearch
+            placeholder="Enter Date"
           />
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiButton iconType={'plusInCircle'}>Upload Base Image</EuiButton>
         </EuiFlexItem>
       </EuiFlexGrid>
-
       <EuiSpacer size="xl" />
 
       <ImagesDataGrid />
