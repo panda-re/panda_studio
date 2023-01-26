@@ -35,7 +35,24 @@ func ErrorHandler() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		c.Next()
+		if ok, panicVal := func() (ok bool, panicVal any) {
+			defer func() {
+				if r := recover(); r != nil {
+					panicVal = r
+					ok = false
+				}
+			}()
+
+			c.Next()
+
+			return true, nil
+		}(); !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": ErrorMessage{
+					Message: fmt.Sprintf("%+v", panicVal),
+				},
+			})
+		}
 
 		if len(c.Errors) == 0 {
 			return

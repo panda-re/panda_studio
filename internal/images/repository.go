@@ -26,11 +26,13 @@ type Repository [T any] interface {
 
 type ImageRepository interface {
 	Repository[Image]
+	FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error)
 	CreateImageFile(ctx context.Context, request *ImageFileCreateRequest) (*ImageFile, error)
 	UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error)
+	OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadSeekCloser, error)
 }
 
-type mongoS3ImageRespository struct {
+type mongoS3ImageRepository struct {
 	coll *mongo.Collection
 	s3Client *minio.Client
 	imagesBucket string
@@ -47,14 +49,14 @@ func GetRepository(ctx context.Context) (ImageRepository, error) {
 		return nil, err
 	}
 
-	return &mongoS3ImageRespository {
+	return &mongoS3ImageRepository {
 		coll: mongoClient.Collection(IMAGES_TABLE),
 		s3Client: s3Client,
 		imagesBucket: configuration.GetConfig().S3.Buckets.ImagesBucket,
 	}, nil
 }
 
-func (r *mongoS3ImageRespository) FindAll(ctx context.Context) ([]Image, error) {
+func (r *mongoS3ImageRepository) FindAll(ctx context.Context) ([]Image, error) {
 	cursor, err := r.coll.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, errors.Wrap(err, "db error")
@@ -68,7 +70,7 @@ func (r *mongoS3ImageRespository) FindAll(ctx context.Context) ([]Image, error) 
 	return images, nil
 }
 
-func (r *mongoS3ImageRespository) FindOne(ctx context.Context, id db.ObjectID) (*Image, error) {
+func (r *mongoS3ImageRepository) FindOne(ctx context.Context, id db.ObjectID) (*Image, error) {
 	var result Image
 
 	err := r.coll.FindOne(ctx, bson.D{{"_id", id}}).Decode(&result)
@@ -79,7 +81,7 @@ func (r *mongoS3ImageRespository) FindOne(ctx context.Context, id db.ObjectID) (
 	return &result, nil
 }
 
-func (r *mongoS3ImageRespository) CreateImageFile(ctx context.Context, req *ImageFileCreateRequest) (*ImageFile, error) {
+func (r *mongoS3ImageRepository) CreateImageFile(ctx context.Context, req *ImageFileCreateRequest) (*ImageFile, error) {
 	newFile := ImageFile{
 		ID: db.NewObjectID(),
 		FileName: req.FileName,
@@ -98,7 +100,7 @@ func (r *mongoS3ImageRespository) CreateImageFile(ctx context.Context, req *Imag
 	return &newFile, err
 }
 
-func (r *mongoS3ImageRespository) FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error) {
+func (r *mongoS3ImageRepository) FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error) {
 	var img Image
 	err := r.coll.FindOne(ctx, bson.D{
 		{"_id", imageId},
@@ -122,14 +124,18 @@ func (r *mongoS3ImageRespository) FindOneImageFile(ctx context.Context, imageId 
 	return img.Files[0], nil
 }
 
-func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error) {
+func (r *mongoS3ImageRepository) getObjectName(imageId db.ObjectID, file *ImageFile) string {
+	objectName := fmt.Sprintf("%s/%s", imageId.Hex(), file.FileName)
+	return objectName
+}
 
+func (r *mongoS3ImageRepository) UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error) {
 	imgFile, err := r.FindOneImageFile(ctx, req.ImageId, req.FileId)
 	if err != nil {
 		return nil, err
 	}
 
-	objectName := fmt.Sprintf("%s/%s", req.ImageId.Hex(), imgFile.FileName)
+	objectName := r.getObjectName(req.ImageId, imgFile)
 
 	hasher := sha256.New()
 	hashReader := util.NewReaderHasher(reader, hasher)
@@ -161,4 +167,23 @@ func (r *mongoS3ImageRespository) UploadImageFile(ctx context.Context, req *Imag
 	}
 
 	return imgFile, nil
+}
+
+
+func (r *mongoS3ImageRepository) DownloadImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadSeekCloser, error) {
+	imgFile, err := r.FindOneImageFile(ctx, imageId, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	objectName := r.getObjectName(imageId, imgFile)
+
+	obj, err := r.s3Client.GetObject(ctx, r.imagesBucket, objectName, minio.GetObjectOptions{
+		Checksum: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }
