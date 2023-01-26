@@ -30,6 +30,7 @@ type ImageRepository interface {
 	CreateImageFile(ctx context.Context, request *ImageFileCreateRequest) (*ImageFile, error)
 	UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error)
 	OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error)
+	DeleteImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error)
 }
 
 type mongoS3ImageRepository struct {
@@ -122,7 +123,11 @@ func (r *mongoS3ImageRepository) FindOneImageFile(ctx context.Context, imageId d
 	if len(img.Files) > 1 {
 		return nil, errors.New("Something is off with the query")
 	}
-	return img.Files[0], nil
+
+	imgFile := img.Files[0]
+	imgFile.ImageID = imageId
+	
+	return imgFile, nil
 }
 
 func (r *mongoS3ImageRepository) getObjectName(imageId db.ObjectID, file *ImageFile) string {
@@ -188,4 +193,37 @@ func (r *mongoS3ImageRepository) OpenImageFile(ctx context.Context, imageId db.O
 	}
 
 	return obj, nil
+}
+
+
+func (r *mongoS3ImageRepository) DeleteImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error) {
+	imgFile, err := r.FindOneImageFile(ctx, imageId, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	// delete file
+	objName := r.getObjectName(imageId, imgFile)
+
+	err = r.s3Client.RemoveObject(ctx, r.imagesBucket, objName, minio.RemoveObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// delete from db
+	_, err = r.coll.UpdateOne(ctx, bson.M{
+		"_id": imageId,
+		"files._id": fileId,
+	}, bson.D{
+		{"$pull", bson.M{
+			"files": bson.M{
+				"_id": fileId,
+			},
+		}},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	return imgFile, nil
 }

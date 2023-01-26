@@ -22,6 +22,7 @@ type Image struct {
 
 type ImageFile struct {
 	ID db.ObjectID  `bson:"_id" json:"id"`
+	ImageID db.ObjectID `bson:"-" json:"imageId"`
 	FileName string `bson:"file_name" json:"file_name"`
 	FileType string `bson:"file_type" json:"file_type"`
 	IsUploaded bool `bson:"is_uploaded" json:"is_uploaded"`

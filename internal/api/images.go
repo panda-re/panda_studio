@@ -97,5 +97,11 @@ func (s *PandaStudioServer) DownloadImageFile(ctx *gin.Context, imageId ImageId,
 }
 
 func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, fileId FileId) {
-	ctx.Error(errors.New("Not implemented"))
+	imgFile, err := s.imageRepo.DeleteImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, imgFile)
 }
