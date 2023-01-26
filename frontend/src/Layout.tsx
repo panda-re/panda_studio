@@ -31,11 +31,6 @@ function Layout() {
       iconType: 'layers',
       onClick: () => navigate('/recordings'),
     },
-    {
-      label:'Create Recording',
-      iconType: 'play',
-      onClick: () => navigate('/createRecording')
-    },
   ];
 
   return (<>

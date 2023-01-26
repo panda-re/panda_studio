@@ -31,7 +31,7 @@ function EntitySearchBar(props: EntitySearchBarProps) {
                 onChange={(newOptions) => {
                     setOptions(newOptions);
                     const hasSelected = newOptions.find(selected => selected.checked === "on");
-                    props.returnSelectedOption(hasSelected !== undefined ? hasSelected.label : "No Recording Selected");
+                    props.returnSelectedOption(hasSelected !== undefined ? hasSelected : "No Recording Selected");
                 }}>
                 {(list, search) => (
                     <Fragment>
