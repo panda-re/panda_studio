@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
-	"github.com/panda-re/panda_studio/internal/images"
+	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/pkg/errors"
 )
 
@@ -40,7 +40,7 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 		return
 	}
 	
-	fileObj, err := s.imageRepo.CreateImageFile(ctx, &images.ImageFileCreateRequest{
+	fileObj, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
 		ImageID: db.ParseObjectID(imageId),
 		FileName: form.Value["file_name"][0],
 		FileType: form.Value["file_type"][0],
@@ -63,7 +63,7 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 	}
 	defer fileReader.Close()
 
-	fileObj, err = s.imageRepo.UploadImageFile(ctx, &images.ImageFileUploadRequest{
+	fileObj, err = s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
 		ImageId: db.ParseObjectID(imageId),
 		FileId: fileObj.ID,
 	}, fileReader)

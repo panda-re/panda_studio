@@ -1,4 +1,4 @@
-package images
+package models
 
 import "github.com/panda-re/panda_studio/internal/db"
 
