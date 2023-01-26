@@ -1,9 +1,6 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
 import { useNavigate } from 'react-router-dom';
 
-
-
-// image ID, name, OS, Timestamp, Size, view specs
 interface InteractionProgram {
   id: string;
   name: string;
@@ -40,7 +37,7 @@ function ImagesDataGrid() {
     return {
       'data-test-subj': `image-row-${id}`,
       onClick: () => {
-        //we may not need an interaction details page
+        navigate('/interactionDetails', {state:{item: item}})
       },
     }
   }
