@@ -24,7 +24,7 @@ const tableColumns: EuiBasicTableColumn<InteractionProgram>[] = [
 
 const data: InteractionProgram[] = [
   {
-    id: 'IMG001',
+    id: 'INT001',
     name: 'list-one',
     date: new Date()
   }

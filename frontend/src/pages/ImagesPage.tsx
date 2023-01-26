@@ -1,8 +1,6 @@
 import {
   EuiButton,
   EuiFieldSearch,
-  EuiFieldText,
-  EuiFlexGroup,
   EuiFlexItem,
   EuiPageTemplate,
   EuiSpacer,
