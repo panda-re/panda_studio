@@ -29,7 +29,7 @@ type ImageRepository interface {
 	FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error)
 	CreateImageFile(ctx context.Context, request *ImageFileCreateRequest) (*ImageFile, error)
 	UploadImageFile(ctx context.Context, req *ImageFileUploadRequest, reader io.Reader) (*ImageFile, error)
-	OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadSeekCloser, error)
+	OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error)
 }
 
 type mongoS3ImageRepository struct {
@@ -87,12 +87,15 @@ func (r *mongoS3ImageRepository) CreateImageFile(ctx context.Context, req *Image
 		FileName: req.FileName,
 		FileType: req.FileType,
 		IsUploaded: false,
-		SHA256: "",
+		Size: -1,
+		Sha256: "",
 	}
 
-	_, err := r.coll.UpdateByID(ctx, req.ImageID, bson.D{{"$push", bson.D{
-		{"files", newFile},
-	}}})
+	_, err := r.coll.UpdateByID(ctx, req.ImageID, bson.D{
+		{"$push", bson.D{
+			{"files", newFile},
+		},
+	}})
 	if err != nil {
 		return nil, errors.Wrap(err, "db error")
 	}
@@ -102,13 +105,11 @@ func (r *mongoS3ImageRepository) CreateImageFile(ctx context.Context, req *Image
 
 func (r *mongoS3ImageRepository) FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*ImageFile, error) {
 	var img Image
-	err := r.coll.FindOne(ctx, bson.D{
-		{"_id", imageId},
-		{"files",
-			bson.D{{"$elemMatch",
-				bson.D{{"_id", fileId}},
-			}},
-		},
+	err := r.coll.FindOne(ctx, bson.M{
+		"_id": imageId,
+		"files": bson.D{{"$elemMatch",
+			bson.D{{"_id", fileId}},
+		}},
 	}, options.FindOne().SetProjection(bson.D{
 		// Filters the files to just the one we want
 		{"files.$", 1},
@@ -141,20 +142,21 @@ func (r *mongoS3ImageRepository) UploadImageFile(ctx context.Context, req *Image
 	hashReader := util.NewReaderHasher(reader, hasher)
 
 	// Upload file and compute hash
-	_, err = r.s3Client.PutObject(ctx, r.imagesBucket, objectName, hashReader, -1, minio.PutObjectOptions{})
+	obj, err := r.s3Client.PutObject(ctx, r.imagesBucket, objectName, hashReader, -1, minio.PutObjectOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "file upload failed")
 	}
 	hash := hex.EncodeToString(hasher.Sum(nil))
 
 	// Update the file information
-	_, err = r.coll.UpdateOne(ctx, bson.D{
-		{"_id", req.ImageId},
-		{"files._id", req.FileId},
+	_, err = r.coll.UpdateOne(ctx, bson.M{
+		"_id": req.ImageId,
+		"files._id": req.FileId,
 	}, bson.D{
-		{"$set", bson.D{
-			bson.E{"files.$.is_uploaded", true},
-			bson.E{"files.$.sha256", hash},
+		{"$set", bson.M{
+			"files.$.is_uploaded": true,
+			"files.$.size": obj.Size,
+			"files.$.sha256": hash,
 		}},
 	})
 	if err != nil {
@@ -170,7 +172,7 @@ func (r *mongoS3ImageRepository) UploadImageFile(ctx context.Context, req *Image
 }
 
 
-func (r *mongoS3ImageRepository) DownloadImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadSeekCloser, error) {
+func (r *mongoS3ImageRepository) OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error) {
 	imgFile, err := r.FindOneImageFile(ctx, imageId, fileId)
 	if err != nil {
 		return nil, err

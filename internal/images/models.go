@@ -21,11 +21,12 @@ type Image struct {
 }
 
 type ImageFile struct {
-	ID db.ObjectID `bson:"_id" json:"id"`
+	ID db.ObjectID  `bson:"_id" json:"id"`
 	FileName string `bson:"file_name" json:"file_name"`
 	FileType string `bson:"file_type" json:"file_type"`
 	IsUploaded bool `bson:"is_uploaded" json:"is_uploaded"`
-	SHA256 string `bson:"sha256" json:"sha256,omitempty"`
+	Size int64		`bson:"size" json:"size"`
+	Sha256 string   `bson:"sha256" json:"sha256,omitempty"`
 }
 
 type ImageConfiguration struct {

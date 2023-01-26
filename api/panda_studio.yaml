@@ -142,6 +142,8 @@ components:
           type: string
         file_type:
           $ref: "#/components/schemas/ImageFileType"
+        size:
+          type: integer
         sha256:
           type: string
     

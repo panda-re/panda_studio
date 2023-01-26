@@ -89,8 +89,9 @@ func (s *PandaStudioServer) DownloadImageFile(ctx *gin.Context, imageId ImageId,
 		ctx.Error(err)
 		return
 	}
+	defer fileReader.Close()
 
-	ctx.DataFromReader(http.StatusOK, -1, "application/octet-stream", fileReader, map[string]string{
+	ctx.DataFromReader(http.StatusOK, imgFile.Size, "application/octet-stream", fileReader, map[string]string{
 		"Content-Disposition": fmt.Sprintf(`attachment; filename=%s`, imgFile.FileName),
 	})
 }
