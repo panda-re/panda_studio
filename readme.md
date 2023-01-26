@@ -6,12 +6,32 @@ First, make sure Docker is properly installed on your system.
 
 Note that some of these instructions are merely workarounds for the time being.
 
+### Installing PANDA Studio 
+1. Install privlidged files into root directory
+	makes a .panda directory in root user, and downloads the main server QCOW to it.
+```
+sudo make initial_setup_priviliged
+```
+
+2. Setup non-privlidged aspects, including setting up the Docker Container
+```
+make initial_setup
+```
+
+## OR
+
+1. Install all files with single command 
+```
+sudo make full_initial_setup
+```
+
 ### Preparation
 1. Create a cache to store the default PANDA images:
 ```
 sudo mkdir -p /root/.panda
-
-# Download the default x86_64 image
+```
+1.5. Download the default x86_64 image
+```
 sudo wget -O /root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2 \
     "https://www.dropbox.com/s/4avqfxqemd29i5j/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2?dl=1"
 ```
