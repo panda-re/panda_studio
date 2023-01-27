@@ -46,7 +46,7 @@ func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (Panda
 	}
 
 	// Copy given image into shared directory
-	nBytes, err := copyFileHelper(file_path, sharedDir)
+	nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		print("Error in copying")
 		return nil, err
@@ -194,24 +194,27 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 	return nil
 }
 
-func copyFileHelper(file_path string, shared_dir string) (int64, error) {
+// This method is used to copy a local file to the shared directory for use by the agent
+// source_file_path - File path to local file being copied
+// shared_dir - the path of the shared directory the file is being copied to
+func copyFileHelper(source_file_path string, shared_dir_path string, copied_file_name string) (int64, error) {
 
-	sourceFileStat, err := os.Stat(file_path)
+	sourceFileStat, err := os.Stat(source_file_path)
 	if err != nil {
 		return 0, err
 	}
 
 	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", file_path)
+		return 0, fmt.Errorf("%s is not a regular file", source_file_path)
 	}
 
-	source, err := os.Open(file_path)
+	source, err := os.Open(source_file_path)
 	if err != nil {
 		return 0, err
 	}
 	defer source.Close()
 
-	destination, err := os.Create(shared_dir + "/system_image.qcow2")
+	destination, err := os.Create(shared_dir_path + copied_file_name)
 	if err != nil {
 		return 0, err
 	}
