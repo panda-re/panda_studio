@@ -53,7 +53,7 @@ func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (Panda
 	}
 
 	// Start the container
-	err = agent.startContainer(ctx, sharedDir, file_path)
+	err = agent.startContainer(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	}, nil
 }
 
-func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context, shared_dir string, file_path string) error {
+func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
 		Image:        DOCKER_IMAGE,
