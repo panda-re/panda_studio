@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	"github.com/pkg/errors"
 )
 
 type dockerGrpcPandaAgent struct {
@@ -136,10 +137,23 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	// Strip off the shared folder prefix so that paths are correct on this system
 	recordingName := strings.Replace(recording.RecordingName, "./shared/", "", 1)
 
-	return &PandaAgentRecording{
+	new_recording := PandaAgentRecording{
 		RecordingName: recordingName,
 		Location:      *pa.sharedDir,
-	}, nil
+	}
+
+	// Copy given image into shared directory
+	//TODO: Replace destination with filesystem target
+	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying snapshot")
+	}
+
+	nBytes, err = copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying nondeterministic log")
+	}
+	return &new_recording, nil
 }
 
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
@@ -197,6 +211,7 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 // This method is used to copy a local file to the shared directory for use by the agent
 // source_file_path - File path to local file being copied
 // shared_dir - the path of the shared directory the file is being copied to
+// copied_file_name - name of the new file after being copied
 func copyFileHelper(source_file_path string, shared_dir_path string, copied_file_name string) (int64, error) {
 
 	sourceFileStat, err := os.Stat(source_file_path)

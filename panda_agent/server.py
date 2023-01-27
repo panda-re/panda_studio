@@ -24,15 +24,10 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def __init__(self, server, agent: PandaAgent):
         self.server = server
         self.agent = agent
-        self.agent_thread = None
-    
-    def isAgentRunning(self):
-        return self.agent_thread is not None
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
-        if self.agent.hasStarted:
+        if self.agent.isRunning:
             return
-
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         return pb.StartAgentResponse()
