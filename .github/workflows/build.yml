@@ -29,6 +29,18 @@ jobs:
            -t pandare/panda_executor
            .
 
+  build_api:
+    runs-on: ubuntu-20.04
+    name: Build PANDA API Container
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build PANDA API Container
+      run: DOCKER_BUILDKIT=1 docker build
+           --progress=plain
+           -f ./docker/Dockerfile.panda-api
+           -t pandare/panda_api
+           .
+
   build_frontend:
     runs-on: ubuntu-20.04
     name: Build React Frontend

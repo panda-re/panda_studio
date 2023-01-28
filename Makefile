@@ -2,6 +2,10 @@
 panda_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_executor
 
+panda_api: panda_agent_protoc_go
+	go generate ./internal/api
+	go build -o ./bin/panda_api ./cmd/panda_api
+
 panda_agent_protoc: panda_agent_protoc_go panda_agent_protoc_py
 
 panda_agent_protoc_go: panda_agent/proto/*.proto
