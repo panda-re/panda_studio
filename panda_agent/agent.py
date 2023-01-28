@@ -7,35 +7,46 @@ class PandaAgent:
 
     def __init__(self, panda: Panda):
         self.panda = panda
-        self.hasStarted = False
         self.isRunning = False
         self.current_recording = None
     
     # This function is meant to run in a different thread
     def start(self):
-        self.hasStarted = False
+        if self.isRunning: 
+            raise RuntimeError("Cannot start another instance of PANDA while one is already running")
         panda = self.panda
 
         @panda.queue_blocking
         def panda_start():
             print("panda agent started")
-            self.isRunning = True
+            
             # revert to the qcow's root snapshot
             panda.revert_sync("root")
         
         print("starting panda agent ")
+        self.isRunning = True
         panda.run()
         print("panda agent stopped")
-        self.isRunning = False
+        #self.isRunning = False
     
     def stop(self):
+        if self.isRunning is False: 
+            raise RuntimeError("Cannot stop a PANDA instance when one is not running")
+        if self.current_recording is not None:
+            # Stop recording for user, then stop PANDA
+            print("Request for PANDA stop before recording ended. Stopping recording automatically")
+            self.stop_recording()
+        
         @self.panda.queue_blocking
         def panda_stop():
             self.panda.end_analysis()
+        self.isRunning = False
     
     def _run_function(self, func, block=True, timeout=None):
         # Since the queued function will be running in another thread, we need
         # a queue in order to pass the return value back to this thread
+        if self.isRunning is False: 
+            raise RuntimeError("Can't run a function when PANDA isn't running")
         returnChannel = queue.Queue()
 
         @self.panda.queue_blocking
@@ -70,6 +81,9 @@ class PandaAgent:
         return self._run_function(panda_start_recording)
     
     def stop_recording(self):
+        if self.current_recording is None:
+            raise RuntimeError("Must start a recording before stopping one")
+        
         def panda_stop_recording(panda: Panda):
             print(f'stopping recording')
             panda.end_record()
