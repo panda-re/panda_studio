@@ -7,9 +7,11 @@ class PandaAgent:
 
     def __init__(self, panda: Panda):
         self.panda = panda
+        # TODO PANDA has running and replay variables already, use those
         self.isRunning = False
         self.current_recording = None
         self.current_replay = None
+        self.serial_out = ""
     
     # This function is meant to run in a different thread
     def start(self):
@@ -95,16 +97,24 @@ class PandaAgent:
         return recording_name
 
     def start_replay(self, recording_name):
-        # TODO checks (recording?)
-        if self.current_replay is not None:
-            raise RuntimeError("Cannot start a new replay while replay is in progress")
-        
-        def panda_start_replay(panda: Panda):
-            print(f'starting replay {recording_name}')
-            panda.run_replay(recording_name)
-        
+        if self.isRunning: 
+            raise RuntimeError("Cannot start another instance of PANDA while one is already running")
+        panda = self.panda
+        if panda.recording_exists(recording_name) is False:
+            raise RuntimeError(f"Recording {recording_name} does not exist")
+        @panda.cb_replay_serial_write
+        def serial_append(env, fifo_addr, part_addr, value):
+            # Append serial to string as character
+            self.serial_out += '%c' % value
+        print("starting panda replay agent ")
+        self.isRunning = True
         self.current_replay = recording_name
-        return self._run_function(panda_start_replay)
+        print(f'starting replay {recording_name}')
+        panda.run_replay(recording_name)
+        print(self.serial_out)
+        print("panda agent replay stopped")
+        # self.isRunning = False
+        return self.serial_out
 
     def stop_replay(self):
         # TODO checks
@@ -117,7 +127,3 @@ class PandaAgent:
         
         self.current_replay = None
         return self._run_function(panda_stop_replay)
-        
-
-    def stop_replay(self):
-        pass
