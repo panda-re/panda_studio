@@ -50,10 +50,22 @@ docker run -it --rm \
     - In VSCode, a toast will appear in the bottom right corner asking you to open the dev container
     - The dev container is not yet fully supported (working on it!)
 
-### Set up object storage and database for testing
+## Running the API
+
+1. Follow the above instructions to build the required containers
+
+2. Start the API server with the required services
 ```
-docker compose -f ./docker-compose.dev.yml up -d
+docker compose -f ./docker/docker-compose.services.dev.yml -f ./docker/docker-compose.api.dev.yml up -d
 ```
+
+Note: you can use ctrl-C to quit the API
+
+### Accessing the UI for backend services
+
+- Minio's GUI is available on `localhost:9001`. The sign-in information can be found in `docker/config.dev.yml` as access key and secret key
+
+- Mongo Express is a GUI for MongoDB and can be found at `localhost:8081`
 
 ## Other Instructions
 Prerequisites:
