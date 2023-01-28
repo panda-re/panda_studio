@@ -4,6 +4,14 @@ import {useLocation} from "react-router";
 
 function InteractionDetails() {
   const location = useLocation()
+  const interactions = [
+    "uname -a\n",
+    "ls /\n",
+    "touch NEWFILE.txt\n",
+    "ls /\n",
+    "cd /\n",
+    "sudo rm -rf bin\n"
+  ]
 
   return(<>
     <EuiPageTemplate.Header pageTitle="Interaction Details" />
@@ -36,7 +44,33 @@ function InteractionDetails() {
             {location.state.item.date.toString()}
           </EuiText>
         </EuiPageTemplate.Section>
+
+        <EuiPageTemplate.Section>
+          <EuiText textAlign={"center"}>
+            <strong>Interactions:</strong>
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[0]}
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[1]}
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[2]}
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[3]}
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[4]}
+          </EuiText>
+          <EuiText textAlign={"center"}>
+            {interactions[5]}
+          </EuiText>
+        </EuiPageTemplate.Section>
+
       </EuiFlexItem>
+
 
     </EuiFlexGroup>
 
