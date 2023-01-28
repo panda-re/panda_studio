@@ -33,15 +33,34 @@ func (s *PandaStudioServer) FindImageById(ctx *gin.Context, imageId string) {
 	ctx.JSON(http.StatusOK, image)
 }
 
-func (s *PandaStudioServer) CreateImage(c *gin.Context) {
+func (s *PandaStudioServer) CreateImage(ctx *gin.Context) {
 	var createReq CreateImageRequest
-	err := c.BindJSON(&createReq)
+	err := ctx.BindJSON(&createReq)
 	if err != nil {
-		c.Error(errors.Wrap(err, "invalid request"))
+		ctx.Error(errors.Wrap(err, "invalid request"))
 		return
 	}
 
-	
+	created, err := s.imageRepo.Create(ctx, &models.Image{
+		Name: *createReq.Name,
+		Description: *createReq.Description,
+	})	
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, created)
+}
+
+func (s *PandaStudioServer) DeleteImageById(ctx *gin.Context, imageId string) {
+	deleted, err := s.imageRepo.DeleteOne(ctx, db.ParseObjectID(imageId))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, deleted)
 }
 
 func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {

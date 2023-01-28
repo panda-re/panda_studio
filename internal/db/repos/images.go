@@ -14,6 +14,7 @@ import (
 	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -23,6 +24,8 @@ const IMAGES_TABLE string = "images"
 type ImageRepository interface {
 	FindAll(ctx context.Context) ([]models.Image, error)
 	FindOne(ctx context.Context, id db.ObjectID) (*models.Image, error)
+	Create(ctx context.Context, obj *models.Image) (*models.Image, error)
+	DeleteOne(ctx context.Context, id db.ObjectID) (*models.Image, error)
 	FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*models.ImageFile, error)
 	CreateImageFile(ctx context.Context, request *models.ImageFileCreateRequest) (*models.ImageFile, error)
 	UploadImageFile(ctx context.Context, req *models.ImageFileUploadRequest, reader io.Reader) (*models.ImageFile, error)
@@ -31,8 +34,8 @@ type ImageRepository interface {
 }
 
 type mongoS3ImageRepository struct {
-	coll *mongo.Collection
-	s3Client *minio.Client
+	coll         *mongo.Collection
+	s3Client     *minio.Client
 	imagesBucket string
 }
 
@@ -47,9 +50,9 @@ func GetImageRepository(ctx context.Context) (ImageRepository, error) {
 		return nil, err
 	}
 
-	return &mongoS3ImageRepository {
-		coll: mongoClient.Collection(IMAGES_TABLE),
-		s3Client: s3Client,
+	return &mongoS3ImageRepository{
+		coll:         mongoClient.Collection(IMAGES_TABLE),
+		s3Client:     s3Client,
 		imagesBucket: configuration.GetConfig().S3.Buckets.ImagesBucket,
 	}, nil
 }
@@ -79,21 +82,63 @@ func (r *mongoS3ImageRepository) FindOne(ctx context.Context, id db.ObjectID) (*
 	return &result, nil
 }
 
+// Create implements ImageRepository
+func (r *mongoS3ImageRepository) Create(ctx context.Context, obj *models.Image) (*models.Image, error) {
+	obj.ID = db.NewObjectID()
+	obj.Files = []*models.ImageFile{}
+
+	// insert into mongo
+	result, err := r.coll.InsertOne(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedId := result.InsertedID.(primitive.ObjectID)
+	obj.ID = &insertedId
+
+	return obj, nil
+}
+
+func (r *mongoS3ImageRepository) DeleteOne(ctx context.Context, id db.ObjectID) (*models.Image, error) {
+	img, err := r.FindOne(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// delete all image files
+	for _, imgFile := range img.Files {
+		_, err := r.DeleteImageFile(ctx, id, imgFile.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = r.coll.DeleteOne(ctx, bson.M{
+		"_id": id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return img, nil
+}
+
+
 func (r *mongoS3ImageRepository) CreateImageFile(ctx context.Context, req *models.ImageFileCreateRequest) (*models.ImageFile, error) {
 	newFile := models.ImageFile{
-		ID: db.NewObjectID(),
-		FileName: req.FileName,
-		FileType: req.FileType,
+		ID:         db.NewObjectID(),
+		FileName:   req.FileName,
+		FileType:   req.FileType,
 		IsUploaded: false,
-		Size: -1,
-		Sha256: "",
+		Size:       -1,
+		Sha256:     "",
 	}
 
 	_, err := r.coll.UpdateByID(ctx, req.ImageID, bson.D{
 		{"$push", bson.D{
 			{"files", newFile},
 		},
-	}})
+		}})
 	if err != nil {
 		return nil, errors.Wrap(err, "db error")
 	}
@@ -123,7 +168,7 @@ func (r *mongoS3ImageRepository) FindOneImageFile(ctx context.Context, imageId d
 
 	imgFile := img.Files[0]
 	imgFile.ImageID = imageId
-	
+
 	return imgFile, nil
 }
 
@@ -152,13 +197,13 @@ func (r *mongoS3ImageRepository) UploadImageFile(ctx context.Context, req *model
 
 	// Update the file information
 	_, err = r.coll.UpdateOne(ctx, bson.M{
-		"_id": req.ImageId,
+		"_id":       req.ImageId,
 		"files._id": req.FileId,
 	}, bson.D{
 		{"$set", bson.M{
 			"files.$.is_uploaded": true,
-			"files.$.size": obj.Size,
-			"files.$.sha256": hash,
+			"files.$.size":        obj.Size,
+			"files.$.sha256":      hash,
 		}},
 	})
 	if err != nil {
@@ -172,7 +217,6 @@ func (r *mongoS3ImageRepository) UploadImageFile(ctx context.Context, req *model
 
 	return imgFile, nil
 }
-
 
 func (r *mongoS3ImageRepository) OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error) {
 	imgFile, err := r.FindOneImageFile(ctx, imageId, fileId)
@@ -192,7 +236,6 @@ func (r *mongoS3ImageRepository) OpenImageFile(ctx context.Context, imageId db.O
 	return obj, nil
 }
 
-
 func (r *mongoS3ImageRepository) DeleteImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*models.ImageFile, error) {
 	imgFile, err := r.FindOneImageFile(ctx, imageId, fileId)
 	if err != nil {
@@ -209,7 +252,7 @@ func (r *mongoS3ImageRepository) DeleteImageFile(ctx context.Context, imageId db
 
 	// delete from db
 	_, err = r.coll.UpdateOne(ctx, bson.M{
-		"_id": imageId,
+		"_id":       imageId,
 		"files._id": fileId,
 	}, bson.D{
 		{"$pull", bson.M{

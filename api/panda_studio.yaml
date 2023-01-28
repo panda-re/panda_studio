@@ -56,7 +56,22 @@ paths:
                 $ref: "#/components/schemas/Image"
         "404":
           description: Not Found
-    
+    delete:
+      tags:
+        - image
+      summary: Delete image with specified ID
+      operationId: deleteImageById
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        "404":
+          description: Not Found
   /images/{imageId}/files:
     post:
       tags:
@@ -180,6 +195,8 @@ components:
           type: string
         description:
           type: string
+        config:
+          $ref: "#/components/schemas/PandaConfig"
 
     CreateImageFileRequest:
       type: object
