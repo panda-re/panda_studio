@@ -63,6 +63,10 @@ func (s *PandaStudioServer) DeleteImageById(ctx *gin.Context, imageId string) {
 	ctx.JSON(http.StatusOK, deleted)
 }
 
+func (s *PandaStudioServer) UpdateImage(ctx *gin.Context, imageId string) {
+	ctx.Error(errors.New("Not yet implemented"))
+}
+
 func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 	form, err := ctx.MultipartForm()
 	if err != nil {

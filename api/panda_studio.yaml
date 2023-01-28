@@ -56,6 +56,22 @@ paths:
                 $ref: "#/components/schemas/Image"
         "404":
           description: Not Found
+    put:
+      tags:
+        - image
+      summary: Update image
+      operationId: updateImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        "404":
+          description: Not Found
     delete:
       tags:
         - image
