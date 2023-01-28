@@ -31,7 +31,12 @@ docker build -f ./docker/Dockerfile.panda-agent -t pandare/panda_agent ./panda_a
 docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 ```
 
-5. Run it!
+5. Build the PANDA API
+```
+docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
+```
+
+6. Run it!
 ```
 docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -40,10 +45,15 @@ docker run -it --rm \
     pandare/panda_executor
 ```
 
-6. Open the Dev Container (optional)
+7. Open the Dev Container (optional)
     - This contains a mostly complete toolchain with all the tools needed for local development
     - In VSCode, a toast will appear in the bottom right corner asking you to open the dev container
     - The dev container is not yet fully supported (working on it!)
+
+### Set up object storage and database for testing
+```
+docker compose -f ./docker-compose.dev.yml up -d
+```
 
 ## Other Instructions
 Prerequisites:

@@ -31,4 +31,5 @@ RUN make panda_api
 FROM ubuntu:20.04
 WORKDIR /app
 COPY --from=builder /app/bin/panda_api /app/
+COPY ./docker/config.dev.yml /app/config.yml
 ENTRYPOINT [ "/app/panda_api" ]

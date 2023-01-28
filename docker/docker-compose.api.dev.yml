@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  panda_api:
+    image: "pandare/panda_api"
+    ports:
+      - "8080:8080"
+    networks:
+      - panda_studio

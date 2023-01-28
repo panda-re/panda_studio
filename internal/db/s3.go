@@ -25,7 +25,29 @@ func GetS3Client(ctx context.Context) (*minio.Client, error) {
 		return nil, err
 	}
 
+	err = ensureBucketsExist(ctx, opts.Buckets, client)
+	if err != nil {
+		return nil, err
+	}
+
 	s3Client = client
 
 	return client, err
+}
+
+func ensureBucketsExist(ctx context.Context, cfg config.S3BucketsConfig, cli *minio.Client) error {
+	bucketNames := []string{
+		cfg.ImagesBucket,
+		cfg.LogsBucket,
+		cfg.RecordingsBucket,
+	}
+
+	for _, name := range bucketNames {
+		err := cli.MakeBucket(ctx, name, minio.MakeBucketOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
