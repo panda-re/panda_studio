@@ -2,7 +2,6 @@ package panda_controller
 
 import (
 	"context"
-	"fmt"
 
 	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 	"google.golang.org/grpc"
@@ -17,6 +16,20 @@ type grpcPandaAgent struct {
 const DEFAULT_GRPC_ADDR = "localhost:50051"
 
 func CreateGrpcPandaAgent(endpoint string) (PandaAgent, error) {
+	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	client := pb.NewPandaAgentClient(conn)
+
+	return &grpcPandaAgent{
+		cc:  conn,
+		cli: client,
+	}, nil
+}
+
+func CreateGrpcPandaReplayAgent(endpoint string) (PandaReplayAgent, error) {
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
@@ -87,16 +100,13 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 	return &PandaAgentRecording{
 		RecordingName: resp.RecordingName,
 		// We cannot know the location with the information we have
-		Location:      "??",
+		Location: "??",
 	}, nil
 }
 
 func (pa *grpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
-	// TODO
 	a, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
 		RecordingName: recordingName,
-		SnapshotFilename: fmt.Sprintf("%s-rr-snp", recordingName),
-		NdlogFilename: fmt.Sprintf("%s-rr-nondet.log", recordingName),
 	})
 	if err != nil {
 		return nil, err
@@ -108,14 +118,12 @@ func (pa *grpcPandaAgent) StartReplay(ctx context.Context, recordingName string)
 }
 
 func (pa *grpcPandaAgent) StopReplay(ctx context.Context) error {
-	// TODO
 	_, err := pa.cli.StopReplay(ctx, &pb.StopReplayRequest{})
 	if err != nil {
 		return err
 	}
-	return nil;
+	return nil
 }
-
 
 func (pa *grpcPandaAgent) Close() error {
 	return pa.cc.Close()

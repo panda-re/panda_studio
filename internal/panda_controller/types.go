@@ -13,6 +13,12 @@ type PandaAgent interface {
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (*PandaAgentRecording, error)
+	Close() error
+}
+
+type PandaReplayAgent interface {
+	StartAgent(ctx context.Context) error
+	StopAgent(ctx context.Context) error
 	StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error)
 	StopReplay(ctx context.Context) error
 	Close() error
@@ -24,7 +30,7 @@ type PandaAgentRunCommandResult struct {
 
 type PandaAgentRecording struct {
 	RecordingName string
-	Location string
+	Location      string
 }
 
 func (r *PandaAgentRecording) GetSnapshotFileName() string {

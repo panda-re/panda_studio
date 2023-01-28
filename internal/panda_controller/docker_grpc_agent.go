@@ -23,6 +23,13 @@ type dockerGrpcPandaAgent struct {
 	sharedDir   *string
 }
 
+type dockerGrpcPandaReplayAgent struct {
+	grpcAgent   PandaReplayAgent
+	cli         *docker.Client
+	containerId *string
+	sharedDir   *string
+}
+
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
@@ -113,6 +120,78 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) error {
 	return pa.grpcAgent.StopAgent(ctx)
 }
 
+func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error) {
+	// Connect to docker daemon
+	cli, err := docker.NewClientWithOpts(docker.FromEnv)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a shared temporary directory
+	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "panda-agent")
+	if err != nil {
+		return nil, err
+	}
+
+	agent := &dockerGrpcPandaReplayAgent{
+		grpcAgent:   nil,
+		cli:         cli,
+		containerId: nil,
+		sharedDir:   &sharedDir,
+	}
+
+	// Start the container
+	err = agent.startContainer(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for container startup - we need a better method
+	time.Sleep(time.Millisecond * 2000)
+
+	// Connect to grpc over unix socket
+	grpcSocket := fmt.Sprintf(DOCKER_GRPC_SOCKET_PATTERN, *agent.sharedDir)
+	grpcAgent, err := CreateGrpcPandaReplayAgent(grpcSocket)
+	if err != nil {
+		return nil, err
+	}
+
+	agent.grpcAgent = grpcAgent
+
+	return agent, nil
+}
+
+// Close implements PandaReplayAgent
+func (pa *dockerGrpcPandaReplayAgent) Close() error {
+	// Close grpc connection
+	err := pa.grpcAgent.Close()
+	if err != nil {
+		return err
+	}
+
+	// Then stop/remove container
+	err = pa.stopContainer(context.Background())
+	if err != nil {
+		return err
+	}
+
+	// Close docker connection
+	err = pa.cli.Close()
+	if err != nil {
+		return err
+	}
+
+	// Remove temp dir
+	if pa.sharedDir != nil {
+		err = os.RemoveAll(*pa.sharedDir)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // StartRecording implements PandaAgent
 func (pa *dockerGrpcPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
 	// Tell the agent to save the snapshot file in the shared folder rather than the current directory
@@ -149,7 +228,35 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	return &new_recording, nil
 }
 
-func (pa *dockerGrpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
+// StartAgent implements PandaReplayAgent
+func (pa *dockerGrpcPandaReplayAgent) StartAgent(ctx context.Context) error {
+	return pa.grpcAgent.StartAgent(ctx)
+}
+
+// StopAgent implements PandaReplayAgent
+func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) error {
+	// The code below assumes the PANDA output was logged in a file called test.txt
+	// It then prints the output
+	log_file := fmt.Sprintf("%s/%s", *pa.sharedDir, "test.txt")
+
+	file, err := os.Open(log_file)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err = file.Close(); err != nil {
+			print(err)
+		}
+	}()
+
+	b, err := io.ReadAll(file)
+	fmt.Printf("%s", b)
+
+	return pa.grpcAgent.StopAgent(ctx)
+}
+
+// StartReplay implements PandaReplayAgent
+func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
 	// TODO
 	// Copy file into shared directory
 	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
@@ -169,9 +276,8 @@ func (pa *dockerGrpcPandaAgent) StartReplay(ctx context.Context, recordingName s
 	return pa.grpcAgent.StartReplay(ctx, recordingLocation)
 }
 
-func (pa *dockerGrpcPandaAgent) StopReplay(ctx context.Context) error {
-	print("Stopping replay TODO")
-	// TODO
+// StopReplay implements PandaReplayAgent
+func (pa *dockerGrpcPandaReplayAgent) StopReplay(ctx context.Context) error {
 	return pa.grpcAgent.StopReplay(ctx)
 }
 
@@ -218,6 +324,64 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 }
 
 func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
+	// if container is not running, our job is done
+	if pa.containerId == nil {
+		return nil
+	}
+
+	err := pa.cli.ContainerRemove(ctx, *pa.containerId, types.ContainerRemoveOptions{
+		Force: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pa *dockerGrpcPandaReplayAgent) startContainer(ctx context.Context) error {
+	// Create the container and save the name
+	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
+		Image:        DOCKER_IMAGE,
+		Tty:          true,
+		AttachStdout: true,
+		AttachStderr: true,
+	}, &container.HostConfig{
+		Mounts: []mount.Mount{
+			{
+				Type:   "bind",
+				Source: *pa.sharedDir,
+				Target: "/panda/shared",
+			},
+			// So PANDA doesn't need to download the same image
+			{
+				Type:   "bind",
+				Source: "/root/.panda",
+				Target: "/root/.panda",
+			},
+		},
+		// make sure the container is removed on exit
+		AutoRemove: true,
+	}, &network.NetworkingConfig{}, nil, "")
+
+	if err != nil {
+		return err
+	}
+	pa.containerId = &ccResp.ID
+
+	// Start the container
+	err = pa.cli.ContainerStart(ctx, *pa.containerId, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
+
+	// Use ContainerAttach to get container logs
+	// Use CopyFromContainer and CopyToContainer to copy files
+
+	return nil
+}
+
+func (pa *dockerGrpcPandaReplayAgent) stopContainer(ctx context.Context) error {
 	// if container is not running, our job is done
 	if pa.containerId == nil {
 		return nil
