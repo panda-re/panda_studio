@@ -21,7 +21,8 @@ import (
 const IMAGES_TABLE string = "images"
 
 type ImageRepository interface {
-	Repository[models.Image]
+	FindAll(ctx context.Context) ([]models.Image, error)
+	FindOne(ctx context.Context, id db.ObjectID) (*models.Image, error)
 	FindOneImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*models.ImageFile, error)
 	CreateImageFile(ctx context.Context, request *models.ImageFileCreateRequest) (*models.ImageFile, error)
 	UploadImageFile(ctx context.Context, req *models.ImageFileUploadRequest, reader io.Reader) (*models.ImageFile, error)

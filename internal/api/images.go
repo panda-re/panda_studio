@@ -33,6 +33,17 @@ func (s *PandaStudioServer) FindImageById(ctx *gin.Context, imageId string) {
 	ctx.JSON(http.StatusOK, image)
 }
 
+func (s *PandaStudioServer) CreateImage(c *gin.Context) {
+	var createReq CreateImageRequest
+	err := c.BindJSON(&createReq)
+	if err != nil {
+		c.Error(errors.Wrap(err, "invalid request"))
+		return
+	}
+
+	
+}
+
 func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 	form, err := ctx.MultipartForm()
 	if err != nil {
