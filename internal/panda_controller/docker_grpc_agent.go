@@ -46,11 +46,13 @@ func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (Panda
 		sharedDir:   &sharedDir,
 	}
 
-	// Copy given image into shared directory
-	nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
-	if (err != nil && err != io.EOF) || nBytes == 0 {
-		print("Error in copying")
-		return nil, err
+	if file_path != "" {
+		// Copy given image into shared directory
+		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
+		if (err != nil && err != io.EOF) || nBytes == 0 {
+			print("Error in copying")
+			return nil, err
+		}
 	}
 
 	// Start the container

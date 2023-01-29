@@ -1,13 +1,45 @@
 import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
-import {MutableRefObject, Ref, useRef, useState} from "react";
+import {MutableRefObject, Ref, useCallback, useEffect, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
-
+import React, { Component } from 'react'
+import Terminal from 'react-console-emulator'
 
 function CreateRecordingPage() {
-  const nameRef = useRef(null)
-  const memoryRef = useRef(null)
-  const imageRef = useRef(null)
-  const programRef = useRef(null)
+  const [name, setName] = useState('');
+  const [volume, setVolume] = useState('');
+  const [program, setProgram] = useState('');
+  const [commands, setCommands] = useState('');
+  const terminal = useRef(null)
+
+  const sendAPICall = useCallback(function () {
+    setCommands(JSON.parse("[" + program + "]"))
+    let recordingDetails = {
+      volume: volume,
+      commands: commands,
+      name: name
+    }
+    console.log(recordingDetails)
+
+    fetch('http://127.0.0.1:8080/panda', {
+      method: 'POST',
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(recordingDetails)
+    })
+      .then(response => response.json())
+      .then(response => displayResponse(response))
+  }, [name, volume, program])
+
+  const displayResponse = useCallback(function (response: any) {
+    const term:any = terminal.current
+    for (let i =0; i < response['response'].length; i++) {
+      term.pushToStdout('panda@panda:~$ ' + commands[i] + '\n')
+      term.pushToStdout(response['response'][i])
+    }
+  }, [commands])
 
   return (<>
     <EuiPageTemplate.Header pageTitle="Create Recording"/>
@@ -20,21 +52,8 @@ function CreateRecordingPage() {
         <EuiFlexItem grow={8}>
           <EuiFieldText
             placeholder="eg, recording1"
-            inputRef={nameRef}
-          />
-        </EuiFlexItem>
-      </EuiFlexGroup>
-    </EuiPageTemplate.Section>
-
-    <EuiPageTemplate.Section>
-      <EuiFlexGroup>
-        <EuiFlexItem grow={2}>
-          <EuiText>Memory size: </EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem grow={8}>
-          <EuiFieldText
-            placeholder="eg, 2G"
-            inputRef={memoryRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -48,7 +67,8 @@ function CreateRecordingPage() {
         <EuiFlexItem grow={8}>
           <EuiFieldText
             placeholder="eg, guest.img"
-            inputRef={imageRef}
+            value={volume}
+            onChange={(e) => setVolume(e.target.value)}
           />
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -57,12 +77,13 @@ function CreateRecordingPage() {
     <EuiPageTemplate.Section>
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={2}>
-          <EuiText>Specify program to run:</EuiText>
+          <EuiText>Specify commands to run:</EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
           <EuiFieldText
-            placeholder="eg, python script.py arg1 arg2..."
-            inputRef={programRef}
+            placeholder="eg, uname -a, ls..."
+            value={program}
+            onChange={(e) => setProgram(e.target.value)}
           />
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -73,35 +94,23 @@ function CreateRecordingPage() {
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={false}>
           <div>
-            <EuiButton onClick={() => sendAPICall(nameRef, memoryRef, imageRef, programRef)}>Create Recording</EuiButton>
+            <EuiButton onClick={sendAPICall}>Create Recording</EuiButton>
           </div>
+        </EuiFlexItem>
+      </EuiFlexGroup>
+    </EuiPageTemplate.Section>
+
+    <EuiPageTemplate.Section>
+      <EuiFlexGroup justifyContent={"spaceAround"}>
+        <EuiFlexItem>
+          <Terminal
+            ref={terminal}
+            commands={{}}
+            readOnly={true}
+          />
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
   </>)
 }
-
-let sendAPICall = function (nameInput: MutableRefObject<any>, memoryInput: MutableRefObject<any>, imageInput: MutableRefObject<any>, programInput: MutableRefObject<any>) {
-  let recordingDetails = {
-    name: nameInput.current.value,
-    image: imageInput.current.value,
-    memory: memoryInput.current.value,
-    commands: programInput.current.value
-  }
-  console.log(recordingDetails)
-  console.log("This is where we run the recording in PANDA")
-
-  fetch('http://127.0.0.1:5000/runPanda', {
-    method: 'POST',
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(recordingDetails)
-  })
-    .then(response => response.json())
-    .then(response => console.log(JSON.stringify(response)))
-}
-
 export default CreateRecordingPage;

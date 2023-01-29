@@ -1,0 +1,17 @@
+name: Build PANDA Studio Dev Container
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  devcontainer:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Dev Container
+        uses: devcontainers/ci@v0.2
+        with:
+          imageName: panda-re/panda_studio-devcontainer
+          push: never
