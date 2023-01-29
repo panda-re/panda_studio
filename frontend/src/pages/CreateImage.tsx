@@ -70,6 +70,19 @@ function CreateImagePage() {
         </EuiPageTemplate.Section>
 
         <EuiPageTemplate.Section>
+            <EuiFlexGroup>
+                <EuiFlexItem grow={2}>
+                    <EuiText>Extra Args: </EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem grow={8}>
+                    <EuiFieldText
+                        placeholder="Placeholder for now"
+                    />
+                </EuiFlexItem>
+            </EuiFlexGroup>
+        </EuiPageTemplate.Section>
+
+        <EuiPageTemplate.Section>
             <EuiButton>Create</EuiButton>
         </EuiPageTemplate.Section>
     </>)
