@@ -1,5 +1,6 @@
 import grpc
 import concurrent.futures as futures
+import os
 
 from pandare import Panda
 
@@ -54,7 +55,13 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 
 def serve():
     #TODO remove hardcoding to replace with param solution and move into agent
-    panda = Panda(generic='x86_64')
+    if(os.path.isfile("/panda/shared/system_image.qcow2")):
+        panda = Panda(arch='x86_64', qcow='/panda/shared/system_image.qcow2', mem='1024',
+                 os='linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr', expect_prompt='root@ubuntu:.*# ',
+                 extra_args='-display none')
+    else:
+        panda = Panda(generic='x86_64')
+
     agent = PandaAgent(panda)
     server = grpc.server(executor)
     pb_grpc.add_PandaAgentServicer_to_server(

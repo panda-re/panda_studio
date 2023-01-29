@@ -26,7 +26,7 @@ type dockerGrpcPandaAgent struct {
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
-func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
+func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (PandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -44,6 +44,15 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 		cli:         cli,
 		containerId: nil,
 		sharedDir:   &sharedDir,
+	}
+
+	if file_path != "" {
+		// Copy given image into shared directory
+		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
+		if (err != nil && err != io.EOF) || nBytes == 0 {
+			print("Error in copying")
+			return nil, err
+		}
 	}
 
 	// Start the container
@@ -163,12 +172,6 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
 			},
-			// So PANDA doesn't need to download the same image
-			{
-				Type:   "bind",
-				Source: "/root/.panda",
-				Target: "/root/.panda",
-			},
 		},
 		// make sure the container is removed on exit
 		AutoRemove: true,
@@ -207,24 +210,28 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 	return nil
 }
 
-func copyFileHelper(source_path string, destination_path string, file_name string) (int64, error) {
+// This method is used to copy a local file to the shared directory for use by the agent
+// source_file_path - File path to local file being copied
+// shared_dir - the path of the shared directory the file is being copied to
+// copied_file_name - name of the new file after being copied
+func copyFileHelper(source_file_path string, shared_dir_path string, copied_file_name string) (int64, error) {
 
-	sourceFileStat, err := os.Stat(source_path)
+	sourceFileStat, err := os.Stat(source_file_path)
 	if err != nil {
 		return 0, err
 	}
 
 	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", source_path)
+		return 0, fmt.Errorf("%s is not a regular file", source_file_path)
 	}
 
-	source, err := os.Open(source_path)
+	source, err := os.Open(source_file_path)
 	if err != nil {
 		return 0, err
 	}
 	defer source.Close()
 
-	destination, err := os.Create(destination_path + file_name)
+	destination, err := os.Create(shared_dir_path + copied_file_name)
 	if err != nil {
 		return 0, err
 	}
