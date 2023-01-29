@@ -39,11 +39,6 @@ function Layout() {
       iconType: 'list',
       onClick: () => navigate('/interactions')
     },
-    {
-      label:'Create Recording',
-      iconType: 'play',
-      onClick: () => navigate('/createRecording')
-    },
   ];
 
   return (<>

@@ -1,16 +1,8 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
 import { useNavigate } from 'react-router';
+import { Recording } from './Interfaces';
 
 import prettyBytes from 'pretty-bytes';
-
-// Recording ID, name, OS, Timestamp, Size, view specs
-interface Recording {
-  id: string;
-  name: string;
-  date: Date;
-  imageName: string;
-  size: number;
-};
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {

@@ -1,17 +1,7 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
 import prettyBytes from 'pretty-bytes';
 import { useNavigate } from 'react-router-dom';
-
-
-
-// image ID, name, OS, Timestamp, Size, view specs
-interface Image {
-  id: string;
-  name: string;
-  date: Date;
-  operatingSystem: string;
-  size: number;
-};
+import { Image } from './Interfaces';
 
 const tableColumns: EuiBasicTableColumn<Image>[] = [
   {
