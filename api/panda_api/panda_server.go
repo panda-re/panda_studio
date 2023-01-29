@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
-	"net/http"
-	"time"
 )
 
 type parameters struct {
@@ -54,7 +55,7 @@ func postRecording(c *gin.Context) {
 func startExecutor(commands []string) []string {
 	ctx := context.Background()
 
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
 	if err != nil {
 		panic(err)
 	}

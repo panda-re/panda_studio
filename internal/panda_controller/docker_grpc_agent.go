@@ -3,6 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	"github.com/pkg/errors"
 )
 
 type dockerGrpcPandaAgent struct {
@@ -21,11 +23,10 @@ type dockerGrpcPandaAgent struct {
 	sharedDir   *string
 }
 
-
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
-func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
+func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (PandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -43,6 +44,15 @@ func CreateDefaultDockerPandaAgent(ctx context.Context) (PandaAgent, error) {
 		cli:         cli,
 		containerId: nil,
 		sharedDir:   &sharedDir,
+	}
+
+	if file_path != "" {
+		// Copy given image into shared directory
+		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
+		if (err != nil && err != io.EOF) || nBytes == 0 {
+			print("Error in copying")
+			return nil, err
+		}
 	}
 
 	// Start the container
@@ -129,10 +139,23 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	// Strip off the shared folder prefix so that paths are correct on this system
 	recordingName := strings.Replace(recording.RecordingName, "./shared/", "", 1)
 
-	return &PandaAgentRecording{
+	new_recording := PandaAgentRecording{
 		RecordingName: recordingName,
-		Location: *pa.sharedDir,
-	}, nil
+		Location:      *pa.sharedDir,
+	}
+
+	// Copy given image into shared directory
+	//TODO: Replace destination with filesystem target
+	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying snapshot")
+	}
+
+	nBytes, err = copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying nondeterministic log")
+	}
+	return &new_recording, nil
 }
 
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
@@ -148,12 +171,6 @@ func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 				Type:   "bind",
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
-			},
-			// So PANDA doesn't need to download the same image
-			{
-				Type:   "bind",
-				Source: "/root/.panda",
-				Target: "/root/.panda",
 			},
 		},
 		// make sure the container is removed on exit
@@ -191,4 +208,37 @@ func (pa *dockerGrpcPandaAgent) stopContainer(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// This method is used to copy a local file to the shared directory for use by the agent
+// source_file_path - File path to local file being copied
+// shared_dir - the path of the shared directory the file is being copied to
+// copied_file_name - name of the new file after being copied
+func copyFileHelper(source_file_path string, shared_dir_path string, copied_file_name string) (int64, error) {
+
+	sourceFileStat, err := os.Stat(source_file_path)
+	if err != nil {
+		return 0, err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", source_file_path)
+	}
+
+	source, err := os.Open(source_file_path)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(shared_dir_path + copied_file_name)
+	if err != nil {
+		return 0, err
+	}
+
+	nBytes, err := io.Copy(destination, source)
+
+	destination.Close()
+
+	return nBytes, err
 }
