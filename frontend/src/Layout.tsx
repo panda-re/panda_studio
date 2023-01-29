@@ -9,6 +9,7 @@ import CreateRecordingPage from "./pages/CreateRecording";
 import RecordingDashboardPage from './pages/RecordingDashboard';
 import RecordingDetailsPage from './pages/RecordingDetailsPage';
 import ImageDetails from "./pages/ImageDetails";
+import CreateInteractionProgramPage from './pages/CreateInteractionProgram';
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
@@ -108,6 +109,7 @@ function Layout() {
         <Route path="/createRecording" element={<CreateRecordingPage />} />
         <Route path="/recordings" element={<RecordingDashboardPage />}/>
         <Route path="/recordingDetails" element={<RecordingDetailsPage />}/>
+        <Route path="/createInteractionProgram" element={<CreateInteractionProgramPage />}/>
         <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
         <Route path="/imageDetails" element={<ImageDetails />} />
