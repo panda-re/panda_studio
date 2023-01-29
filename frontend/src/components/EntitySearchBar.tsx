@@ -5,11 +5,16 @@ import React, { useState, Fragment, MutableRefObject } from 'react';
 // entities: list of "stringified" entities to let user select from
 // returnSelected: callback function (hook) defined by parent component to retrieve the selected item from the child component
 // ------------------------------------------------------------
-//    create a callback like this in the parent's component construction method: 
-// const [selectedRecording, setSelectedRecording] = React.useState<String | undefined>("NONE SELECTED MESSAGE");
-// function returnSelected(message: String){
-//    setSelectedRecording(message);
-// }
+// let imageEntities: EuiSelectableOption[] = [];
+//   data.map((r) =>
+//     imageEntities.push({label: `${r.id} - ${r.name} - ${r.operatingSystem} - ${r.date.toLocaleDateString()} - ${prettyBytes(r.size, { maximumFractionDigits: 2 })}`,
+//   data: r})
+//   );
+
+//   const [selectedImage, setSelectedImage] = React.useState<EuiSelectableOption | undefined>(undefined);
+//   function returnSelectedImage(message: EuiSelectableOption){
+//    setSelectedImage(message);
+//   }
 interface EntitySearchBarProps{
     name: String;
     entities: EuiSelectableOption[]
