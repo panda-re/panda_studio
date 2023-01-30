@@ -11,6 +11,7 @@ func main() {
 	// Variables for keeping track of pass/fail of test
 	num_tests := 0
 	num_passed := 0
+	recording_name := "test"
 
 	ctx := context.Background()
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
@@ -30,6 +31,7 @@ func main() {
 		"ls /",
 	}
 
+	println("Testing PANDA Agent")
 	// Running a command before PANDA starts
 	num_tests++
 	for _, cmd := range commands {
@@ -83,9 +85,10 @@ func main() {
 		panic(err)
 	}
 
-	if err := agent.StartRecording(ctx, "test"); err != nil {
+	if err := agent.StartRecording(ctx, recording_name); err != nil {
 		panic(err)
 	}
+
 	// Starting second recording while one is in progress
 	num_tests++
 	if err := agent.StartRecording(ctx, "testing"); err != nil {
@@ -108,8 +111,54 @@ func main() {
 		panic(err)
 	}
 
+	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer replay_agent.Close()
+	if err != nil {
+		panic(err)
+	}
+	println("Testing PANDA replay")
+	// Testing stopping a replay before starting
+	num_tests++
+	if _, err := replay_agent.StopReplay(ctx); err != nil {
+		println("Test Passed. Prevented stopping of a non-existent replay")
+		num_passed++
+	} else {
+		println("Test Failed. Stopped nothing from being replayed")
+	}
+
+	// Starting a replay of a recording that doesn't exist
+	num_tests++
+	if _, err := replay_agent.StartReplay(ctx, "DNE"); err != nil {
+		println("Test Passed. Prevented replay of a recording that doesn't exist")
+		num_passed++
+	} else {
+		println("Test Failed. Attempted to replay a nonexistant recording")
+	}
+
+	// Testing return of serial and execution
+	num_tests++
+	replay, err := replay_agent.StartReplay(ctx, recording_name)
+	if err != nil {
+		println("Test Failed. Could not replay")
+		panic(err)
+	}
+	if replay.Serial != "" && replay.Replay != "" {
+		// TODO better job ensuring the logs are correct
+		println("Test Passed. Replay ran successfully")
+		num_passed++
+	} else {
+		println("Test Failed. Replay returned partially incomplete")
+	}
+
 	fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
 	err = agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+	err = replay_agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}

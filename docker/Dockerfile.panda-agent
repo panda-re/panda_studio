@@ -23,4 +23,4 @@ COPY *.py ./
 EXPOSE 50051
 # ENTRYPOINT ["python3", "/panda/server.py"]
 # This will pipe PANDA's output to a file to later be read. Useful for replays
-ENTRYPOINT ["sh", "-c", "python3 /panda/server.py > ./shared/test.txt"]
+ENTRYPOINT ["sh", "-c", "python3 /panda/server.py > ./shared/execution.log"]

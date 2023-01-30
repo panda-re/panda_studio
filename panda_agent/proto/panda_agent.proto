@@ -44,9 +44,12 @@ message StartReplayRequest {
     string recording_name = 1;
 }
 message StartReplayResponse {
-    int32 statusCode = 1;
-    string output = 2;
+    string serial = 1;
+    string replay = 2;
 }
 
 message StopReplayRequest {}
-message StopReplayResponse {}
+message StopReplayResponse {
+    string serial = 1;
+    string replay = 2;
+}

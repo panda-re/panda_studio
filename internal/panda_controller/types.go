@@ -19,8 +19,8 @@ type PandaAgent interface {
 type PandaReplayAgent interface {
 	StartAgent(ctx context.Context) error
 	StopAgent(ctx context.Context) error
-	StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error)
-	StopReplay(ctx context.Context) error
+	StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
+	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
 	Close() error
 }
 
@@ -31,6 +31,11 @@ type PandaAgentRunCommandResult struct {
 type PandaAgentRecording struct {
 	RecordingName string
 	Location      string
+}
+
+type PandaAgentReplayResult struct {
+	Serial string // Captured serial through PANDA callback
+	Replay string // Replay execution through redirected output to file
 }
 
 func (r *PandaAgentRecording) GetSnapshotFileName() string {

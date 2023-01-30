@@ -235,29 +235,11 @@ func (pa *dockerGrpcPandaReplayAgent) StartAgent(ctx context.Context) error {
 
 // StopAgent implements PandaReplayAgent
 func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) error {
-	// The code below assumes the PANDA output was logged in a file called test.txt
-	// It then prints the output
-	log_file := fmt.Sprintf("%s/%s", *pa.sharedDir, "test.txt")
-
-	file, err := os.Open(log_file)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			print(err)
-		}
-	}()
-
-	b, err := io.ReadAll(file)
-	fmt.Printf("%s", b)
-
 	return pa.grpcAgent.StopAgent(ctx)
 }
 
 // StartReplay implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentRunCommandResult, error) {
-	// TODO
+func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
 	// Copy file into shared directory
 	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
 	snapshotName := fmt.Sprintf("%s-rr-snp", recordingName)
@@ -277,7 +259,7 @@ func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recording
 }
 
 // StopReplay implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StopReplay(ctx context.Context) error {
+func (pa *dockerGrpcPandaReplayAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResult, error) {
 	return pa.grpcAgent.StopReplay(ctx)
 }
 

@@ -53,12 +53,16 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         )
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
-        output = self.agent.start_replay(request.recording_name)
-        return pb.StartReplayResponse(statusCode=0, output=output)
+        serial = self.agent.start_replay(request.recording_name)
+        with (open("./shared/execution.log")) as file:
+            replay = file.read()
+        return pb.StartReplayResponse(serial=serial, replay=replay)
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
-        self.agent.stop_replay()
-        return pb.StopReplayResponse()
+        serial = self.agent.stop_replay()
+        with (open("./shared/execution.log")) as file:
+            replay = file.read()
+        return pb.StopReplayResponse(serial=serial, replay=replay)
 
 
 def serve():
