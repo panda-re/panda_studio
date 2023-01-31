@@ -9,6 +9,9 @@ import CreateRecordingPage from "./pages/CreateRecording";
 import RecordingDashboardPage from './pages/RecordingDashboard';
 import RecordingDetailsPage from './pages/RecordingDetailsPage';
 import ImageDetails from "./pages/ImageDetails";
+import InteractionDashboard from "./pages/InteractionDashboard";
+import InteractionDetails from "./pages/InteractionDetails";
+
 
 function Layout() {
   const { euiTheme } = useEuiTheme();
@@ -32,9 +35,9 @@ function Layout() {
       onClick: () => navigate('/recordings'),
     },
     {
-      label:'Create Recording',
-      iconType: 'play',
-      onClick: () => navigate('/createRecording')
+      label:'Interactions',
+      iconType: 'list',
+      onClick: () => navigate('/interactions')
     },
   ];
 
@@ -111,6 +114,8 @@ function Layout() {
         <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
         <Route path="/imageDetails" element={<ImageDetails />} />
+        <Route path="/interactions" element={<InteractionDashboard />} />
+        <Route path="/interactionDetails" element={<InteractionDetails />} />
       </Routes>
 
     </EuiPageTemplate>

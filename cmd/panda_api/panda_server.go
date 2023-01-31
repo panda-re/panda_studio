@@ -90,7 +90,7 @@ func postRecording(c *gin.Context) {
 func startExecutor(commands []string) []string {
 	ctx := context.Background()
 
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
 	if err != nil {
 		panic(err)
 	}

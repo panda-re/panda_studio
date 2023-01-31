@@ -13,7 +13,7 @@ func main() {
 	//defer cancel()
 
 	// agent, err := controller.CreateDefaultGrpcPandaAgent()
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
