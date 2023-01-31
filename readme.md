@@ -51,11 +51,6 @@ docker build -f ./docker/Dockerfile.panda-agent -t pandare/panda_agent ./panda_a
 docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 ```
 
-5. Build the PANDA API
-```
-docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
-```
-
 6. Run it!
 ```
 docker run -it --rm \
@@ -76,10 +71,10 @@ docker run -it --rm \
 
 2. Start the API server with the required services
 ```
-docker compose -f ./docker/docker-compose.services.dev.yml -f ./docker/docker-compose.api.dev.yml up -d
+docker compose -f ./docker/docker-compose.services.dev.yml -f ./docker/docker-compose.api.dev.yml up --build panda_api
 ```
 
-Note: you can use ctrl-C to quit the API
+Note: you can use ctrl-C to quit the API. Changes made to the API will automatically be rebuilt
 
 ### Accessing the UI for backend services
 
