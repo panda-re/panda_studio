@@ -34,3 +34,4 @@ panda_agent/shared/
 
 # Generated go files
 *.gen.go
+*.gen.ts
