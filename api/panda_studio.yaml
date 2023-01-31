@@ -1,0 +1,226 @@
+openapi: "3.0.2"
+info:
+  title: PANDA Studio API
+  version: "0.1"
+servers:
+  - url: http://localhost:8080/api
+paths:
+  # todo: create image, delete image, update image
+  /images:
+    get:
+      tags:
+        - image
+      summary: Finds all Images
+      operationId: findAllImages
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Image"
+    post:
+      tags:
+        - image
+      summary: Creates new Image
+      operationId: createImage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateImageRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+  /images/{imageId}:
+    get:
+      tags:
+        - image
+      summary: Get image with specified ID
+      operationId: findImageById
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        "404":
+          description: Not Found
+    put:
+      tags:
+        - image
+      summary: Update image
+      operationId: updateImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+        - image
+      summary: Delete image with specified ID
+      operationId: deleteImageById
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        "404":
+          description: Not Found
+  /images/{imageId}/files:
+    post:
+      tags:
+        - image
+        - file
+      summary: Create new image file
+      operationId: createImageFile
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateImageFileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageFile"
+        "404":
+          description: Image not found
+        "409":
+          description: Image already contains file
+  /images/{imageId}/files/{fileId}:
+    get:
+      tags:
+        - image
+        - file
+      summary: Download image file
+      operationId: downloadImageFile
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not Found
+    delete:
+      tags:
+        - image
+        - file
+      summary: Delete image file
+      operationId: deleteImageFile
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageFile"
+components:
+  parameters:
+    ImageId:
+      name: imageId
+      in: path
+      description: ID of image
+      required: true
+      schema:
+        type: string
+    FileId:
+      name: fileId
+      in: path
+      description: ID of file
+      required: true
+      schema:
+        type: string
+  schemas:
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageFile"
+        config:
+          $ref: "#/components/schemas/PandaConfig"
+
+    ImageFile:
+      type: object
+      properties:
+        id:
+          type: string
+        file_name:
+          type: string
+        file_type:
+          $ref: "#/components/schemas/ImageFileType"
+        size:
+          type: integer
+        sha256:
+          type: string
+    
+    ImageFileType:
+      type: string
+      enum: [qcow2, dtb, kernel]
+
+    PandaConfig:
+      # todo: define this schema
+      type: object
+    
+    CreateImageRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: "#/components/schemas/PandaConfig"
+
+    CreateImageFileRequest:
+      type: object
+      properties:
+        file_name:
+          type: string
+        file_type:
+          $ref: "#/components/schemas/ImageFileType"
+        file:
+          type: string
+          format: binary
