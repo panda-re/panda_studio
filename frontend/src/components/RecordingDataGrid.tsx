@@ -1,9 +1,10 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-import prettyBytes from 'pretty-bytes';
-import { useNavigate } from 'react-router-dom';
-import { Image } from './Interfaces';
+import { useNavigate } from 'react-router';
+import { Recording } from './Interfaces';
 
-const tableColumns: EuiBasicTableColumn<Image>[] = [
+import prettyBytes from 'pretty-bytes';
+
+const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {
     field: 'id',
     name: 'Id',
@@ -13,8 +14,8 @@ const tableColumns: EuiBasicTableColumn<Image>[] = [
     name: 'File Name',
   },
   {
-    field: 'operatingSystem',
-    name: 'Operating System',
+    field: 'imageName',
+    name: 'Image Name',
   },
   {
     field: 'size',
@@ -27,31 +28,39 @@ const tableColumns: EuiBasicTableColumn<Image>[] = [
   },
 ]
 
-const data: Image[] = [
+const data: Recording[] = [
   {
-    id: 'AGHA68',
-    name: 'wheezy.qcow2',
-    operatingSystem: 'Ubuntu',
+    id: 'record_1',
+    name: 'test_recording',
+    imageName: 'wheezy.qcow2',
+    date: new Date(),
+    size: 150*1024*1024,
+  },
+  {
+    id: 'record_2',
+    name: 'test_recording2',
+    imageName: 'wheezy.qcow2',
     date: new Date(),
     size: 150*1024*1024,
   }
 ];
 
-function ImagesDataGrid() {
+function RecordingDataGrid() {
   const navigate = useNavigate();
-  const getRowProps = (item: Image) => {
+
+  const getRowProps = (item: Recording) => {
     const { id } = item;
     return {
-      'data-test-subj': `image-row-${id}`,
+      'data-test-subj': `recording-row-${id}`,
       onClick: () => {
-        navigate('/imageDetails', {state:{item: item}})
+        navigate('/recordingDetails', {state:{item: item}});
       },
     }
-  }
+  };
 
   return (<>
     <EuiBasicTable
-      tableCaption="Images"
+      tableCaption="Recordings"
       items={data}
       rowHeader="firstName"
       columns={tableColumns}
@@ -60,4 +69,4 @@ function ImagesDataGrid() {
   </>)
 }
 
-export default ImagesDataGrid;
+export default RecordingDataGrid;

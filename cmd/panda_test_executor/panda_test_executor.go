@@ -14,7 +14,7 @@ func main() {
 	recording_name := "test"
 
 	ctx := context.Background()
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx)
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
 	if err != nil {
 		panic(err)
 	}

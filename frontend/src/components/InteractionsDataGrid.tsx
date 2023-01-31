@@ -1,9 +1,13 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-import prettyBytes from 'pretty-bytes';
 import { useNavigate } from 'react-router-dom';
-import { Image } from './Interfaces';
 
-const tableColumns: EuiBasicTableColumn<Image>[] = [
+interface InteractionProgram {
+  id: string;
+  name: string;
+  date: Date;
+};
+
+const tableColumns: EuiBasicTableColumn<InteractionProgram>[] = [
   {
     field: 'id',
     name: 'Id',
@@ -13,45 +17,34 @@ const tableColumns: EuiBasicTableColumn<Image>[] = [
     name: 'File Name',
   },
   {
-    field: 'operatingSystem',
-    name: 'Operating System',
-  },
-  {
-    field: 'size',
-    name: 'Size',
-    render: (value: number) => prettyBytes(value, { maximumFractionDigits: 2 }),
-  },
-  {
     field: 'date',
     name: 'Timestamp',
   },
 ]
 
-const data: Image[] = [
+const data: InteractionProgram[] = [
   {
-    id: 'AGHA68',
-    name: 'wheezy.qcow2',
-    operatingSystem: 'Ubuntu',
-    date: new Date(),
-    size: 150*1024*1024,
+    id: 'INT001',
+    name: 'list-one',
+    date: new Date()
   }
 ];
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
-  const getRowProps = (item: Image) => {
+  const getRowProps = (item: InteractionProgram) => {
     const { id } = item;
     return {
       'data-test-subj': `image-row-${id}`,
       onClick: () => {
-        navigate('/imageDetails', {state:{item: item}})
+        navigate('/interactionDetails', {state:{item: item}})
       },
     }
   }
 
   return (<>
     <EuiBasicTable
-      tableCaption="Images"
+      tableCaption="Interaction Programs"
       items={data}
       rowHeader="firstName"
       columns={tableColumns}
