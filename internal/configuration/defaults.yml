@@ -1,0 +1,14 @@
+# Note: all configuration keys must exists in this file, or environment variables will not
+# load properly
+s3:
+  endpoint:
+  ssl: true
+  access_key:
+  secret_key:
+  buckets:
+    recordings: panda-recordings
+    images: panda-images
+    logs: panda-logs
+mongodb:
+  uri:
+  database: panda_studio

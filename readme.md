@@ -71,7 +71,7 @@ docker run -it --rm \
 
 2. Start the API server with the required services
 ```
-docker compose -f ./docker/docker-compose.services.dev.yml -f ./docker/docker-compose.api.dev.yml up --build panda_api
+docker compose -f ./docker/docker-compose.dev.yml --build panda_api
 ```
 
 Note: you can use ctrl-C to quit the API. Changes made to the API will automatically be rebuilt
