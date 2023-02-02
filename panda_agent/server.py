@@ -39,7 +39,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)
-        return pb.RunCommandReply(statusCode=0, output=output)
+        return pb.RunCommandResponse(statusCode=0, output=output)
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
         self.agent.start_recording(recording_name=request.recording_name)
