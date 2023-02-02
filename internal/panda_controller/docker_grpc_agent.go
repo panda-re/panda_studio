@@ -237,18 +237,13 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	return &new_recording, nil
 }
 
-// StartAgent implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StartAgent(ctx context.Context) error {
-	return pa.grpcAgent.StartAgent(ctx)
-}
-
 // StopAgent implements PandaReplayAgent
 func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) error {
 	return pa.grpcAgent.StopAgent(ctx)
 }
 
 // StartReplay implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+func (pa *dockerGrpcPandaReplayAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
 	// Copy file into shared directory
 	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
 	snapshotName := fmt.Sprintf("%s-rr-snp", recordingName)
@@ -264,7 +259,7 @@ func (pa *dockerGrpcPandaReplayAgent) StartReplay(ctx context.Context, recording
 	}
 	// Location of the recording for PANDA/container
 	recordingLocation := fmt.Sprintf("./shared/%s", recordingName)
-	return pa.grpcAgent.StartReplay(ctx, recordingLocation)
+	return pa.grpcAgent.StartReplayAgent(ctx, recordingLocation)
 }
 
 // StopReplay implements PandaReplayAgent

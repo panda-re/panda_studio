@@ -73,7 +73,7 @@ func main() {
 	}
 
 	fmt.Println("Starting replay")
-	replay, err := replay_agent.StartReplay(ctx, "test")
+	replay, err := replay_agent.StartReplayAgent(ctx, "test")
 	if err != nil {
 		panic(err)
 	}

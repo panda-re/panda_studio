@@ -131,7 +131,7 @@ func main() {
 
 	// Starting a replay of a recording that doesn't exist
 	num_tests++
-	if _, err := replay_agent.StartReplay(ctx, "DNE"); err != nil {
+	if _, err := replay_agent.StartReplayAgent(ctx, "DNE"); err != nil {
 		println("Test Passed. Prevented replay of a recording that doesn't exist")
 		num_passed++
 	} else {
@@ -140,7 +140,7 @@ func main() {
 
 	// Testing return of serial and execution
 	num_tests++
-	replay, err := replay_agent.StartReplay(ctx, recording_name)
+	replay, err := replay_agent.StartReplayAgent(ctx, recording_name)
 	if err != nil {
 		println("Test Failed. Could not replay")
 		panic(err)
