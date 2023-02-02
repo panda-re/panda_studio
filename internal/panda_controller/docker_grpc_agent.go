@@ -78,7 +78,7 @@ func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (Panda
 		return nil, err
 	}
 
-	agent.grpcAgent = grpcAgent
+	agent.grpcAgent = grpcAgent.(PandaAgent)
 
 	return agent, nil
 }
@@ -160,12 +160,12 @@ func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error)
 
 	// Connect to grpc over unix socket
 	grpcSocket := fmt.Sprintf(DOCKER_GRPC_SOCKET_PATTERN, *agent.sharedDir)
-	grpcAgent, err := CreateGrpcPandaReplayAgent(grpcSocket)
+	grpcAgent, err := CreateGrpcPandaAgent(grpcSocket)
 	if err != nil {
 		return nil, err
 	}
 
-	agent.grpcAgent = grpcAgent
+	agent.grpcAgent = grpcAgent.(PandaReplayAgent)
 
 	return agent, nil
 }
