@@ -8,11 +8,8 @@ import (
 )
 
 func main() {
+	// Default agent
 	ctx := context.Background()
-	// ctx, cancel := context.WithTimeout(ctx, time.Second*15)
-	//defer cancel()
-
-	// agent, err := controller.CreateDefaultGrpcPandaAgent()
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
@@ -60,6 +57,30 @@ func main() {
 	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
 
 	err = agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	// Replay agent
+	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer agent.Close()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Starting replay")
+	replay, err := replay_agent.StartReplay(ctx, "test")
+	if err != nil {
+		panic(err)
+	}
+	println(replay.Serial)
+	println(replay.Replay)
+
+	err = replay_agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}

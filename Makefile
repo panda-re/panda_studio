@@ -1,4 +1,4 @@
-.PHONY: all test full_initial_setup initial_setup_priviliged initial_setup docker_agent panda_agent_protoc docker_executor docker_replay_executor panda_executor
+.PHONY: all test full_initial_setup initial_setup_priviliged initial_setup docker_agent panda_agent_protoc docker_executor panda_executor
 
 all: panda_executor panda_agent_protoc docker_agent docker_executor
 
@@ -19,9 +19,6 @@ docker_agent:
 
 docker_executor:
 	docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
-
-docker_replay_executor:
-	docker build -f docker/Dockerfile.panda-replay-executor -t pandare/panda_replay_executor .
 
 docker_executor_test:
 	docker build -f docker/Dockerfile.panda-executor-test -t pandare/panda_test_executor .
