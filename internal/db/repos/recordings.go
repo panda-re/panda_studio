@@ -8,6 +8,7 @@ import (
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -17,6 +18,7 @@ type RecordingRepository interface {
 	ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error)
 	DeleteRecording(ctx context.Context, imageId db.ObjectID) (*models.Recording, error)
 	FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error)
+	CreateRecording(ctx context.Context, obj *models.Recording) (*models.Recording, error)
 }
 
 type mongoS3RecordingRepository struct {
@@ -41,6 +43,21 @@ func GetRecordingRepository(ctx context.Context) (RecordingRepository, error) {
 		s3Client:         s3Client,
 		recordingsBucket: configuration.GetConfig().S3.Buckets.RecordingsBucket,
 	}, nil
+}
+
+func (m mongoS3RecordingRepository) CreateRecording(ctx context.Context, obj *models.Recording) (*models.Recording, error) {
+	obj.ID = db.NewObjectID()
+
+	// insert into mongo
+	result, err := m.coll.InsertOne(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedId := result.InsertedID.(primitive.ObjectID)
+	obj.ID = &insertedId
+
+	return obj, nil
 }
 
 func (m mongoS3RecordingRepository) FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error) {

@@ -9,3 +9,9 @@ type Recording struct {
 	RecordingImage Image       `bson:"recordingImage" json:"recordingImage"`
 	// Interaction list
 }
+
+type CreateRecordingRequest struct {
+	Name          string
+	ImageID       db.ObjectID
+	InteractionID db.ObjectID
+}

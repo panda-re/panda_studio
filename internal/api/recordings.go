@@ -7,14 +7,18 @@ import (
 	"net/http"
 )
 
+func (s *PandaStudioServer) CreateRecording(ctx *gin.Context) {
+	//TODO: implement me
+}
+
 func (s *PandaStudioServer) FindRecordingById(ctx *gin.Context, recordingId string) {
-	image, err := s.recordingRepo.FindRecording(ctx, db.ParseObjectID(recordingId))
+	recording, err := s.recordingRepo.FindRecording(ctx, db.ParseObjectID(recordingId))
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, image)
+	ctx.JSON(http.StatusOK, recording)
 }
 
 func (s *PandaStudioServer) DeleteRecordingById(ctx *gin.Context, recordingId string) {
