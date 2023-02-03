@@ -8,6 +8,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/panda-re/panda_studio/internal/api"
+	config "github.com/panda-re/panda_studio/internal/configuration"
+	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
@@ -22,8 +25,17 @@ type responses struct {
 }
 
 func main() {
-	router := gin.Default()
-	router.Use(cors.New(cors.Config{
+	if err := config.LoadConfig(); err != nil {
+		panic(err)
+	}
+	if err := runServer(); err != nil {
+		panic(err)
+	}
+}
+
+func runServer() error {
+	r := gin.Default()
+	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "PATCH", "POST"},
 		AllowHeaders:     []string{"*"},
@@ -34,9 +46,32 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	router.POST("/panda", postRecording)
 
-	router.Run("localhost:8080")
+	r.Use(middleware.ErrorHandler())
+
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		return err
+	}
+	swagger.Servers = nil
+	server, err := api.NewPandaStudioServer()
+	if err != nil {
+		return err
+	}
+
+	// r.Use(oapimiddleware.OapiRequestValidator(swagger))
+	api.RegisterHandlersWithOptions(r, server, api.GinServerOptions{
+		BaseURL: "/api",
+	})
+	//images.ImagesRegister(apiGroup.Group("/images"))
+
+	r.POST("/panda", postRecording)
+
+	if err := r.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func postRecording(c *gin.Context) {

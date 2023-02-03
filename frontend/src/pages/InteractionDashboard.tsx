@@ -1,29 +1,32 @@
 import {
   EuiButton,
   EuiFieldSearch,
+  EuiFieldText,
+  EuiFlexGroup,
   EuiFlexItem,
   EuiPageTemplate,
   EuiSpacer,
   EuiText
 } from '@elastic/eui';
-import ImagesDataGrid from '../components/ImagesDataGrid';
+import InteractionsDataGrid from '../components/InteractionsDataGrid';
 import {EuiFlexGrid} from "@elastic/eui";
+import RecordingDataGrid from "../components/RecordingDataGrid";
 
-function ImagesPage() {
+function InteractionDashboard() {
 
   return (<>
-    <EuiPageTemplate.Header pageTitle='Image Dashboard' rightSideItems={[]} />
+    <EuiPageTemplate.Header pageTitle='Interactions Dashboard' rightSideItems={[]} />
 
     <EuiPageTemplate.Section>
       <EuiFlexGrid columns={4}>
         <EuiFlexItem>
           <EuiFieldSearch
-            placeholder="Enter Image ID"
+            placeholder="Enter Interaction ID"
           />
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiFieldSearch
-            placeholder="Enter Image Name"
+            placeholder="Enter Interaction Name"
           />
         </EuiFlexItem>
         <EuiFlexItem>
@@ -32,15 +35,14 @@ function ImagesPage() {
           />
         </EuiFlexItem>
         <EuiFlexItem>
-          <EuiButton iconType={'plusInCircle'}>Upload Base Image</EuiButton>
+          <EuiButton iconType={'plusInCircle'}>Create New Interaction</EuiButton>
         </EuiFlexItem>
       </EuiFlexGrid>
       <EuiSpacer size="xl" />
 
-      <ImagesDataGrid />
+      <InteractionsDataGrid />
     </EuiPageTemplate.Section>
-
   </>)
 }
 
-export default ImagesPage;
+export default InteractionDashboard;
