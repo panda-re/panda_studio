@@ -61,13 +61,13 @@ function CreateInteractionProgramPage (){
     (droppableId == "availableInteractions") ? actions.availableInteractions(list) : actions.chosenInteractions(list);
   };
 
-  const onDragUpdate = ({ source, destination }: {source: any, destination: any}) => {
+  const onDragUpdate = ({ source, destination }: {source: any, destination?: any}) => {
     const shouldRemove =
       !destination && source.droppableId == 'chosenInteractions';
     setIsItemRemovable(shouldRemove);
   };
 
-  const onDragEnd = ({ source, destination }: {source: any, destination: any}) => {
+  const onDragEnd = ({ source, destination }: {source: any, destination?: any}) => {
     if (source && destination) {
       if (source.droppableId === destination.droppableId) {
         const items = euiDragDropReorder(
