@@ -1,10 +1,15 @@
-import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiPageTemplate, EuiSelectableOption, EuiText} from '@elastic/eui';
 import {MutableRefObject, Ref, useCallback, useEffect, useRef, useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import React, { Component } from 'react'
-import Terminal from 'react-console-emulator'
+import EntitySearchBar from '../components/EntitySearchBar';
+import { Image, InteractionProgram } from '../components/Interfaces';
+
+import prettyBytes from 'pretty-bytes';
+import { useNavigate } from 'react-router';
 
 function CreateRecordingPage() {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [volume, setVolume] = useState('');
   const [program, setProgram] = useState('');
@@ -41,6 +46,89 @@ function CreateRecordingPage() {
     }
   }, [commands])
 
+  const data: Image[] = [
+    {
+      id: 'record_1',
+      name: 'test_recording',
+      operatingSystem: 'Ubuntu',
+      date: new Date(),
+      size: 150*1024*1024,
+    },
+    {
+      id: 'record_2',
+      name: 'test_recording2',
+      operatingSystem: 'Ubuntu',
+      date: new Date(),
+      size: 150*1024*1024,
+    }
+  ];
+
+  // Generate selectable options for Image search component
+  let imageEntities: EuiSelectableOption[] = [];
+  data.map((r) =>
+    imageEntities.push({label: `${r.id} - ${r.name} - ${r.operatingSystem} - ${r.date.toLocaleDateString()} - ${prettyBytes(r.size, { maximumFractionDigits: 2 })}`,
+  data: r})
+  );
+
+  const [selectedImage, setSelectedImage] = React.useState<EuiSelectableOption | undefined>(undefined);
+  function returnSelectedImage(message: EuiSelectableOption){
+   setSelectedImage(message);
+  }
+
+  const programs: InteractionProgram[] = [
+    {
+      id: 'program1',
+      name: 'Test Program 1',
+      date: new Date(),
+    },
+    {
+      id: 'program2',
+      name: 'Test Program 2',
+      date: new Date(),
+    },
+    {
+      id: 'program3',
+      name: 'Test Program 3',
+      date: new Date(),
+    },
+    {
+      id: 'program4',
+      name: 'Test Program 4',
+      date: new Date(),
+    },
+    {
+      id: 'program5',
+      name: 'Test Program 5',
+      date: new Date(),
+    },
+    {
+      id: 'program6',
+      name: 'Test Program 6',
+      date: new Date(),
+    },
+    {
+      id: 'program7',
+      name: 'Test Program 7',
+      date: new Date(),
+    },
+    {
+      id: 'program8',
+      name: 'Test Program 8',
+      date: new Date(),
+    },
+  ]
+
+  // Generate selectable options for Interaction Program search component
+  let interactionProgramEntities: EuiSelectableOption[] = [];
+  programs.map((r) =>
+    interactionProgramEntities.push({label: `${r.id} - ${r.name} - ${r.date.toLocaleDateString()}`})
+  );
+
+  const [selectedProgram, setSelectedProgram] = React.useState<EuiSelectableOption | undefined>(undefined);
+  function returnSelectedProgram(message: EuiSelectableOption){
+   setSelectedProgram(message);
+  }
+
   return (<>
     <EuiPageTemplate.Header pageTitle="Create Recording"/>
 
@@ -65,11 +153,7 @@ function CreateRecordingPage() {
           <EuiText>Image: </EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
-          <EuiFieldText
-            placeholder="eg, guest.img"
-            value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-          />
+          <EntitySearchBar name="Image" entities={imageEntities} returnSelectedOption={(returnSelectedImage)}></EntitySearchBar>
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
@@ -80,37 +164,25 @@ function CreateRecordingPage() {
           <EuiText>Specify commands to run:</EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
-          <EuiFieldText
-            placeholder="eg, uname -a, ls..."
-            value={program}
-            onChange={(e) => setProgram(e.target.value)}
-          />
+          <EntitySearchBar name="Interaction Program" entities={interactionProgramEntities} returnSelectedOption={(returnSelectedProgram)}></EntitySearchBar>
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
-
 
     <EuiPageTemplate.Section>
       <EuiFlexGroup justifyContent={"spaceAround"}>
         <EuiFlexItem grow={false}>
           <div>
-            <EuiButton onClick={sendAPICall}>Create Recording</EuiButton>
+            {/* <EuiButton onClick={sendAPICall}>Create Recording</EuiButton> */}
+            <EuiButton onClick={() => {
+              alert(`Creating recording with name: ${name}, image: ${selectedImage?.data?.name}, program: ${selectedProgram}`); 
+              // navigate('/recordings');
+            }}>Create Recording</EuiButton>
           </div>
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
 
-    <EuiPageTemplate.Section>
-      <EuiFlexGroup justifyContent={"spaceAround"}>
-        <EuiFlexItem>
-          <Terminal
-            ref={terminal}
-            commands={{}}
-            readOnly={true}
-          />
-        </EuiFlexItem>
-      </EuiFlexGroup>
-    </EuiPageTemplate.Section>
   </>)
 }
 export default CreateRecordingPage;

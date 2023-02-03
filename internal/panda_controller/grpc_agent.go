@@ -15,7 +15,8 @@ type grpcPandaAgent struct {
 
 const DEFAULT_GRPC_ADDR = "localhost:50051"
 
-func CreateGrpcPandaAgent(endpoint string) (PandaAgent, error) {
+// Either PandaAgent or PandaReplayAgent interface
+func CreateGrpcPandaAgent(endpoint string) (interface{}, error) {
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
@@ -29,10 +30,12 @@ func CreateGrpcPandaAgent(endpoint string) (PandaAgent, error) {
 	}, nil
 }
 
-func CreateDefaultGrpcPandaAgent() (PandaAgent, error) {
+// Either PandaAgent or PandaReplayAgent interface
+func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 	return CreateGrpcPandaAgent(DEFAULT_GRPC_ADDR)
 }
 
+// StartAgent implements PandaAgent
 func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
 	_, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
 	if err != nil {
@@ -42,6 +45,7 @@ func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
 	return nil
 }
 
+// StopAgent implements PandaAgent
 func (pa *grpcPandaAgent) StopAgent(ctx context.Context) error {
 	_, err := pa.cli.StopAgent(ctx, &pb.StopAgentRequest{})
 	if err != nil {
@@ -51,6 +55,7 @@ func (pa *grpcPandaAgent) StopAgent(ctx context.Context) error {
 	return nil
 }
 
+// RunCommand implements PandaAgent
 func (pa *grpcPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
 	resp, err := pa.cli.RunCommand(ctx, &pb.RunCommandRequest{
 		Command: cmd,
@@ -86,10 +91,36 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 	return &PandaAgentRecording{
 		RecordingName: resp.RecordingName,
 		// We cannot know the location with the information we have
-		Location:      "??",
+		Location: "??",
 	}, nil
 }
 
+// StartReplayAgent implements PandaReplayAgent
+func (pa *grpcPandaAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+	resp, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
+		RecordingName: recordingName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PandaAgentReplayResult{
+		Serial: resp.GetSerial(),
+		Replay: resp.GetReplay(),
+	}, nil
+}
+
+// StopReplay implements PandaReplayAgent
+func (pa *grpcPandaAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResult, error) {
+	resp, err := pa.cli.StopReplay(ctx, &pb.StopReplayRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &PandaAgentReplayResult{
+		Serial: resp.GetSerial(),
+		Replay: resp.GetReplay(),
+	}, nil
+}
 
 func (pa *grpcPandaAgent) Close() error {
 	return pa.cc.Close()

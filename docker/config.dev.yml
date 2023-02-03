@@ -1,0 +1,14 @@
+# Note - change these credentials for production use!
+# also todo: support loading this via environment variables
+s3:
+  endpoint: minio:9000
+  ssl: false
+  access_key: UZgFLiypw2yKUqfm
+  secret_key: HaGTqhqSRfjmjrD3patK5HBtJyyUgyMC
+  buckets:
+    recordings: panda-recordings
+    images: panda-images
+    logs: panda-logs
+mongodb:
+  uri: mongodb://admin:abc123def456@mongodb:27017
+  database: panda_studio

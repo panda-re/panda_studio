@@ -26,9 +26,10 @@ COPY . /app
 WORKDIR /app
 
 # Next build it
-RUN make panda_executor
+RUN make panda_api
 
 FROM ubuntu:20.04
 WORKDIR /app
-COPY --from=builder /app/bin/panda_executor /app/
-ENTRYPOINT [ "/app/panda_executor" ]
+COPY --from=builder /app/bin/panda_api /app/
+COPY ./docker/config.dev.yml /app/config.yml
+ENTRYPOINT [ "/app/panda_api" ]

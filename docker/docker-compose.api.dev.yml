@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  panda_api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.panda-api
+    ports:
+      - "8080:8080"
+    networks:
+      - panda_studio

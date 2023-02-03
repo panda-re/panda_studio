@@ -51,7 +51,7 @@ docker build -f ./docker/Dockerfile.panda-agent -t pandare/panda_agent ./panda_a
 docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 ```
 
-5. Run it!
+6. Run it!
 ```
 docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -60,10 +60,27 @@ docker run -it --rm \
     pandare/panda_executor
 ```
 
-6. Open the Dev Container (optional)
+7. Open the Dev Container (optional)
     - This contains a mostly complete toolchain with all the tools needed for local development
     - In VSCode, a toast will appear in the bottom right corner asking you to open the dev container
     - The dev container is not yet fully supported (working on it!)
+
+## Running the API
+
+1. Follow the above instructions to build the required containers
+
+2. Start the API server with the required services
+```
+docker compose -f ./docker/docker-compose.services.dev.yml -f ./docker/docker-compose.api.dev.yml up --build panda_api
+```
+
+Note: you can use ctrl-C to quit the API. Changes made to the API will automatically be rebuilt
+
+### Accessing the UI for backend services
+
+- Minio's GUI is available on `localhost:9001`. The sign-in information can be found in `docker/config.dev.yml` as access key and secret key
+
+- Mongo Express is a GUI for MongoDB and can be found at `localhost:8081`
 
 ## Other Instructions
 Prerequisites:

@@ -25,9 +25,13 @@ bin/
 *.sw?
 
 # qcow image folder
-images/
+/images/
 
 # Generated protobuf files
 *_pb2*
 pb/
 panda_agent/shared/
+
+# Generated go files
+*.gen.go
+*.gen.ts
