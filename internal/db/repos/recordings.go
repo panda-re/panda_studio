@@ -15,7 +15,7 @@ const RECORDINGS_TABLE string = "recordings"
 
 type RecordingRepository interface {
 	ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error)
-	DeleteRecording(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*models.Recording, error)
+	DeleteRecording(ctx context.Context, imageId db.ObjectID) (*models.Recording, error)
 	FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error)
 }
 
@@ -63,7 +63,7 @@ func (m mongoS3RecordingRepository) ReadRecording(ctx context.Context, recording
 	return recording, nil
 }
 
-func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.Recording, error) {
+func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
 	recording, err := m.FindRecording(ctx, recordingId)
 	if err != nil {
 		return nil, err
