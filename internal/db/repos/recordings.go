@@ -39,7 +39,7 @@ func GetRecordingRepository(ctx context.Context) (RecordingRepository, error) {
 	}
 
 	return &mongoS3RecordingRepository{
-		coll:             mongoClient.Collection(IMAGES_TABLE),
+		coll:             mongoClient.Collection(RECORDINGS_TABLE),
 		s3Client:         s3Client,
 		recordingsBucket: configuration.GetConfig().S3.Buckets.RecordingsBucket,
 	}, nil

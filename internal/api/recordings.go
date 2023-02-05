@@ -8,7 +8,7 @@ import (
 )
 
 func (s *PandaStudioServer) CreateRecording(ctx *gin.Context) {
-	//TODO: implement me
+	//TODO: do some stuff to actually make a recording
 }
 
 func (s *PandaStudioServer) FindRecordingById(ctx *gin.Context, recordingId string) {
