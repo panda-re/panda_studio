@@ -57,5 +57,7 @@ jobs:
       run: npm install -g yarn
     - name: Install npm packages using yarn
       run: yarn install
+    - name: Generate API client
+      run: yarn run generate:api
     - name: Build static site
       run: yarn run build

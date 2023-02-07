@@ -6,9 +6,11 @@ option go_package = "github.com/panda-re/panda_studio/panda_agent/pb";
 service PandaAgent {
     rpc StartAgent (StartAgentRequest) returns (StartAgentResponse) {}
     rpc StopAgent (StopAgentRequest) returns (StopAgentResponse) {}
-    rpc RunCommand (RunCommandRequest) returns (RunCommandReply) {}
+    rpc RunCommand (RunCommandRequest) returns (RunCommandResponse) {}
     rpc StartRecording (StartRecordingRequest) returns (StartRecordingResponse) {}
     rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
+    rpc StartReplay (StartReplayRequest) returns (StartReplayResponse) {}
+    rpc StopReplay (StopReplayRequest) returns (StopReplayResponse) {}
 }
 
 message StartAgentRequest {}
@@ -20,7 +22,7 @@ message RunCommandRequest {
     string command = 1;
 }
 
-message RunCommandReply {
+message RunCommandResponse {
     int32 statusCode = 1;
     string output = 2;
 }
@@ -35,4 +37,19 @@ message StopRecordingResponse {
     string recording_name = 1;
     string snapshot_filename = 2;
     string ndlog_filename = 3;
+}
+
+// TODO add plugins
+message StartReplayRequest {
+    string recording_name = 1;
+}
+message StartReplayResponse {
+    string serial = 1;
+    string replay = 2;
+}
+
+message StopReplayRequest {}
+message StopReplayResponse {
+    string serial = 1;
+    string replay = 2;
 }

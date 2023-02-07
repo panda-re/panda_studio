@@ -29,6 +29,9 @@ docker_api:
 panda_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_executor
 
+panda_replay_executor: panda_agent_protoc_go
+	go build -o ./bin/panda_executor ./cmd/panda_replay_executor
+
 panda_executor_test: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_test_executor
 

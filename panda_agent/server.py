@@ -39,7 +39,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)
-        return pb.RunCommandReply(statusCode=0, output=output)
+        return pb.RunCommandResponse(statusCode=0, output=output)
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
         self.agent.start_recording(recording_name=request.recording_name)
@@ -52,6 +52,19 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             snapshot_filename=f"{recording_name}-rr-snp",
             ndlog_filename=f"{recording_name}-rr-nondet.log"
         )
+
+    def StartReplay(self, request: pb.StartReplayRequest, context):
+        serial = self.agent.start_replay(request.recording_name)
+        with (open("./shared/execution.log")) as file:
+            replay = file.read()
+        return pb.StartReplayResponse(serial=serial, replay=replay)
+
+    def StopReplay(self, request: pb.StopReplayRequest, context):
+        serial = self.agent.stop_replay()
+        with (open("./shared/execution.log")) as file:
+            replay = file.read()
+        return pb.StopReplayResponse(serial=serial, replay=replay)
+
 
 def serve():
     #TODO remove hardcoding to replace with param solution and move into agent
