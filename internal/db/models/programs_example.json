@@ -1,7 +1,16 @@
-{
-    "id": "helloworld123",
-    "name": "test program",
-    "instructions": [
-        
-    ]
-}
+[
+		{
+			"id": "63d5955ed14c76798cf58c58",
+			"name": "Test Program",
+			"instructions": [
+				{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "start_recording",
+					"recording_name": "test_recording123"
+				}
+			]
+		}
+	]
