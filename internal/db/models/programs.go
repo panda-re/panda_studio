@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/panda-re/panda_studio/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +24,7 @@ type RunCommandInstruction struct {
 	Command string `bson:"command" json:"command"`
 }
 
-func (*RunCommandInstruction) GetType() string {
+func (*RunCommandInstruction) GetInstructionType() string {
 	return "command"
 }
 
@@ -31,7 +32,7 @@ type StartRecordingInstruction struct {
 	RecordingName string `bson:"recording_name" json:"recording_name"`
 }
 
-func (*StartRecordingInstruction) GetType() string {
+func (*StartRecordingInstruction) GetInstructionType() string {
 	return "start_recording"
 }
 
@@ -40,11 +41,11 @@ type UnmarshalFunc func([]byte, interface{}) error
 
 type discriminatedInstruction struct {
 	Type string `bson:"type" json:"type"`
-	InteractionProgramInstruction `bson:",inline" json:",inline"`
+	InteractionProgramInstruction `bson:"args" json:"args"`
 }
 
 func (ip *InteractionProgramInstructionList) marshal(Marshal MarshalFunc) ([]byte, error) {
-	typedInstructions := make([]discriminatedInstruction, len(*ip))
+	typedInstructions := make([]interface{}, len(*ip))
 	for i, inst := range *ip {
 		typedInstructions[i] = discriminatedInstruction{
 			Type: inst.GetInstructionType(),
@@ -69,7 +70,27 @@ func (ip *InteractionProgramInstructionList) unmarshal(data []byte, Unmarshal Un
 		return err
 	}
 
-	*ip = make(InteractionProgramInstructionList, len(types))
+	instructions := make(InteractionProgramInstructionList, len(types))
+
+	for i, msg := range rawMessages {
+		item := &instructions[i]
+		switch types[i].Type {
+		case "command":
+			*item = &RunCommandInstruction{}
+		case "start_recording":
+			*item = &StartRecordingInstruction{}
+		default:
+			return errors.New("invalid type")
+		}
+		
+		err = Unmarshal(msg, item)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	*ip = instructions
 	return nil
 }
 
