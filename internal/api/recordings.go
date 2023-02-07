@@ -8,7 +8,17 @@ import (
 )
 
 func (s *PandaStudioServer) CreateRecording(ctx *gin.Context) {
-	//TODO: do some stuff to actually make a recording
+	//TODO: add domain logic for creating recording
+}
+
+func (s *PandaStudioServer) FindAllRecordings(ctx *gin.Context, recordingId string) {
+	recordings, err := s.recordingRepo.FindAllRecordings(ctx)
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, recordings)
 }
 
 func (s *PandaStudioServer) FindRecordingById(ctx *gin.Context, recordingId string) {
@@ -29,4 +39,18 @@ func (s *PandaStudioServer) DeleteRecordingById(ctx *gin.Context, recordingId st
 	}
 
 	ctx.JSON(http.StatusOK, deleted)
+}
+
+func (s *PandaStudioServer) CreateRecordingFile(ctx *gin.Context, imageId string) {
+	//TODO: add domain logic for creating recording
+}
+
+func (s *PandaStudioServer) DeleteRecordingFile(ctx *gin.Context, recordingId string, fileId string) {
+	recordingFile, err := s.recordingRepo.DeleteRecordingFile(ctx, db.ParseObjectID(recordingId), db.ParseObjectID(fileId))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, recordingFile)
 }

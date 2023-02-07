@@ -5,27 +5,30 @@ import (
 )
 
 type Recording struct {
-	ID                 db.ObjectID `bson:"_id" json:"id"`
-	Name               string      `bson:"name" json:"name"`
-	Description        string      `bson:"description" json:"description"`
-	ImageID            db.ObjectID `bson:"recordingImage" json:"recordingImage"`
-	RecordingSnapshot  Snapshot    `bson:"recordingSnapshot" json:"recordingSnapshot"`
-	RecordingNondetLog NondetLog   `bson:"recordingNondetLog" json:"recordingNondetLog"`
+	ID             db.ObjectID      `bson:"_id" json:"id"`
+	Name           string           `bson:"name" json:"name"`
+	Description    string           `bson:"description" json:"description"`
+	ImageID        db.ObjectID      `bson:"recordingImage" json:"recordingImage"`
+	RecordingFiles []*RecordingFile `bson:"recordingSnapshot" json:"recordingSnapshot"`
 	// Interaction list
 }
 
-type Snapshot struct {
-	ID   db.ObjectID `bson:"_id" json:"_id"`
-	Name string      `bson:"name" json:"name"`
-}
-
-type NondetLog struct {
-	ID   db.ObjectID `bson:"id" json:"id"`
-	Name string      `bson:"name" json:"name"`
+type RecordingFile struct {
+	ID       db.ObjectID `bson:"_id" json:"_id"`
+	Name     string      `bson:"name" json:"name"`
+	FileType string      `bson:"file_type" json:"file_type"`
+	Size     int64       `bson:"size" json:"size"`
+	Sha256   string      `bson:"sha256" json:"sha256,omitempty"`
 }
 
 type CreateRecordingRequest struct {
 	Name          string
 	ImageID       db.ObjectID
 	InteractionID db.ObjectID
+}
+
+type CreateRecordingFileRequest struct {
+	Name        string
+	RecordingID db.ObjectID
+	FileType    string `bson:"file_type" json:"file_type"`
 }

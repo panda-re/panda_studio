@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db"
@@ -10,15 +11,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const RECORDINGS_TABLE string = "recordings"
 
 type RecordingRepository interface {
 	ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error)
-	DeleteRecording(ctx context.Context, imageId db.ObjectID) (*models.Recording, error)
+	DeleteRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error)
 	FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error)
+	FindAllRecordings(ctx context.Context) ([]models.Recording, error)
 	CreateRecording(ctx context.Context, obj *models.Recording) (*models.Recording, error)
+	FindRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error)
+	DeleteRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error)
+	CreateRecordingFile(ctx context.Context, req *models.CreateRecordingFileRequest) (*models.RecordingFile, error)
 }
 
 type mongoS3RecordingRepository struct {
@@ -71,6 +77,20 @@ func (m mongoS3RecordingRepository) FindRecording(ctx context.Context, id db.Obj
 	return &result, nil
 }
 
+func (m *mongoS3RecordingRepository) FindAllRecordings(ctx context.Context) ([]models.Recording, error) {
+	cursor, err := m.coll.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	var recordings []models.Recording
+	if err = cursor.All(ctx, &recordings); err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	return recordings, nil
+}
+
 func (m mongoS3RecordingRepository) ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
 	recording, err := m.FindRecording(ctx, recordingId)
 	if err != nil {
@@ -94,4 +114,83 @@ func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordi
 	}
 
 	return recording, nil
+}
+
+func (m *mongoS3RecordingRepository) CreateRecordingFile(ctx context.Context, req *models.CreateRecordingFileRequest) (*models.RecordingFile, error) {
+	newRecordingFile := models.RecordingFile{
+		ID:       db.NewObjectID(),
+		Name:     req.Name,
+		FileType: req.FileType,
+		Size:     -1,
+		Sha256:   "",
+	}
+
+	_, err := m.coll.UpdateByID(ctx, req.RecordingID, bson.D{
+		{"$push", bson.D{
+			{"files", newRecordingFile},
+		},
+		}})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	return &newRecordingFile, err
+}
+
+func (m *mongoS3RecordingRepository) FindRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error) {
+	var recording models.Recording
+	err := m.coll.FindOne(ctx, bson.M{
+		"_id": recordingId,
+		"files": bson.D{{"$elemMatch",
+			bson.D{{"_id", fileId}},
+		}},
+	}, options.FindOne().SetProjection(bson.D{
+		{"files.$", 1},
+	})).Decode(&recording)
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	if len(recording.RecordingFiles) > 1 {
+		return nil, errors.New("Something is off with the query")
+	}
+
+	recordingFile := recording.RecordingFiles[0]
+
+	return recordingFile, nil
+}
+
+func (m *mongoS3RecordingRepository) DeleteRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error) {
+	recordingFile, err := m.FindRecordingFile(ctx, recordingId, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	objName := m.getObjectName(recordingId, recordingFile)
+
+	err = m.s3Client.RemoveObject(ctx, m.recordingsBucket, objName, minio.RemoveObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = m.coll.UpdateOne(ctx, bson.M{
+		"_id":       recordingId,
+		"files._id": fileId,
+	}, bson.D{
+		{"$pull", bson.M{
+			"files": bson.M{
+				"_id": fileId,
+			},
+		}},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	return recordingFile, nil
+}
+
+func (m *mongoS3RecordingRepository) getObjectName(recordingId db.ObjectID, file *models.RecordingFile) string {
+	objectName := fmt.Sprintf("%s/%s", recordingId.Hex(), file.Name)
+	return objectName
 }
