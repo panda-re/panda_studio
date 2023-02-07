@@ -41,7 +41,7 @@ func (s *PandaStudioServer) DeleteRecordingById(ctx *gin.Context, recordingId st
 	ctx.JSON(http.StatusOK, deleted)
 }
 
-func (s *PandaStudioServer) CreateRecordingFile(ctx *gin.Context, imageId string) {
+func (s *PandaStudioServer) CreateRecordingFile(ctx *gin.Context, recordingId string) {
 	//TODO: add domain logic for creating recording
 }
 
