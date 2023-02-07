@@ -11,7 +11,7 @@ func (s *PandaStudioServer) CreateRecording(ctx *gin.Context) {
 	//TODO: add domain logic for creating recording
 }
 
-func (s *PandaStudioServer) FindAllRecordings(ctx *gin.Context, recordingId string) {
+func (s *PandaStudioServer) FindAllRecordings(ctx *gin.Context) {
 	recordings, err := s.recordingRepo.FindAllRecordings(ctx)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))

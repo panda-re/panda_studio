@@ -154,7 +154,7 @@ paths:
       tags:
         - recording
       summary: Finds all Recordings
-      operationId: findAllIRecordings
+      operationId: findAllRecordings
       responses:
         "200":
           description: OK
