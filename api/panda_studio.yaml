@@ -201,7 +201,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recording"
         "404":
-          description: "#/components/responses/NotFoundResponse"
+          $ref: "#/components/responses/NotFoundResponse"
     delete:
       tags:
         - recording
@@ -217,7 +217,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recording"
         "404":
-          description: "#/components/responses/NotFoundResponse"
+          $ref: "#/components/responses/NotFoundResponse"
 components:
   parameters:
     ImageId:
