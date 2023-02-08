@@ -40,17 +40,3 @@ func (s *PandaStudioServer) DeleteRecordingById(ctx *gin.Context, recordingId st
 
 	ctx.JSON(http.StatusOK, deleted)
 }
-
-func (s *PandaStudioServer) CreateRecordingFile(ctx *gin.Context, recordingId string) {
-	//TODO: add domain logic for creating recording
-}
-
-func (s *PandaStudioServer) DeleteRecordingFile(ctx *gin.Context, recordingId string, fileId string) {
-	recordingFile, err := s.recordingRepo.DeleteRecordingFile(ctx, db.ParseObjectID(recordingId), db.ParseObjectID(fileId))
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, recordingFile)
-}

@@ -2,16 +2,20 @@ package repos
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"io"
 )
 
 const RECORDINGS_TABLE string = "recordings"
@@ -106,6 +110,13 @@ func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordi
 		return nil, err
 	}
 
+	for _, recordingFile := range recording.RecordingFiles {
+		_, err := m.DeleteRecordingFile(ctx, recordingId, recordingFile.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	_, err = m.coll.DeleteOne(ctx, bson.M{
 		"_id": recordingId,
 	})
@@ -118,11 +129,12 @@ func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordi
 
 func (m *mongoS3RecordingRepository) CreateRecordingFile(ctx context.Context, req *models.CreateRecordingFileRequest) (*models.RecordingFile, error) {
 	newRecordingFile := models.RecordingFile{
-		ID:       db.NewObjectID(),
-		Name:     req.Name,
-		FileType: req.FileType,
-		Size:     -1,
-		Sha256:   "",
+		ID:         db.NewObjectID(),
+		Name:       req.Name,
+		FileType:   req.FileType,
+		IsUploaded: false,
+		Size:       -1,
+		Sha256:     "",
 	}
 
 	_, err := m.coll.UpdateByID(ctx, req.RecordingID, bson.D{
@@ -135,6 +147,45 @@ func (m *mongoS3RecordingRepository) CreateRecordingFile(ctx context.Context, re
 	}
 
 	return &newRecordingFile, err
+}
+
+func (m *mongoS3RecordingRepository) UploadRecordingFile(ctx context.Context, req *models.UploadRecordingFileRequest, reader io.Reader) (*models.RecordingFile, error) {
+	recordingFile, err := m.FindRecordingFile(ctx, req.RecordingID, req.FileID)
+	if err != nil {
+		return nil, err
+	}
+
+	objectName := m.getObjectName(req.RecordingID, recordingFile)
+
+	hasher := sha256.New()
+	hashReader := util.NewReaderHasher(reader, hasher)
+
+	obj, err := m.s3Client.PutObject(ctx, m.recordingsBucket, objectName, hashReader, -1, minio.PutObjectOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "file upload failed")
+	}
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	_, err = m.coll.UpdateOne(ctx, bson.M{
+		"_id":       req.RecordingID,
+		"files._id": req.FileID,
+	}, bson.D{
+		{"$set", bson.M{
+			"files.$.is_uploaded": true,
+			"files.$.size":        obj.Size,
+			"files.$.sha256":      hash,
+		}},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	recordingFile, err = m.FindRecordingFile(ctx, req.RecordingID, req.FileID)
+	if err != nil {
+		return nil, err
+	}
+
+	return recordingFile, nil
 }
 
 func (m *mongoS3RecordingRepository) FindRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error) {

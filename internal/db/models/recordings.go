@@ -14,11 +14,12 @@ type Recording struct {
 }
 
 type RecordingFile struct {
-	ID       db.ObjectID `bson:"_id" json:"_id"`
-	Name     string      `bson:"name" json:"name"`
-	FileType string      `bson:"file_type" json:"file_type"`
-	Size     int64       `bson:"size" json:"size"`
-	Sha256   string      `bson:"sha256" json:"sha256,omitempty"`
+	ID         db.ObjectID `bson:"_id" json:"_id"`
+	Name       string      `bson:"name" json:"name"`
+	FileType   string      `bson:"file_type" json:"file_type"`
+	IsUploaded bool        `bson:"is_uploaded" json:"is_uploaded"`
+	Size       int64       `bson:"size" json:"size"`
+	Sha256     string      `bson:"sha256" json:"sha256,omitempty"`
 }
 
 type CreateRecordingRequest struct {
@@ -31,4 +32,9 @@ type CreateRecordingFileRequest struct {
 	Name        string
 	RecordingID db.ObjectID
 	FileType    string `bson:"file_type" json:"file_type"`
+}
+
+type UploadRecordingFileRequest struct {
+	RecordingID db.ObjectID
+	FileID      db.ObjectID
 }

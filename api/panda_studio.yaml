@@ -184,7 +184,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
+                $ref: "#/components/schemas/Recording"
   /recordings/{recordingId}:
     get:
       tags:
@@ -201,7 +201,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recording"
         "404":
-          description: Not Found
+          description: "#/components/responses/NotFoundResponse"
     delete:
       tags:
         - recording
@@ -217,7 +217,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recording"
         "404":
-          description: Not Found
+          description: "#/components/responses/NotFoundResponse"
   /recordings/{recordingId}/files:
     post:
       tags:
@@ -240,7 +240,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/RecordingFile"
         "404":
-          description: Recording not found
+          description: "#/components/responses/NotFoundResponse"
         "409":
           description: Recording already contains file
   /recordings/{recordingId}/files/{fileId}:
@@ -341,6 +341,10 @@ components:
       type: string
       enum: [qcow2, dtb, kernel]
 
+    RecordingFileType:
+      type: string
+      enum: [ snp, ndlog ]
+
     PandaConfig:
       # todo: define this schema
       type: object
@@ -381,8 +385,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RecordingFile"
-        config:
-          $ref: "#/components/schemas/PandaConfig"
 
     RecordingFile:
       type: object
@@ -392,7 +394,7 @@ components:
         name:
           type: string
         file_type:
-          $ref: "#/components/schemas/ImageFileType"
+          $ref: "#/components/schemas/RecordingFileType"
         size:
           type: integer
         sha256:
