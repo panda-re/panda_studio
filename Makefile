@@ -33,7 +33,7 @@ panda_replay_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_replay_executor
 
 panda_executor_test: panda_agent_protoc_go
-	go test -c -run Main ./cmd/panda_test_executor
+	go test -c ./cmd/panda_test_executor
 
 panda_api: panda_agent_protoc_go
 	go generate ./internal/api

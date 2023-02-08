@@ -31,4 +31,4 @@ RUN make panda_executor_test
 FROM ubuntu:20.04
 WORKDIR /app
 COPY --from=builder /app/panda_test_executor.test /app/
-ENTRYPOINT [ "./panda_test_executor.test" ]
+ENTRYPOINT [ "./panda_test_executor.test", "-test.run", "Main", "-test.v" ]
