@@ -10,7 +10,8 @@ import (
 //go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=server.cfg.yaml ../../api/panda_studio.yaml
 
 type PandaStudioServer struct {
-	imageRepo repos.ImageRepository
+	imageRepo     repos.ImageRepository
+	recordingRepo repos.RecordingRepository
 }
 
 // Ensures our implementation conforms to the correct interface
@@ -22,7 +23,13 @@ func NewPandaStudioServer() (*PandaStudioServer, error) {
 		return nil, err
 	}
 
+	recordingRepo, err := repos.GetRecordingRepository(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	return &PandaStudioServer{
-		imageRepo: imageRepo,
+		imageRepo:     imageRepo,
+		recordingRepo: recordingRepo,
 	}, nil
 }
