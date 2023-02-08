@@ -218,48 +218,6 @@ paths:
                 $ref: "#/components/schemas/Recording"
         "404":
           description: "#/components/responses/NotFoundResponse"
-  /recordings/{recordingId}/files:
-    post:
-      tags:
-        - recording
-        - file
-      summary: Create new recording file
-      operationId: createRecordingFile
-      parameters:
-        - $ref: "#/components/parameters/RecordingId"
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: "#/components/schemas/CreateRecordingFileRequest"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RecordingFile"
-        "404":
-          description: "#/components/responses/NotFoundResponse"
-        "409":
-          description: Recording already contains file
-  /recordings/{recordingId}/files/{fileId}:
-    delete:
-      tags:
-        - recording
-        - file
-      summary: Delete recording file
-      operationId: deleteRecordingFile
-      parameters:
-        - $ref: "#/components/parameters/RecordingId"
-        - $ref: "#/components/parameters/FileId"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ImageFile"
 components:
   parameters:
     ImageId:
