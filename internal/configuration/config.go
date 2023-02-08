@@ -1,8 +1,14 @@
 package configuration
 
 import (
+	_ "embed"
+	"strings"
+
 	"github.com/spf13/viper"
 )
+
+//go:embed defaults.yml
+var defaultConfig string
 
 type Config struct {
 	v *viper.Viper
@@ -37,9 +43,20 @@ func LoadConfig() error {
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 	v.AddConfigPath(".")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+	v.AutomaticEnv()
 
-	if err := v.ReadInConfig(); err != nil {
+	// load in default config
+	if err := v.ReadConfig(strings.NewReader(defaultConfig)); err != nil {
 		return err
+	}
+
+	// Merge in the rest of the config
+	if err := v.MergeInConfig(); err != nil {
+		// If the file is not found, just fall back to default/environment variables
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
 	}
 
 	appConfig = &Config{}
