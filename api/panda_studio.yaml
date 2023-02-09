@@ -250,3 +250,57 @@ components:
         file:
           type: string
           format: binary
+    
+    InteractionProgram:
+      type: object
+      properties:
+        id: 
+          type: string
+        name:
+          type: string
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InteractionProgramInstruction"
+    
+    InteractionProgramInstruction:
+      oneOf:
+        - $ref: "#/components/schemas/RunCommandInstruction"
+        - $ref: "#/components/schemas/StartRecordingInstruction"
+        - $ref: "#/components/schemas/StopRecordingInstruction"
+      discriminator:
+        propertyName: "type"
+        mapping:
+          command: "#/components/schemas/RunCommandInstruction"
+          start_recording: "#/components/schemas/StartRecordingInstruction"
+          stop_recording: "#/components/schemas/StopRecordingInstruction"
+    
+    RunCommandInstruction:
+      type: object
+      required:
+        - type
+        - command
+      properties:
+        type:
+          type: string
+        command:
+          type: string
+    
+    StartRecordingInstruction:
+      type: object
+      required:
+        - type
+        - recording_name
+      properties:
+        type:
+          type: string
+        recording_name:
+          type: string
+    
+    StopRecordingInstruction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
