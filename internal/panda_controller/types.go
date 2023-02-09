@@ -37,6 +37,19 @@ type PandaAgentReplayResult struct {
 	Replay string // Replay execution through redirected output to file
 }
 
+type NetworkRequest struct {
+	socketType   string
+	port         int32
+	application  string
+	command      string
+	customPacket string
+}
+
+type NetworkResponse struct {
+	statusCode int32
+	output     string
+}
+
 func (r *PandaAgentRecording) GetSnapshotFileName() string {
 	return fmt.Sprintf("%s/%s-rr-snp", r.Location, r.RecordingName)
 }

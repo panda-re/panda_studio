@@ -14,10 +14,16 @@ import (
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
+type command struct {
+	Type    string `json:"type"`
+	Command string `json:"command"`
+	Name    string `json:"name"`
+}
+
 type parameters struct {
-	Volume   string   `json:"volume"`
-	Commands []string `json:"commands"`
-	Name     string   `json:"name"`
+	Volume   string    `json:"volume"`
+	Commands []command `json:"commands"`
+	Name     string    `json:"name"`
 }
 
 type responses struct {
@@ -82,14 +88,15 @@ func postRecording(c *gin.Context) {
 		return
 	}
 
-	response.Response = startExecutor(params.Commands)
+	response.Response, _ = startExecutor(params.Commands)
 
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func startExecutor(commands []string) []string {
+func startExecutor(commands []command) ([]string, string) {
 	ctx := context.Background()
 
+	// Create the docker contaier
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
 	if err != nil {
 		panic(err)
@@ -100,6 +107,7 @@ func startExecutor(commands []string) []string {
 		panic(err)
 	}
 
+	// Start Agent assuming that we are not running a replay
 	fmt.Println("Starting agent")
 	err = agent.StartAgent(ctx)
 	if err != nil {
@@ -108,15 +116,47 @@ func startExecutor(commands []string) []string {
 
 	var result []string
 
+	var recording string
+	//var cmdResult string
+
 	for _, cmd := range commands {
 		fmt.Printf("> %s\n", cmd)
-		cmdResult, err := agent.RunCommand(ctx, cmd)
-		if err != nil {
-			panic(err)
+		// Check Type of command and then execute backend as needed for that command.
+		switch cmd.Type {
+		case "Recording":
+			if cmd.Command == "start" {
+				cmdResult, err := agent.StartRecording(ctx, cmd.Name)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf("%s\n", cmdResult.Logs)
+				result = append(result, cmdResult.Logs+"\n")
+			} else if cmd.Command == "stop" {
+				recording, err = agent.StopRecording(ctx)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				panic("Error, Recording Instruction Type with incorrect instruction")
+			}
+			break
+		case "Serial":
+			cmdResult, err := agent.RunCommand(ctx, cmd.Command)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf("%s\n", cmdResult.Logs)
+			result = append(result, cmdResult.Logs+"\n")
+			break
+		case "Filesystem":
+			break
+		case "Network":
+			break
+		default:
+			panic("Incorrect Command Type, Correct Options are: Recording, Serial, Filesystem or Network")
 		}
-		fmt.Printf("%s\n", cmdResult.Logs)
-		result = append(result, cmdResult.Logs+"\n")
+
 	}
 
-	return result
+	return result, recording
 }
