@@ -18,6 +18,7 @@ type ProgramRepository interface {
 	FindOne(ctx context.Context, id db.ObjectID) (*models.InteractionProgram, error)
 	Create(ctx context.Context, obj *models.InteractionProgram) (*models.InteractionProgram, error)
 	Delete(ctx context.Context, id db.ObjectID) (*models.InteractionProgram, error)
+	Update(ctx context.Context, id db.ObjectID, obj *models.InteractionProgram) (*models.InteractionProgram, error)
 }
 
 func GetProgramRepository(ctx context.Context) (ProgramRepository, error) {
@@ -95,4 +96,26 @@ func (r *mongoProgramRepository) FindOne(ctx context.Context, id *primitive.Obje
 	}
 
 	return &result, nil
+}
+
+// Update implements ProgramRepository
+func (r *mongoProgramRepository) Update(ctx context.Context, id *primitive.ObjectID, obj *models.InteractionProgram) (*models.InteractionProgram, error) {
+	// ensure it exists
+	_, err := r.FindOne(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// prevent id from being changed
+	obj.ID = id
+
+	// update in mongo
+	_, err = r.coll.UpdateOne(ctx, bson.M{
+		"_id": id,
+	}, obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "db error with updating")
+	}
+
+	return obj, nil
 }
