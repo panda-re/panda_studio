@@ -43,7 +43,15 @@ func ensureBucketsExist(ctx context.Context, cfg config.S3BucketsConfig, cli *mi
 	}
 
 	for _, name := range bucketNames {
-		err := cli.MakeBucket(ctx, name, minio.MakeBucketOptions{})
+		exists, err := cli.BucketExists(ctx, name)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
+		err = cli.MakeBucket(ctx, name, minio.MakeBucketOptions{})
 		if err != nil {
 			return err
 		}
