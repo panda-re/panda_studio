@@ -1,8 +1,12 @@
-import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-import { useNavigate } from 'react-router';
-import { Recording } from './Interfaces';
-
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps} from '@elastic/eui';
+import {useLoaderData, useLocation, useNavigate} from 'react-router';
+import {Recording, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
+import {findAllRecordings} from "../api";
+import type {AxiosRequestConfig} from "axios";
+import ContextMenu from "./ContextMenu";
+import {useMemo} from "react";
+import {DefaultItemAction} from "@elastic/eui/src/components/basic_table/action_types";
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {
@@ -14,58 +18,52 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
     name: 'File Name',
   },
   {
-    field: 'imageName',
+    field: 'recordingImage',
     name: 'Image Name',
   },
   {
     field: 'size',
     name: 'Size',
-    render: (value: number) => prettyBytes(value, { maximumFractionDigits: 2 }),
+    render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
   },
   {
     field: 'date',
     name: 'Timestamp',
   },
+  {
+    name: 'Actions',
+    render: () => <ContextMenu/>
+  }
 ]
 
-const data: Recording[] = [
-  {
-    id: 'record_1',
-    name: 'test_recording',
-    imageName: 'wheezy.qcow2',
-    date: new Date(),
-    size: 150*1024*1024,
-  },
-  {
-    id: 'record_2',
-    name: 'test_recording2',
-    imageName: 'wheezy.qcow2',
-    date: new Date(),
-    size: 150*1024*1024,
-  }
-];
+const reqConfig: AxiosRequestConfig = {
+  baseURL: 'http://localhost:8080/api'
+}
 
 function RecordingDataGrid() {
   const navigate = useNavigate();
+  const {isLoading, error, data} = useFindAllRecordings()
 
-  const getRowProps = (item: Recording) => {
-    const { id } = item;
+  const getRowProps: EuiBasicTableProps<Recording>['rowProps'] = (item) => {
+    const {id} = item;
     return {
       'data-test-subj': `recording-row-${id}`,
       onClick: () => {
-        navigate('/recordingDetails', {state:{item: item}});
+        navigate('/recordingDetails', {state: {item: item}});
       },
     }
   };
 
   return (<>
-    <EuiBasicTable
-      tableCaption="Recordings"
-      items={data}
-      rowHeader="firstName"
-      columns={tableColumns}
-      rowProps={getRowProps}
-    />
+    {isLoading && <div>Loading...</div> ||
+      <EuiBasicTable
+        tableCaption="Recordings"
+        items={data?.data ?? []}
+        rowHeader="firstName"
+        columns={tableColumns}
+        rowProps={getRowProps}
+      />
+      }
   </>)
 }
 
