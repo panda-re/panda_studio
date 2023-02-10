@@ -1,7 +1,8 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
+import { AxiosRequestConfig } from 'axios';
 import prettyBytes from 'pretty-bytes';
 import { useNavigate } from 'react-router-dom';
-import { Image } from './Interfaces';
+import { findAllImages, Image, ImageFile } from '../api';
 
 const tableColumns: EuiBasicTableColumn<Image>[] = [
   {
@@ -13,34 +14,32 @@ const tableColumns: EuiBasicTableColumn<Image>[] = [
     name: 'File Name',
   },
   {
-    field: 'operatingSystem',
-    name: 'Operating System',
-  },
-  {
-    field: 'size',
+    field: 'files',
     name: 'Size',
-    render: (value: number) => prettyBytes(value, { maximumFractionDigits: 2 }),
-  },
-  {
-    field: 'date',
-    name: 'Timestamp',
+    render: (value: ImageFile[]) => {
+      var size = 0;
+      for(var f of value){
+        size+= (f.size != null) ? +f.size: 0;
+      }
+      return prettyBytes(size, { maximumFractionDigits: 2 });
+    },
   },
 ]
 
-const data: Image[] = [
-  {
-    id: 'AGHA68',
-    name: 'wheezy.qcow2',
-    operatingSystem: 'Ubuntu',
-    date: new Date(),
-    size: 150*1024*1024,
-  }
-];
+var data: Image[] = [];
+
+const reqConfig: AxiosRequestConfig = {
+  baseURL: "http://localhost:8080/api"
+}
+
+findAllImages(reqConfig).then((value) => {
+  data = value.data;
+});
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
   const getRowProps = (item: Image) => {
-    const { id } = item;
+    const id = item.id;
     return {
       'data-test-subj': `image-row-${id}`,
       onClick: () => {
