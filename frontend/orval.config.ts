@@ -10,6 +10,12 @@ export default defineConfig({
             target: 'panda_studio.gen.ts',
             client: 'react-query',
             mode: 'single',
-        }
-    }
-})
+            override: {
+                mutator: {
+                    path: 'axios.ts',
+                    name: 'customInstance',
+                },
+            },
+        },
+    },
+});
