@@ -49,14 +49,21 @@ func TestAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO more and proper tests
 	t.Run("PreCommand", TestPrematureCommand)
+	if !t.Failed() {
+		num_passed++
+	}
+	t.Run("PreStop", TestPrematureStop)
 	if !t.Failed() {
 		num_passed++
 	}
 	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
+	}
+	t.Run("ExtraStart", TestExtraStart)
+	if !t.Failed() {
+		num_passed++
 	}
 	t.Run("Commands", TestCommands)
 	if !t.Failed() {
@@ -71,6 +78,21 @@ func TestPrematureCommand(t *testing.T) {
 	}
 }
 
+func TestPrematureStop(t *testing.T) {
+	num_tests++
+	err := agent.StopAgent(ctx)
+	if err == nil {
+		t.Error("Did not prevent premature stop")
+	}
+}
+
+func TestExtraStart(t *testing.T) {
+	num_tests++
+	if err := agent.StartAgent(ctx); err == nil {
+		t.Error("Did not prevent a second PANDA start")
+	}
+}
+
 func TestCommands(t *testing.T) {
 	num_tests++
 	commands := []string{
@@ -78,10 +100,13 @@ func TestCommands(t *testing.T) {
 	}
 	for _, cmd := range commands {
 		response, err := agent.RunCommand(ctx, cmd)
-		if response != nil && response.Logs != "Hello World" {
-			t.Fatal("Did not recieve correct response from command")
-		} else if err != nil {
+		if err != nil {
 			t.Error(err)
+		}
+		if response == nil {
+			t.Fatal("Did not receive a response")
+		} else if response.Logs != "Hello World" {
+			t.Fatal("Did not receive correct response from command")
 		}
 	}
 }
@@ -149,7 +174,7 @@ func TestReplay(t *testing.T) {
 
 	// TODO more and proper tests
 
-	t.Run("PreStop", TestPrematureStop)
+	t.Run("PreStop", TestPrematureReplayStop)
 	if !t.Failed() {
 		num_passed++
 	}
@@ -159,7 +184,7 @@ func TestReplay(t *testing.T) {
 	}
 }
 
-func TestPrematureStop(t *testing.T) {
+func TestPrematureReplayStop(t *testing.T) {
 	num_tests++
 	_, err := replay_agent.StopReplay(ctx)
 	if err == nil {
