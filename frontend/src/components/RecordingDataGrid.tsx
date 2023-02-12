@@ -2,11 +2,9 @@ import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps} from '@elastic/e
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
-import {findAllRecordings} from "../api";
 import type {AxiosRequestConfig} from "axios";
 import ContextMenu from "./ContextMenu";
-import {useMemo} from "react";
-import {DefaultItemAction} from "@elastic/eui/src/components/basic_table/action_types";
+import {AXIOS_INSTANCE, customInstance} from "../api/axios";
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {
@@ -36,10 +34,6 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
   }
 ]
 
-const reqConfig: AxiosRequestConfig = {
-  baseURL: 'http://localhost:8080/api'
-}
-
 function RecordingDataGrid() {
   const navigate = useNavigate();
   const {isLoading, error, data} = useFindAllRecordings()
@@ -58,7 +52,7 @@ function RecordingDataGrid() {
     {isLoading && <div>Loading...</div> ||
       <EuiBasicTable
         tableCaption="Recordings"
-        items={data?.data ?? []}
+        items={data ?? []}
         rowHeader="firstName"
         columns={tableColumns}
         rowProps={getRowProps}
