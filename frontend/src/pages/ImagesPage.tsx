@@ -29,24 +29,6 @@ function ImagesPage() {
   const onFileChange = (files: FileList | null) => {
     setFiles(files!.length > 0 ? Array.from(files!) : []);
   };
-
-  const renderFiles = () => {
-    if (files.length > 0) {
-      return (
-        <ul>
-          {files.map((file, i) => (
-            <li key={i}>
-              <strong>{file.name}</strong> ({file.size} bytes)
-            </li>
-          ))}
-        </ul>
-      );
-    } else {
-      return (
-        <p>Add some files to see a demo of retrieving from the FileList</p>
-      );
-    }
-  };
   
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
