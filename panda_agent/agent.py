@@ -10,7 +10,6 @@ class PandaAgent:
         # TODO PANDA has running and replay variables already, use those
         self.isRunning = False
         self.current_recording = None
-        self.current_replay = None
         self.serial_out = ""
     
     # This function is meant to run in a different thread
@@ -110,22 +109,19 @@ class PandaAgent:
             self.serial_out += '%c' % value
         print("starting panda replay agent ")
         self.isRunning = True
-        self.current_replay = recording_name
         print(f'starting replay {recording_name}')
         panda.run_replay(recording_name)
-        self.current_replay = None
         print("panda agent replay stopped")
         # self.isRunning = False
         return self.serial_out
 
     def stop_replay(self):
-        if self.current_replay is None:
+        if self.panda._in_replay is False:
             raise RuntimeError("Must start a replay before stopping one")
 
         def panda_stop_replay(panda: Panda):
             print('stopping replay')
             panda.end_replay()
         
-        self.current_replay = None
         self._run_function(panda_stop_replay)
         return self.serial_out
