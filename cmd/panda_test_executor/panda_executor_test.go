@@ -132,16 +132,35 @@ func TestRecord(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// TODO more and proper tests
+	t.Run("PreStop", TestPrematureStopRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("Start", TestStartRecording)
 	if t.Failed() {
 		t.FailNow()
 	} else {
 		num_passed++
 	}
+	t.Run("ExtraStart", TestExtraStartRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("Commands", TestCommands)
 	if !t.Failed() {
 		num_passed++
+	}
+	t.Run("Stop", TestStopRecording)
+	if !t.Failed() {
+		num_passed++
+	}
+}
+
+func TestPrematureStopRecording(t *testing.T) {
+	num_tests++
+	_, err := agent.StopRecording(ctx)
+	if err == nil {
+		t.Fatal()
 	}
 }
 
@@ -149,6 +168,36 @@ func TestStartRecording(t *testing.T) {
 	num_tests++
 	if err := agent.StartRecording(ctx, recording_name); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestExtraStartRecording(t *testing.T) {
+	num_tests++
+	if err := agent.StartRecording(ctx, recording_name); err == nil {
+		t.Fatal("Did not prevent starting a second concurrent recording")
+	}
+}
+
+func TestStopRecording(t *testing.T) {
+	num_tests++
+	recording, err := agent.StopRecording(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if recording != nil {
+		if recording.RecordingName != recording_name {
+			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", recording_name, recording.RecordingName)
+		}
+		snapshotName := fmt.Sprintf("%s/%s-rr-snp", recording.Location, recording_name)
+		if recording.GetSnapshotFileName() != snapshotName {
+			t.Errorf("Did not return correct snaphot name. Expected: '%s' Got: '%s'", snapshotName, recording.GetSnapshotFileName())
+		}
+		ndLogName := fmt.Sprintf("%s/%s-rr-nondet.log", recording.Location, recording_name)
+		if recording.GetNdlogFileName() != ndLogName {
+			t.Errorf("Did not return correct nondet log name. Expected: '%s' Got: '%s'", ndLogName, recording.GetNdlogFileName())
+		}
+	} else {
+		t.Fatal("Did not return recording")
 	}
 }
 
