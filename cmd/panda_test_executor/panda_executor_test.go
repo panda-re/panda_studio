@@ -3,10 +3,33 @@ package main
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
+
+// Each enum represents the state panda was in that caused the exception
+// Enum should match that in /panda_agent/agent.py
+const (
+	RUNNING       = 1
+	NOT_RUNNING   = 2
+	RECORDING     = 3
+	NOT_RECORDING = 4
+	REPLAYING     = 5
+	NOT_REPLAYING = 6
+)
+
+func isCorrectError(err error, expected int) bool {
+	// Upon error, the following regex will be in the message
+	re := regexp.MustCompile(`<ErrorCode\.\w+: `)
+	// Regex splits right before error number
+	split := re.Split(err.Error(), -1)
+	// See if the error number matches the expected error code
+	return strings.HasPrefix(split[1], strconv.Itoa(expected))
+}
 
 var num_passed int = 0
 var num_tests int = 0
@@ -73,7 +96,7 @@ func TestPrematureCommand(t *testing.T) {
 	num_tests++
 	_, err := agent.RunCommand(ctx, "")
 	if err == nil {
-		t.Error("Did not prevent premature command")
+		t.Fatal("Did not prevent premature command")
 	}
 }
 
@@ -81,14 +104,15 @@ func TestPrematureStop(t *testing.T) {
 	num_tests++
 	err := agent.StopAgent(ctx)
 	if err == nil {
-		t.Error("Did not prevent premature stop")
+		t.Fatal("Did not prevent premature stop")
 	}
 }
 
 func TestExtraStart(t *testing.T) {
 	num_tests++
-	if err := agent.StartAgent(ctx); err == nil {
-		t.Error("Did not prevent a second PANDA start")
+	err := agent.StartAgent(ctx)
+	if err == nil {
+		t.Fatal("Did not prevent a second PANDA start")
 	}
 }
 
@@ -159,7 +183,7 @@ func TestPrematureStopRecording(t *testing.T) {
 	num_tests++
 	_, err := agent.StopRecording(ctx)
 	if err == nil {
-		t.Fatal()
+		t.Fatal("Did not prevent stopping a non-existant recording")
 	}
 }
 
@@ -172,7 +196,8 @@ func TestStartRecording(t *testing.T) {
 
 func TestExtraStartRecording(t *testing.T) {
 	num_tests++
-	if err := agent.StartRecording(ctx, recording_name); err == nil {
+	err := agent.StartRecording(ctx, recording_name)
+	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
 	}
 }
@@ -258,6 +283,6 @@ func TestNonexistantReplay(t *testing.T) {
 	num_tests++
 	_, err := replay_agent.StartReplayAgent(ctx, " ")
 	if err == nil {
-		t.Error("Did not prevent nonexistant replay")
+		t.Fatal("Did not prevent nonexistant replay")
 	}
 }

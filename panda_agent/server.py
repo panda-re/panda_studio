@@ -12,6 +12,7 @@ sys.path.append("pb")
 import pb.panda_agent_pb2_grpc as pb_grpc
 import pb.panda_agent_pb2 as pb
 from agent import PandaAgent
+from agent import ErrorCode
 
 PORTS = [
     "[::]:50051",
@@ -27,7 +28,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
         if self.agent.isRunning:
-            return
+            raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         return pb.StartAgentResponse()
