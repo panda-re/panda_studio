@@ -3,7 +3,7 @@
 import Axios, { AxiosRequestConfig } from 'axios';
  
 export const AXIOS_INSTANCE = Axios.create({
-    baseURL: process.env.API_URL ?? 'http://localhost:8080/api'
+    baseURL: import.meta.env.API_URL ?? 'http://localhost:8080/api'
 }); // use your own URL here or environment variable
 
 // add a second `options` argument here if you want to pass extra options to each generated query
