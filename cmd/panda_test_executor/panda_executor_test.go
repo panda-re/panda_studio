@@ -15,7 +15,6 @@ func TestMain(t *testing.T) {
 	t.Cleanup(func() {
 		fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
 	})
-	// TODO tests
 	t.Run("Agent", TestAgent)
 	if t.Failed() {
 		t.Fatal("Agent unsuccessful")
@@ -221,9 +220,11 @@ func TestReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO more and proper tests
-
 	t.Run("PreStop", TestPrematureReplayStop)
+	if !t.Failed() {
+		num_passed++
+	}
+	t.Run("WrongReplay", TestNonexistantReplay)
 	if !t.Failed() {
 		num_passed++
 	}
@@ -249,6 +250,14 @@ func TestRunReplay(t *testing.T) {
 	}
 	if replay.Serial == "" || replay.Replay == "" {
 		// TODO better job ensuring the logs are correct
-		t.Error("Test Failed. Replay returned partially incomplete")
+		t.Error("Replay returned partially incomplete")
+	}
+}
+
+func TestNonexistantReplay(t *testing.T) {
+	num_tests++
+	_, err := replay_agent.StartReplayAgent(ctx, " ")
+	if err == nil {
+		t.Error("Did not prevent nonexistant replay")
 	}
 }
