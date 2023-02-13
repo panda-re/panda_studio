@@ -8,7 +8,7 @@ import { InteractionProgram } from '../components/Interfaces';
 import prettyBytes from 'pretty-bytes';
 import { useNavigate } from 'react-router';
 import { AxiosRequestConfig } from 'axios';
-import { findAllImages, Image } from '../api';
+import { findAllImages, Image, useFindAllImages } from '../api';
 
 // const sendAPICall = useCallback(function () {
 //   setCommands(JSON.parse("[" + program + "]"))
@@ -52,26 +52,22 @@ function CreateRecordingPage() {
     baseURL: "http://localhost:8080/api"
   }
 
-  function getImageEntities(){
-    var images: Image[] = [];
-    var entities: EuiSelectableOption[] = [];
-    findAllImages(reqConfig).then((value) => {
-      images = value.data;
-      // Generate selectable options for Image search component
-      
-      images.map((r) =>{
-        var size = 0;
-        if(r.files != null){
-          for(var f of r.files){
-            size+= (f.size != null) ? +f.size: 0;
-          }
+  var imageEntities: EuiSelectableOption[] = [];
+
+  const {isLoading, error, data} = useFindAllImages({ axios: reqConfig});
+
+  if(data?.data != null){
+    data.data.map((r) =>{
+      var size = 0;
+      if(r.files != null){
+        for(var f of r.files){
+          size+= (f.size != null) ? +f.size: 0;
         }
-        entities.push({label: `Image Name: ${r.name}  ----   Image Id: ${r.id}  ----   Image Size: ${prettyBytes(size, { maximumFractionDigits: 2 })}`,
-        // entities.push({label: `id:${r.id} - name:${r.name} - size:${prettyBytes(size, { maximumFractionDigits: 2 })}`,
-        data: r});
-      })
-    });
-    return entities;
+      }
+      imageEntities.push({label: `Image Name: ${r.name}  ----   Image Id: ${r.id}  ----   Image Size: ${prettyBytes(size, { maximumFractionDigits: 2 })}`,
+      // entities.push({label: `id:${r.id} - name:${r.name} - size:${prettyBytes(size, { maximumFractionDigits: 2 })}`,
+      data: r});
+    })
   }
 
   function getProgramEntities(){
@@ -160,7 +156,8 @@ function CreateRecordingPage() {
           <EuiText>Image: </EuiText>
         </EuiFlexItem>
         <EuiFlexItem grow={8}>
-          <EntitySearchBar name="Image" entities={getImageEntities()} returnSelectedOption={(returnSelectedImage)}></EntitySearchBar>
+          {isLoading && <div>Loading...</div> ||
+          <EntitySearchBar name="Image" entities={imageEntities} returnSelectedOption={(returnSelectedImage)}></EntitySearchBar>}
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageTemplate.Section>
