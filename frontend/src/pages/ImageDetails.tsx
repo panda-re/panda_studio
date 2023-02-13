@@ -3,7 +3,8 @@ import {ReactElement} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { ImageFile } from '../api';
+import { deleteImageById, deleteImageFile, ImageFile } from '../api';
+import { AxiosRequestConfig } from 'axios';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
@@ -111,7 +112,23 @@ function CreateImageDetailsPage() {
             >Derive New Image</EuiButton>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiButton style={buttonStyle}>Delete Image</EuiButton>
+          <EuiButton 
+              style={buttonStyle}
+              onClick= {() =>
+                {
+                  const reqConfig: AxiosRequestConfig = {
+                    baseURL: "http://localhost:8080/api"
+                  }
+                  const files = location.state.item.files;
+                  for(var f of files){
+                    deleteImageFile(location.state.item.id, f.id, reqConfig);
+                  }
+                  deleteImageById(location.state.item.id, reqConfig).then(()=>{
+                    navigate('/images');
+                  })
+                }
+              }
+            >Delete Image</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
