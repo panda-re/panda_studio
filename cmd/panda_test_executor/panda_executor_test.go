@@ -14,21 +14,23 @@ import (
 // Each enum represents the state panda was in that caused the exception
 // Enum should match that in /panda_agent/agent.py
 const (
-	RUNNING       = 1
-	NOT_RUNNING   = 2
-	RECORDING     = 3
-	NOT_RECORDING = 4
-	REPLAYING     = 5
-	NOT_REPLAYING = 6
+	RUNNING       = 0
+	NOT_RUNNING   = 1
+	RECORDING     = 2
+	NOT_RECORDING = 3
+	REPLAYING     = 4
+	NOT_REPLAYING = 5
 )
 
-func isCorrectError(err error, expected int) bool {
-	// Upon error, the following regex will be in the message
-	re := regexp.MustCompile(`<ErrorCode\.\w+: `)
-	// Regex splits right before error number
-	split := re.Split(err.Error(), -1)
-	// See if the error number matches the expected error code
-	return strings.HasPrefix(split[1], strconv.Itoa(expected))
+var error_to_string [6]string = [6]string{"RUNNING", "NOT_RUNNING", "RECORDING", "NOT_RECORDING", "REPLAYING", "NOT_REPLAYING"}
+
+func getError(err error) int {
+	// Find the numbers in the error message
+	re := regexp.MustCompile("[0-9]+")
+	// Return the first one as an integer
+	nums := re.FindAllString(err.Error(), -1)
+	num, _ := strconv.Atoi(nums[0])
+	return num
 }
 
 var num_passed int = 0
@@ -97,6 +99,12 @@ func TestPrematureCommand(t *testing.T) {
 	_, err := agent.RunCommand(ctx, "")
 	if err == nil {
 		t.Fatal("Did not prevent premature command")
+	} else {
+		err_num := getError(err)
+		err_expected := NOT_RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -105,6 +113,12 @@ func TestPrematureStop(t *testing.T) {
 	err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent premature stop")
+	} else {
+		err_num := getError(err)
+		err_expected := NOT_RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -113,6 +127,12 @@ func TestExtraStart(t *testing.T) {
 	err := agent.StartAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent a second PANDA start")
+	} else {
+		err_num := getError(err)
+		err_expected := RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -184,6 +204,12 @@ func TestPrematureStopRecording(t *testing.T) {
 	_, err := agent.StopRecording(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent stopping a non-existant recording")
+	} else {
+		err_num := getError(err)
+		err_expected := NOT_RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -199,6 +225,12 @@ func TestExtraStartRecording(t *testing.T) {
 	err := agent.StartRecording(ctx, recording_name)
 	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
+	} else {
+		err_num := getError(err)
+		err_expected := RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -264,6 +296,12 @@ func TestPrematureReplayStop(t *testing.T) {
 	_, err := replay_agent.StopReplay(ctx)
 	if err == nil {
 		t.Error("Did not prevent premature stop")
+	} else {
+		err_num := getError(err)
+		err_expected := NOT_REPLAYING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
@@ -284,5 +322,8 @@ func TestNonexistantReplay(t *testing.T) {
 	_, err := replay_agent.StartReplayAgent(ctx, " ")
 	if err == nil {
 		t.Fatal("Did not prevent nonexistant replay")
+	} else if !strings.Contains(err.Error(), "Error in copying snapshot for replay") {
+		// Error happens before agent enumeration
+		t.Error("Incorrect error message")
 	}
 }
