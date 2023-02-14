@@ -2,9 +2,7 @@ import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps} from '@elastic/e
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
-import type {AxiosRequestConfig} from "axios";
 import ContextMenu from "./ContextMenu";
-import {AXIOS_INSTANCE, customInstance} from "../api/axios";
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {
@@ -28,15 +26,11 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
     field: 'date',
     name: 'Timestamp',
   },
-  {
-    name: 'Actions',
-    render: () => <ContextMenu/>
-  }
 ]
 
 function RecordingDataGrid() {
   const navigate = useNavigate();
-  const {isLoading, error, data} = useFindAllRecordings()
+  const {isLoading, error, data} = useFindAllRecordings();
 
   const getRowProps: EuiBasicTableProps<Recording>['rowProps'] = (item) => {
     const {id} = item;
@@ -48,13 +42,21 @@ function RecordingDataGrid() {
     }
   };
 
+  const columnsWithActions = [
+    ...tableColumns,
+    {
+      name: 'Actions',
+        render: (item: Recording) => <ContextMenu recordingId={item.id!} />
+    },
+  ]
+
   return (<>
     {isLoading && <div>Loading...</div> ||
       <EuiBasicTable
         tableCaption="Recordings"
         items={data ?? []}
         rowHeader="firstName"
-        columns={tableColumns}
+        columns={columnsWithActions}
         rowProps={getRowProps}
       />
       }

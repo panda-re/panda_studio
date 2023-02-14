@@ -7,12 +7,16 @@ import {
   EuiCopy,
   useGeneratedHtmlId, EuiButtonEmpty,
 } from '@elastic/eui';
+import {deleteRecordingById, useDeleteRecordingById, useFindAllRecordings} from "../api";
+import axios from "axios";
 
-export default () => {
+export default ({recordingId}: {recordingId: string}) => {
   const [isPopoverOpen, setPopover] = useState(false);
   const smallContextMenuPopoverId = useGeneratedHtmlId({
     prefix: 'smallContextMenuPopover',
   });
+
+  const deleteRecording = useDeleteRecordingById();
 
   const onButtonClick: React.MouseEventHandler = (event ) => {
     setPopover(!isPopoverOpen);
@@ -23,14 +27,21 @@ export default () => {
     setPopover(false);
   };
 
+  const deleteItem: React.MouseEventHandler = (event) => {
+    console.log(recordingId);
+    deleteRecording.mutate({recordingId});
+    closePopover();
+    event.stopPropagation();
+  };
+
   const items = [
-    <EuiContextMenuItem key="delete" icon="trash" onClick={closePopover}>
+    <EuiContextMenuItem key="delete" icon="trash" onClick={deleteItem}>
       Delete
     </EuiContextMenuItem>,
-    <EuiContextMenuItem key="edit" icon="pencil" onClick={closePopover}>
+    <EuiContextMenuItem key="edit" icon="pencil">
       Edit
     </EuiContextMenuItem>,
-    <EuiContextMenuItem key="share" icon="copy" onClick={closePopover}>
+    <EuiContextMenuItem key="share" icon="copy">
       Share
     </EuiContextMenuItem>,
   ];

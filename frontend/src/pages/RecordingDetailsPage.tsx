@@ -48,7 +48,7 @@ function RecordingDetailsPage() {
             <strong>Date Created:</strong>
           </EuiText>
           <EuiText textAlign={"center"}>
-            {location.state.item.date.toString()}
+            {location.state.item.date}
           </EuiText>
         </EuiPageTemplate.Section>
       </EuiFlexItem>
