@@ -10,6 +10,7 @@ type Recording struct {
 	Description    string           `bson:"description" json:"description"`
 	ImageID        db.ObjectID      `bson:"recordingImage" json:"recordingImage"`
 	Size           int64            `bson:"size" json:"size"`
+	Date           string           `bson:"date" json:"date"`
 	RecordingFiles []*RecordingFile `bson:"recordingSnapshot" json:"recordingSnapshot"`
 	// Interaction list
 }
