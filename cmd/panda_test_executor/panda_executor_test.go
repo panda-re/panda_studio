@@ -56,7 +56,22 @@ func TestMain(t *testing.T) {
 
 var agent controller.PandaAgent
 
-var recording_name string = "test"
+// Recording name for testing record and replay
+var recording_name string = "panda_executor_test"
+
+// Consistent commands to run
+var commands = []string{
+	"echo Hello World",
+	"uname -a",
+	"touch /NEW_FILE.txt",
+}
+
+// Outputs of commands to ensure they ran correctly
+var commands_output = []string{
+	"Hello World",
+	"Linux ubuntu 4.15.0-72-generic #81-Ubuntu SMP Tue Nov 26 12:20:02 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux",
+	"",
+}
 var ctx = context.Background()
 
 // Tests to ensure the agent functions properly
@@ -155,18 +170,15 @@ func TestExtraStart(t *testing.T) {
 // Should be run after agent.StartAgent
 func TestCommands(t *testing.T) {
 	num_tests++
-	commands := []string{
-		"echo Hello World",
-	}
-	for _, cmd := range commands {
+	for i, cmd := range commands {
 		response, err := agent.RunCommand(ctx, cmd)
 		if err != nil {
 			t.Error(err)
 		}
-		if response == nil {
+		if commands_output[i] != "" && response == nil {
 			t.Fatal("Did not receive a response")
-		} else if response.Logs != "Hello World" {
-			t.Fatal("Did not receive correct response from command")
+		} else if response.Logs != commands_output[i] {
+			t.Fatalf("Did not receive correct response from command %s. Expected: %s Got: %s", commands[i], commands_output[i], response.Logs)
 		}
 	}
 }
