@@ -357,9 +357,37 @@ func TestRunReplay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if replay.Serial == "" || replay.Replay == "" {
-		// TODO better job ensuring the logs are correct
-		t.Error("Replay returned partially incomplete")
+	if replay == nil {
+		t.Fatal("Replay did not return")
+	}
+	if replay.Serial == "" {
+		t.Error("Replay did not return serial")
+	} else {
+		// Check serial I/O, currently only works with single-line I/O
+		serial := strings.Split(replay.Serial, "\r\n")
+		for i, cmd := range serial {
+			index := i / 2 // Lines alternate between command and response
+			if i%2 == 0 {
+				// Test for the serial command
+				if !strings.HasSuffix(cmd, commands[index]) {
+					t.Errorf("Expected: '%s' Got: '%s'", commands[index], cmd)
+				}
+			} else {
+				// Test for response of serial command
+				if !strings.HasSuffix(cmd, commands_output[index]) {
+					t.Errorf("Expected: '%s' Got: '%s'", commands_output[index], cmd)
+				}
+			}
+		}
+
+	}
+	if replay.Replay == "" {
+		t.Error("Replay did not return execution")
+	} else {
+		// Check replay execution
+		if !strings.Contains(replay.Replay, "Replay completed successfully") {
+			t.Fatal("Replay did not complete successfully")
+		}
 	}
 }
 
