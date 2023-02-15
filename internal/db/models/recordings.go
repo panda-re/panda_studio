@@ -5,13 +5,13 @@ import (
 )
 
 type Recording struct {
-	ID             db.ObjectID      `bson:"_id" json:"id"`
-	Name           string           `bson:"name" json:"name"`
-	Description    string           `bson:"description" json:"description"`
-	ImageID        db.ObjectID      `bson:"recordingImage" json:"recordingImage"`
-	Size           int64            `bson:"size" json:"size"`
-	Date           string           `bson:"date" json:"date"`
-	RecordingFiles []*RecordingFile `bson:"recordingSnapshot" json:"recordingSnapshot"`
+	ID          db.ObjectID      `bson:"_id" json:"id"`
+	Name        string           `bson:"name" json:"name"`
+	Description string           `bson:"description" json:"description"`
+	ImageID     db.ObjectID      `bson:"recordingImage" json:"recordingImage"`
+	Size        int64            `bson:"size" json:"size"`
+	Date        string           `bson:"date" json:"date"`
+	Files       []*RecordingFile `bson:"recordingSnapshot" json:"recordingSnapshot"`
 	// Interaction list
 }
 
