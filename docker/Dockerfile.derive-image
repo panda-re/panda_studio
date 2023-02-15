@@ -1,0 +1,30 @@
+# https://github.com/djui/docker-guestfs/blob/master/Dockerfile
+FROM ubuntu:22.04
+
+WORKDIR /root
+
+# -- Install Dependencies --
+RUN apt-get update && \
+    apt-get install -y \
+    ligbuestfs-tools \
+    qemu-utils \
+    linux-image-generic
+
+ENV LIBGUESTFS_BACKEND=direct \
+    HOME=/root
+
+# Copy image into directory (pulled from min.io beforehand)
+# COPY ${OLD_IMAGE_NAME.qcow2} .
+
+# Name of the image we are creating
+ARG IMAGE_NAME_ARG
+ENV IMAGE_NAME = ${IMAGE_NAME_ARG}
+
+# Name of the Docker Hub image we are pulling from
+ARG DOCKER_IMAGE_NAME_ARG
+ENV DOCKER_IMAGE_NAME = ${DOCKER_IMAGE_NAME_ARG}
+
+# todo: Add error logging here
+ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
+
+# docker build --build-arg image_name_arg="ubuntu-2204.qcow2" docker_image_name_arg="hello-world"
