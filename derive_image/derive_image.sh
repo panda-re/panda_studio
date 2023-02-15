@@ -1,12 +1,11 @@
 #!/bin/bash
 # -- expand size of the main drive --
-cp ${IMAGE_NAME}.qcow2 ${IMAGE_NAME}-copy.qcow2	
-virt-resize --expand /dev/sda1 ${IMAGE_NAME}-copy.qcow2 ${IMAGE_NAME}.qcow2
-rm ${IMAGE_NAME}-copy.qcow2
+cp ${BASE_IMAGE_NAME} ${NEW_IMAGE_NAME}	
+virt-resize --expand /dev/sda1 ${BASE_IMAGE_NAME} ${NEW_IMAGE_NAME}
 
 # -- Open Guestfish --
 sudo guestfish --network << EOF
-add ${IMAGE_NAME}
+add ${NEW_IMAGE_NAME}
 set-network true
 run
 mount /dev/sda3 /

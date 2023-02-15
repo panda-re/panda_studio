@@ -14,17 +14,21 @@ ENV LIBGUESTFS_BACKEND=direct \
     HOME=/root
 
 # Copy image into directory (pulled from min.io beforehand)
-# COPY ${OLD_IMAGE_NAME.qcow2} .
+# COPY ${BASE_IMAGE_NAME.qcow2} .
 
 # Name of the image we are creating
-ARG IMAGE_NAME_ARG
-ENV IMAGE_NAME = ${IMAGE_NAME_ARG}
+ARG NEW_IMAGE_NAME
+ENV NEW_IMAGE_NAME = ${NEW_IMAGE_NAME}
+
+# Name of the old image we are basing it off of
+ARG BASE_IMAGE
+ENV BASE_IMAGE_NAME = ${BASE_IMAGE}
 
 # Name of the Docker Hub image we are pulling from
-ARG DOCKER_IMAGE_NAME_ARG
-ENV DOCKER_IMAGE_NAME = ${DOCKER_IMAGE_NAME_ARG}
+ARG DOCKER_IMAGE
+ENV DOCKER_IMAGE_NAME = ${DOCKER_IMAGE}
 
 # todo: Add error logging here
 ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
 
-# docker build --build-arg image_name_arg="ubuntu-2204.qcow2" docker_image_name_arg="hello-world"
+# docker build --build-arg new_image_name="ubuntu-2204-derived.qcow2" base_image="ubuntu-2204.qcow2" docker_image="hello-world"
