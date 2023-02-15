@@ -17,8 +17,8 @@ ENV LIBGUESTFS_BACKEND=direct \
 # COPY ${BASE_IMAGE_NAME.qcow2} .
 
 # Name of the image we are creating
-ARG NEW_IMAGE_NAME
-ENV NEW_IMAGE_NAME = ${NEW_IMAGE_NAME}
+ARG NEW_IMAGE
+ENV NEW_IMAGE_NAME = ${NEW_IMAGE}
 
 # Name of the old image we are basing it off of
 ARG BASE_IMAGE
@@ -31,4 +31,4 @@ ENV DOCKER_IMAGE_NAME = ${DOCKER_IMAGE}
 # todo: Add error logging here
 ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
 
-# docker build --build-arg new_image_name="ubuntu-2204-derived.qcow2" base_image="ubuntu-2204.qcow2" docker_image="hello-world"
+# docker build --build-arg new_image="ubuntu-2204-derived.qcow2" base_image="ubuntu-2204.qcow2" docker_image="hello-world"
