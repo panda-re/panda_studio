@@ -32,7 +32,9 @@ class PandaAgent:
             print("panda agent started")
             
             # revert to the qcow's root snapshot
-            panda.revert_sync("root")
+            message = panda.revert_sync("root")
+            if message != "":
+                raise RuntimeError(ErrorCode.RUNNING, message)
         
         print("starting panda agent ")
         panda.run()
@@ -43,8 +45,9 @@ class PandaAgent:
             raise RuntimeError(ErrorCode.NOT_RUNNING.value, "Cannot stop a PANDA instance when one is not running")
         if self.current_recording is not None:
             # Stop recording for user, then stop PANDA
-            print("Request for PANDA stop before recording ended. Stopping recording automatically")
             self.stop_recording()
+            self.panda.end_analysis()
+            raise RuntimeWarning(ErrorCode.RECORDING.value, "Request for PANDA stop before recording ended. Stopping recording automatically")
         
         @self.panda.queue_blocking
         def panda_stop():
@@ -84,7 +87,10 @@ class PandaAgent:
         self.current_recording = recording_name
         def panda_start_recording(panda: Panda):
             print(f'starting recording {recording_name}')
-            return panda.record(recording_name)
+            try:
+                return panda.record(recording_name)
+            except Exception as err:
+                raise RuntimeError(ErrorCode.RECORDING.value, f"Unexpected {err=}, {type(err)=}")
         
         return self._run_function(panda_start_recording)
     
@@ -94,7 +100,10 @@ class PandaAgent:
         
         def panda_stop_recording(panda: Panda):
             print(f'stopping recording')
-            panda.end_record()
+            try:
+                panda.end_record()
+            except Exception as err:
+                raise RuntimeError(ErrorCode.RECORDING.value, f"Unexpected {err=}, {type(err)=}")
         
         recording_name = self.current_recording
         self._run_function(panda_stop_recording)
@@ -125,7 +134,10 @@ class PandaAgent:
 
         def panda_stop_replay(panda: Panda):
             print('stopping replay')
-            panda.end_replay()
+            try:
+                panda.end_replay()
+            except Exception as err:
+                raise RuntimeError(ErrorCode.REPLAYING.value, f"Unexpected {err=}, {type(err)=}")
         
         self._run_function(panda_stop_replay)
         return self.serial_out
