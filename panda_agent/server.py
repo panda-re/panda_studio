@@ -13,6 +13,7 @@ import pb.panda_agent_pb2_grpc as pb_grpc
 import pb.panda_agent_pb2 as pb
 from agent import PandaAgent
 from agent import ErrorCode
+from time import sleep
 
 PORTS = [
     "[::]:50051",
@@ -31,7 +32,6 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
-        from time import sleep
         sleep(0.5) # ensures internal flags get set
         return pb.StartAgentResponse()
     
@@ -46,6 +46,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
         self.agent.start_recording(recording_name=request.recording_name)
+        sleep(1)
         return pb.StartRecordingResponse()
     
     def StopRecording(self, request: pb.StopRecordingRequest, context):

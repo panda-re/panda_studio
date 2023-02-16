@@ -188,10 +188,6 @@ func TestCommands(t *testing.T) {
 func TestRecord(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		err = agent.StopAgent(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -210,7 +206,7 @@ func TestRecord(t *testing.T) {
 	if !t.Failed() {
 		num_passed++
 	}
-	t.Run("Start", TestStartRecording)
+	t.Run("StartRecording", TestStartRecording)
 	if t.Failed() {
 		t.FailNow()
 	} else {
@@ -224,7 +220,15 @@ func TestRecord(t *testing.T) {
 	if !t.Failed() {
 		num_passed++
 	}
-	t.Run("Stop", TestStopRecording)
+	t.Run("StopRecording", TestStopRecording)
+	if !t.Failed() {
+		num_passed++
+	}
+	err = agent.StartRecording(ctx, "_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("HangingStop", TestHangingRecording)
 	if !t.Failed() {
 		num_passed++
 	}
@@ -294,6 +298,23 @@ func TestStopRecording(t *testing.T) {
 		}
 	} else {
 		t.Fatal("Did not return recording")
+	}
+}
+
+// Tests that a recording is stopped when agent is stopped
+// The agent should stop the recording and raise a warning
+// Should be run after agent.StartRecording
+func TestHangingRecording(t *testing.T) {
+	num_tests++
+	err := agent.StopAgent(ctx)
+	if err == nil {
+		t.Fatal("Did not receive warning for stopping a hanging recording")
+	} else {
+		err_num := getError(err)
+		err_expected := RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
 	}
 }
 
