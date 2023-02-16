@@ -18,16 +18,14 @@ class PandaAgent:
 
     def __init__(self, panda: Panda):
         self.panda = panda
-        # TODO PANDA has running and replay variables already, use those
-        self.isRunning = False
         self.current_recording = None
         self.serial_out = ""
     
     # This function is meant to run in a different thread
     def start(self):
-        if self.isRunning:
-            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         panda = self.panda
+        if self.panda.started.is_set():
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
 
         @panda.queue_blocking
         def panda_start():
@@ -37,13 +35,11 @@ class PandaAgent:
             panda.revert_sync("root")
         
         print("starting panda agent ")
-        self.isRunning = True
         panda.run()
         print("panda agent stopped")
-        #self.isRunning = False
     
     def stop(self):
-        if self.isRunning is False: 
+        if self.panda.started.is_set() is False: 
             raise RuntimeError(ErrorCode.NOT_RUNNING.value, "Cannot stop a PANDA instance when one is not running")
         if self.current_recording is not None:
             # Stop recording for user, then stop PANDA
@@ -53,12 +49,11 @@ class PandaAgent:
         @self.panda.queue_blocking
         def panda_stop():
             self.panda.end_analysis()
-        self.isRunning = False
     
     def _run_function(self, func, block=True, timeout=None):
         # Since the queued function will be running in another thread, we need
         # a queue in order to pass the return value back to this thread
-        if self.isRunning is False: 
+        if self.panda.running.is_set() is False: 
             raise RuntimeError(ErrorCode.NOT_RUNNING.value, "Can't run a function when PANDA isn't running")
         returnChannel = queue.Queue()
 
@@ -107,10 +102,10 @@ class PandaAgent:
         return recording_name
 
     def start_replay(self, recording_name):
-        # Replay runs its own PANDA instance so PANDA should not be running beforehand
-        if self.isRunning: 
-            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         panda = self.panda
+        # Replay runs its own PANDA instance so PANDA should not be running beforehand
+        if self.panda.started.is_set(): 
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         if panda.recording_exists(recording_name) is False:
             raise RuntimeError(ErrorCode.REPLAYING.value, f"Recording {recording_name} does not exist")
         # For user to see serial output. A way to remember what the recording did
@@ -119,11 +114,9 @@ class PandaAgent:
             # Append serial to string as character
             self.serial_out += '%c' % value
         print("starting panda replay agent ")
-        self.isRunning = True
         print(f'starting replay {recording_name}')
         panda.run_replay(recording_name)
         print("panda agent replay stopped")
-        # self.isRunning = False
         return self.serial_out
 
     def stop_replay(self):
