@@ -128,6 +128,7 @@ func TestPrematureCommand(t *testing.T) {
 		err_expected := NOT_RUNNING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -145,6 +146,7 @@ func TestPrematureStop(t *testing.T) {
 		err_expected := NOT_RUNNING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -162,6 +164,7 @@ func TestExtraStart(t *testing.T) {
 		err_expected := RUNNING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -247,6 +250,7 @@ func TestPrematureStopRecording(t *testing.T) {
 		err_expected := NOT_RECORDING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -272,6 +276,7 @@ func TestExtraStartRecording(t *testing.T) {
 		err_expected := RECORDING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -314,6 +319,7 @@ func TestHangingRecording(t *testing.T) {
 		err_expected := RECORDING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -371,6 +377,7 @@ func TestPrematureReplayStop(t *testing.T) {
 		err_expected := NOT_REPLAYING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -429,6 +436,7 @@ func TestRunExtraReplay(t *testing.T) {
 		err_expected := RUNNING
 		if err_num != err_expected {
 			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
 		}
 	}
 }
@@ -443,5 +451,6 @@ func TestNonexistantReplay(t *testing.T) {
 	} else if !strings.Contains(err.Error(), "Error in copying snapshot for replay") {
 		// Error happens before agent enumeration
 		t.Error("Incorrect error message")
+		t.Error(err)
 	}
 }
