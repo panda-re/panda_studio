@@ -331,6 +331,10 @@ func TestReplay(t *testing.T) {
 	if !t.Failed() {
 		num_passed++
 	}
+	t.Run("RunExtraReplay", TestRunExtraReplay)
+	if !t.Failed() {
+		num_passed++
+	}
 }
 
 // Tests attempting to stop a replay when one is not in progress
@@ -387,6 +391,23 @@ func TestRunReplay(t *testing.T) {
 		// Check replay execution
 		if !strings.Contains(replay.Replay, "Replay completed successfully") {
 			t.Fatal("Replay did not complete successfully")
+		}
+	}
+}
+
+// Tests attempting to start a replay after one has started
+// The agent should prevent this from happening with an exception
+// Should be run before replay_agent.StartReplayAgent
+func TestRunExtraReplay(t *testing.T) {
+	num_tests++
+	_, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	if err == nil {
+		t.Fatal("Did not prevent extra replay")
+	} else {
+		err_num := getError(err)
+		err_expected := RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
 		}
 	}
 }
