@@ -5,11 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { findAllImages, Image, ImageFile, useFindAllImages } from '../api';
 
 function ImagesDataGrid() {
-  const reqConfig: AxiosRequestConfig = {
-    baseURL: "http://localhost:8080/api"
-  }
 
-  const {isLoading, error, data} = useFindAllImages({ axios: reqConfig});
+  const {isLoading, error, data} = useFindAllImages();
 
   const tableColumns: EuiBasicTableColumn<Image>[] = [
     {
@@ -48,7 +45,7 @@ function ImagesDataGrid() {
     {isLoading && <div>Loading...</div> ||
     <EuiBasicTable
       tableCaption="Images"
-      items={data?.data ?? []}
+      items={data ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
