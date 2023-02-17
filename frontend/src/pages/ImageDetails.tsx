@@ -3,13 +3,14 @@ import {ReactElement} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { deleteImageById, deleteImageFile, ErrorResponse, ImageFile, useDeleteImageFile } from '../api';
+import { deleteImageById, deleteImageFile, ErrorResponse, ImageFile, useDeleteImageById, useDeleteImageFile } from '../api';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { UseMutationOptions } from '@tanstack/react-query';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const deleteFn = useDeleteImageById();
 
   const buttonStyle = {
     marginRight: "25px",
@@ -117,13 +118,7 @@ function CreateImageDetailsPage() {
               style={buttonStyle}
               onClick= {() =>
                 {
-                  const files = location.state.item.files;
-                  for(var f of files){
-                    const deleteFn = useDeleteImageFile()
-                    deleteFn.mutate({imageId: location.state.item.id, fileId: f.id})
-
-                    // useDeleteImageFile(location.state.item.id, f.id, reqConfig);
-                  }
+                  deleteFn.mutate({imageId: location.state.item.id})
                   // deleteImageById(location.state.item.id, reqConfig).then(()=>{
                   //   navigate('/images');
                   // })
