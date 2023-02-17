@@ -7,8 +7,8 @@ import {
   EuiCopy,
   useGeneratedHtmlId, EuiButtonEmpty,
 } from '@elastic/eui';
-import {deleteRecordingById, useDeleteRecordingById, useFindAllRecordings} from "../api";
-import axios from "axios";
+import {Recording, useDeleteRecordingById} from "../api";
+import {useQueryClient} from "@tanstack/react-query";
 
 export default ({recordingId}: {recordingId: string}) => {
   const [isPopoverOpen, setPopover] = useState(false);
@@ -16,7 +16,8 @@ export default ({recordingId}: {recordingId: string}) => {
     prefix: 'smallContextMenuPopover',
   });
 
-  const deleteRecording = useDeleteRecordingById();
+  const queryClient = useQueryClient();
+  const deleteRecording = useDeleteRecordingById({onSuccess: queryClient.invalidateQueries()});
 
   const onButtonClick: React.MouseEventHandler = (event ) => {
     setPopover(!isPopoverOpen);
@@ -28,7 +29,6 @@ export default ({recordingId}: {recordingId: string}) => {
   };
 
   const deleteItem: React.MouseEventHandler = (event) => {
-    console.log(recordingId);
     deleteRecording.mutate({recordingId});
     closePopover();
     event.stopPropagation();

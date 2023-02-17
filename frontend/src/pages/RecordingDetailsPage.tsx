@@ -1,10 +1,15 @@
-import { EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText } from '@elastic/eui';
-import { useLocation } from 'react-router';
+import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {useLocation, useNavigate} from 'react-router';
 
 import prettyBytes from 'pretty-bytes';
 
 function RecordingDetailsPage() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const buttonStyle = {
+    marginRight: "25px",
+    marginTop: "25px"
+  }
 
   return (<>
     <EuiPageTemplate.Header pageTitle="Recording Details" />
@@ -51,6 +56,24 @@ function RecordingDetailsPage() {
             {location.state.item.date}
           </EuiText>
         </EuiPageTemplate.Section>
+      </EuiFlexItem>
+
+      <EuiFlexItem>
+        <EuiFlexGroup direction={"column"}>
+          <EuiFlexItem grow={false}>
+            <EuiButton
+              style={buttonStyle}
+              onClick={() => {
+                navigate('/recordings')
+              }}
+            >
+              Recording Dashboard
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton style={buttonStyle}>Delete Recording</EuiButton>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiFlexItem>
     </EuiFlexGroup>
   </>)
