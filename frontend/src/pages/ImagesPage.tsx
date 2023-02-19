@@ -12,16 +12,15 @@ import {
   EuiOverlayMask,
   EuiPageTemplate,
   EuiSpacer,
-  EuiText,
   useGeneratedHtmlId
 } from '@elastic/eui';
 import ImagesDataGrid from '../components/ImagesDataGrid';
 import {EuiFlexGrid} from "@elastic/eui";
 import { useState } from 'react';
-import { createImage, createImageFile, CreateImageFileRequest, CreateImageRequest, ImageFileType, PandaConfig } from '../api';
-import { AxiosRequestConfig } from 'axios';
+import { CreateImageFileRequest, CreateImageRequest, Image, ImageFileType, PandaConfig, useCreateImage, useCreateImageFile } from '../api';
 
 function ImagesPage() {
+  const createFileFn = useCreateImageFile()
   // File picker constants
   const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
   const [files, setFiles] = useState(new Array<File>);
@@ -48,6 +47,21 @@ function ImagesPage() {
     setIsModalVisible(true);
   }
 
+  function createImageFiles(image: Image){
+    for(var f of files){
+      const fileReq: CreateImageFileRequest = {
+        file_name: modalName,
+        file_type: ImageFileType.qcow2,
+        file: f,
+      }
+      createFileFn.mutate({data: fileReq, imageId: image.id ?? ""})
+    }
+  }
+
+  const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {
+    createImageFiles(data);
+  },}})
+
   function createFile(){
     const conf: PandaConfig = {
       key: modalConfig,
@@ -57,28 +71,8 @@ function ImagesPage() {
       description: modalDesc,
       config: conf,
     };
-    const reqConfig: AxiosRequestConfig = {
-      baseURL: "http://localhost:8080/api"
-    }
     if(modalName != ""){
-      createImage(req, reqConfig).then((value)=> {
-        if(value.data.id != null){
-          for(var f of files){
-            const fileReq: CreateImageFileRequest = {
-              file_name: modalName,
-              file_type: ImageFileType.qcow2,
-              file: f,
-            }
-            createImageFile(value.data.id, fileReq, reqConfig);
-          }
-        }
-        else{
-          alert("File creation error");
-        }
-      });
-    }
-    else{
-      alert("File name is invalid");
+      createFn.mutate({data: req})
     }
   }
 
@@ -86,7 +80,7 @@ function ImagesPage() {
     return <EuiOverlayMask>
               <EuiModal onClose={closeModal}>
                 <EuiModalHeader>
-                  <EuiModalHeaderTitle>Add New Interaction</EuiModalHeaderTitle>
+                  <EuiModalHeaderTitle>Upload New Image</EuiModalHeaderTitle>
                 </EuiModalHeader>
                 <EuiModalBody>
                     <EuiFieldText 

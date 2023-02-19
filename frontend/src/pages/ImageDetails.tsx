@@ -1,16 +1,67 @@
-import {EuiButton, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
-import {ReactElement} from "react";
+import {EuiButton, EuiFieldText, EuiFilePicker, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
+import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { deleteImageById, deleteImageFile, ErrorResponse, ImageFile, useDeleteImageById, useDeleteImageFile } from '../api';
-import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { UseMutationOptions } from '@tanstack/react-query';
+import { ImageFile, useDeleteImageById, useUpdateImage } from '../api';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const deleteFn = useDeleteImageById();
+  const updateFn = useUpdateImage();
+
+  // Modal Constants
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalName, setModalName] = useState("");
+  const [modalDesc, setModalDesc] = useState("");
+
+  const closeModal = () => {
+    setModalName("");
+    setModalDesc("");
+    setIsModalVisible(false)
+  };
+  const showModal = () => {
+    setModalName(location.state.item.name);
+    setModalDesc(location.state.item.description);
+    setIsModalVisible(true);
+  }
+
+  function CreateModal(){
+    return <EuiOverlayMask>
+              <EuiModal onClose={closeModal}>
+                <EuiModalHeader>
+                  <EuiModalHeaderTitle>Update Image Details</EuiModalHeaderTitle>
+                </EuiModalHeader>
+                <EuiModalBody>
+                    <EuiFieldText 
+                      placeholder="Enter Name"  
+                      name="imageName"
+                      value={modalName}
+                      onChange={(e) => {
+                        setModalName(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter New Description"  
+                      name="imageDesc" 
+                      value={modalDesc}
+                      onChange={(e) => {
+                        setModalDesc(e.target.value);
+                      }}/>
+                </EuiModalBody>
+                <EuiModalFooter>
+                  <EuiButton onClick={closeModal} fill>Close</EuiButton>
+                  <EuiButton 
+                    onClick={() => {
+                      // updateFn.mutate({imageId: location.state.item.id});
+                      closeModal();
+                    }} 
+                    fill>
+                      Submit</EuiButton>
+                </EuiModalFooter>
+              </EuiModal>
+            </EuiOverlayMask>
+  }
 
   const buttonStyle = {
     marginRight: "25px",
@@ -116,19 +167,22 @@ function CreateImageDetailsPage() {
           <EuiFlexItem grow={false}>
           <EuiButton 
               style={buttonStyle}
-              onClick= {() =>
-                {
-                  deleteFn.mutate({imageId: location.state.item.id})
-                  // deleteImageById(location.state.item.id, reqConfig).then(()=>{
-                  //   navigate('/images');
-                  // })
-                }
-              }
+              onClick= {() => {
+                deleteFn.mutate({imageId: location.state.item.id})
+                navigate('/images')
+              }}
             >Delete Image</EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton 
+            style={buttonStyle}
+            onClick={showModal}
+            >Update Image Info</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
     </EuiFlexGroup>
+    {(isModalVisible) ? (CreateModal()) : null}
   </>)
 }
 
