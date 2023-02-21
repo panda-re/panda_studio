@@ -3,7 +3,7 @@ import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useDeleteRecordingById, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
 import ContextMenu from "./ContextMenu";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useQueryClient} from "@tanstack/react-query";
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
@@ -33,7 +33,6 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
 function RecordingDataGrid() {
   const navigate = useNavigate();
   const {isLoading, error, data} = useFindAllRecordings();
-  const deleteRecording = useDeleteRecordingById();
 
   const getRowProps: EuiBasicTableProps<Recording>['rowProps'] = (item) => {
     const {id} = item;

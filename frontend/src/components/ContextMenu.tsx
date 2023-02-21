@@ -17,7 +17,7 @@ export default ({recordingId}: {recordingId: string}) => {
   });
 
   const queryClient = useQueryClient();
-  const deleteRecording = useDeleteRecordingById({onSuccess: queryClient.invalidateQueries()});
+  const deleteRecording = useDeleteRecordingById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   const onButtonClick: React.MouseEventHandler = (event ) => {
     setPopover(!isPopoverOpen);
@@ -37,12 +37,6 @@ export default ({recordingId}: {recordingId: string}) => {
   const items = [
     <EuiContextMenuItem key="delete" icon="trash" onClick={deleteItem}>
       Delete
-    </EuiContextMenuItem>,
-    <EuiContextMenuItem key="edit" icon="pencil">
-      Edit
-    </EuiContextMenuItem>,
-    <EuiContextMenuItem key="share" icon="copy">
-      Share
     </EuiContextMenuItem>,
   ];
 

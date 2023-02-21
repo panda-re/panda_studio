@@ -2,13 +2,21 @@ import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText} from '@e
 import {useLocation, useNavigate} from 'react-router';
 
 import prettyBytes from 'pretty-bytes';
+import {useDeleteRecordingById} from "../api";
+import {useQueryClient} from "@tanstack/react-query";
+import {render} from "react-dom";
 
 function RecordingDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const deleteFunction = useDeleteRecordingById({mutation: {onSuccess: () => navigate('/recordings')}});
   const buttonStyle = {
     marginRight: "25px",
     marginTop: "25px"
+  }
+
+  const deleteCurrentRecording = () => {
+    deleteFunction.mutate({recordingId: location.state.item.id});
   }
 
   return (<>
@@ -71,7 +79,7 @@ function RecordingDetailsPage() {
             </EuiButton>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiButton style={buttonStyle}>Delete Recording</EuiButton>
+            <EuiButton style={buttonStyle} onClick={deleteCurrentRecording}>Delete Recording</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
