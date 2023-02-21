@@ -10,14 +10,11 @@ import {
 import {Recording, useDeleteRecordingById} from "../api";
 import {useQueryClient} from "@tanstack/react-query";
 
-export default ({recordingId}: {recordingId: string}) => {
+export default ({recordingId, deleteCallback}: {recordingId: string, deleteCallback: any}) => {
   const [isPopoverOpen, setPopover] = useState(false);
   const smallContextMenuPopoverId = useGeneratedHtmlId({
     prefix: 'smallContextMenuPopover',
   });
-
-  const queryClient = useQueryClient();
-  const deleteRecording = useDeleteRecordingById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   const onButtonClick: React.MouseEventHandler = (event ) => {
     setPopover(!isPopoverOpen);
@@ -29,7 +26,7 @@ export default ({recordingId}: {recordingId: string}) => {
   };
 
   const deleteItem: React.MouseEventHandler = (event) => {
-    deleteRecording.mutate({recordingId});
+    deleteCallback({recordingId: recordingId});
     closePopover();
     event.stopPropagation();
   };

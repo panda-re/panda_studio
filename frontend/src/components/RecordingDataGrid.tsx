@@ -32,7 +32,20 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
 
 function RecordingDataGrid() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {isLoading, error, data} = useFindAllRecordings();
+  const queryClient = useQueryClient();
+  const deleteFunction = useDeleteRecordingById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
+
+  const deleteRecording = ({recordingId}: {recordingId: string}) => {
+    deleteFunction.mutate({recordingId: recordingId});
+  }
+
+  useEffect(() => {
+    if(location.state) {
+      deleteRecording({recordingId: location.state.recordingId});
+    }
+  }, []);
 
   const getRowProps: EuiBasicTableProps<Recording>['rowProps'] = (item) => {
     const {id} = item;
@@ -48,7 +61,7 @@ function RecordingDataGrid() {
     ...tableColumns,
     {
       name: 'Actions',
-        render: (item: Recording) => <ContextMenu recordingId={item.id!} />
+        render: (item: Recording) => <ContextMenu recordingId={item.id!} deleteCallback={deleteRecording} />
     },
   ]
 

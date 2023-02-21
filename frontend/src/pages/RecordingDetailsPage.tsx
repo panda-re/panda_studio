@@ -9,14 +9,13 @@ import {render} from "react-dom";
 function RecordingDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const deleteFunction = useDeleteRecordingById({mutation: {onSuccess: () => navigate('/recordings')}});
   const buttonStyle = {
     marginRight: "25px",
     marginTop: "25px"
   }
 
   const deleteCurrentRecording = () => {
-    deleteFunction.mutate({recordingId: location.state.item.id});
+    navigate('/recordings', {state: {recordingId: location.state.item.id}});
   }
 
   return (<>
