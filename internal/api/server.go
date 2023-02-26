@@ -12,18 +12,25 @@ import (
 type PandaStudioServer struct {
 	imageRepo     repos.ImageRepository
 	recordingRepo repos.RecordingRepository
+	programRepo  repos.ProgramRepository
 }
 
 // Ensures our implementation conforms to the correct interface
 var _ ServerInterface = &PandaStudioServer{}
 
 func NewPandaStudioServer() (*PandaStudioServer, error) {
-	imageRepo, err := repos.GetImageRepository(context.TODO())
+	ctx := context.TODO()
+	imageRepo, err := repos.GetImageRepository(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	recordingRepo, err := repos.GetRecordingRepository(context.TODO())
+	recordingRepo, err := repos.GetRecordingRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	programRepo, err := repos.GetProgramRepository(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -31,5 +38,6 @@ func NewPandaStudioServer() (*PandaStudioServer, error) {
 	return &PandaStudioServer{
 		imageRepo:     imageRepo,
 		recordingRepo: recordingRepo,
+		programRepo:  programRepo,
 	}, nil
 }
