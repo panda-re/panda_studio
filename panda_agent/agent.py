@@ -136,8 +136,8 @@ class PandaAgent:
 
     def execute_network_command(self, request: pb.NetworkRequest):
         
-        response = []
-        message = bytearray[b'']
+        response = b''
+        message = b''
 
         if request.application == "HTTP" or request.application == "http":
             if request.command == "GET":
@@ -162,7 +162,7 @@ class PandaAgent:
                 return "Invalid HTTP Command, make sure its somehting like GET, POST, or PUT"
             
             # Add a space then add the custome message (may be '' which is fine as long as its something)
-            message += bytes(' ')
+            message += bytes(' ', encoding='utf-8')
             message += bytes(request.customPacket, encoding='utf-8')
             message += b' HTTP/1.1\r\n\r\n'
 
