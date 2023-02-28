@@ -23,7 +23,7 @@ jobs:
            -t pandare/panda_test_executor
            .
     - name: Run Agent Test
-      run: docker run -it --rm
+      run: docker run --rm
           -v /var/run/docker.sock:/var/run/docker.sock
           -v /root/.panda:/root/.panda
           -v /tmp/panda-studio:/tmp/panda-studio
