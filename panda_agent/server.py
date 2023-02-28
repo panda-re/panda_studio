@@ -46,7 +46,6 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
         self.agent.start_recording(recording_name=request.recording_name)
-        sleep(1)
         return pb.StartRecordingResponse()
     
     def StopRecording(self, request: pb.StopRecordingRequest, context):
