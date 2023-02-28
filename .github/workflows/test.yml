@@ -1,0 +1,30 @@
+name: Test PANDA Studio
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test_agent:
+    runs-on: ubuntu-20.04
+    name: Test PANDA Agent
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build PANDA Agent Container
+      run: DOCKER_BUILDKIT=1 docker build
+           --progress=plain
+           -f ./docker/Dockerfile.panda-agent
+           -t pandare/panda_agent
+           ./panda_agent
+    - name: Build PANDA Test Executor Container
+      run: DOCKER_BUILDKIT=1 docker build
+           --progress=plain
+           -f ./docker/Dockerfile.panda-executor-test
+           -t pandare/panda_test_executor
+           .
+    - name: Run Agent Test
+      run: docker run -it --rm
+          -v /var/run/docker.sock:/var/run/docker.sock
+          -v /root/.panda:/root/.panda
+          -v /tmp/panda-studio:/tmp/panda-studio
+          pandare/panda_test_executor
