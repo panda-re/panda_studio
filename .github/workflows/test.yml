@@ -1,0 +1,16 @@
+name: Test PANDA Studio
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test_agent:
+    runs-on: ubuntu-20.04
+    name: Test PANDA Agent
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run Agent Test
+      run: |
+          sudo make initial_setup_priviliged test
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.panda:/root/.panda -v /tmp/panda-studio:/tmp/panda-studio pandare/panda_test_executor
