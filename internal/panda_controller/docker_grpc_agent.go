@@ -125,8 +125,28 @@ func (pa *dockerGrpcPandaAgent) StartAgent(ctx context.Context) error {
 }
 
 // StopAgent implements PandaAgent
-func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) error {
-	return pa.grpcAgent.StopAgent(ctx)
+func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
+	l, err := pa.grpcAgent.StopAgent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip off the shared folder prefix so that paths are correct on this system
+	// TODO rename based on agent
+	logName := strings.Replace(l.LogName, "./shared/", "", 1)
+
+	log := PandaAgentLog{
+		LogName:  logName,
+		Location: *pa.sharedDir,
+	}
+
+	// Copy log into shared directory
+	nBytes, err := copyFileHelper(log.GetLogFileName(), "/tmp/panda-studio/", logName)
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying log")
+	}
+
+	return &log, err
 }
 
 func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error) {
@@ -238,8 +258,29 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 }
 
 // StopAgent implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) error {
-	return pa.grpcAgent.StopAgent(ctx)
+func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
+	// return pa.grpcAgent.StopAgent(ctx)
+	l, err := pa.grpcAgent.StopAgent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip off the shared folder prefix so that paths are correct on this system
+	// TODO rename based on agent
+	logName := strings.Replace(l.LogName, "./shared/", "", 1)
+
+	log := PandaAgentLog{
+		LogName:  logName,
+		Location: *pa.sharedDir,
+	}
+
+	// Copy log into shared directory
+	nBytes, err := copyFileHelper(log.GetLogFileName(), "/tmp/panda-studio/", logName)
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		return nil, errors.Wrap(err, "Error in copying log")
+	}
+
+	return &log, err
 }
 
 // StartReplay implements PandaReplayAgent

@@ -56,10 +56,12 @@ func main() {
 	fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileName())
 	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
 
-	err = agent.StopAgent(ctx)
+	log, err := agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("Log file: %s\n", log.GetLogFileName())
 
 	// Replay agent
 	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx)
@@ -80,8 +82,10 @@ func main() {
 	println(replay.Serial)
 	println(replay.Replay)
 
-	err = replay_agent.StopAgent(ctx)
+	log, err = replay_agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("Log file: %s\n", log.GetLogFileName())
 }

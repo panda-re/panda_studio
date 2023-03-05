@@ -79,7 +79,8 @@ var ctx = context.Background()
 func TestAgent(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		err = agent.StopAgent(ctx)
+		// TODO check logs
+		_, err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,7 +139,7 @@ func TestPrematureCommand(t *testing.T) {
 // Should be run before agent.StartAgent
 func TestPrematureStop(t *testing.T) {
 	num_tests++
-	err := agent.StopAgent(ctx)
+	_, err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent premature stop")
 	} else {
@@ -311,7 +312,8 @@ func TestStopRecording(t *testing.T) {
 // Should be run after agent.StartRecording
 func TestHangingRecording(t *testing.T) {
 	num_tests++
-	err := agent.StopAgent(ctx)
+	// TODO check logs
+	_, err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not receive warning for stopping a hanging recording")
 	} else {
@@ -331,7 +333,8 @@ var replay_agent controller.PandaReplayAgent
 func TestReplay(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		err = replay_agent.StopAgent(ctx)
+		// TODO check logs
+		_, err = replay_agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}

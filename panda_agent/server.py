@@ -38,7 +38,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def StopAgent(self, request: pb.StopAgentRequest, context):
         self.agent.stop()
         self.server.stop(grace=5)
-        return pb.StopAgentResponse()
+        return pb.StopAgentResponse(log_filename="./shared/execution.log")
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)

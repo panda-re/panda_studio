@@ -16,7 +16,9 @@ service PandaAgent {
 message StartAgentRequest {}
 message StartAgentResponse {}
 message StopAgentRequest {}
-message StopAgentResponse {}
+message StopAgentResponse {
+    string log_filename = 1;
+}
 
 message RunCommandRequest {
     string command = 1;

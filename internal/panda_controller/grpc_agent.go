@@ -46,13 +46,17 @@ func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
 }
 
 // StopAgent implements PandaAgent
-func (pa *grpcPandaAgent) StopAgent(ctx context.Context) error {
-	_, err := pa.cli.StopAgent(ctx, &pb.StopAgentRequest{})
+func (pa *grpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
+	resp, err := pa.cli.StopAgent(ctx, &pb.StopAgentRequest{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &PandaAgentLog{
+		LogName: resp.LogFilename,
+		// We cannot know the location with the information we have
+		Location: "?",
+	}, nil
 }
 
 // RunCommand implements PandaAgent
