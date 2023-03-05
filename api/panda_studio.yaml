@@ -218,6 +218,94 @@ paths:
                 $ref: "#/components/schemas/Recording"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+  /programs:
+    get:
+      tags:
+        - program
+      summary: Find all Interaction Programs
+      operationId: findAllPrograms
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InteractionProgram"
+    post:
+      tags:
+        - program
+      summary: Create new Interaction Program
+      operationId: createProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgramRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionProgram"
+  /programs/{programId}:
+    get:
+      tags:
+        - program
+      summary: Get Interaction Program with specified ID
+      operationId: findProgramById
+      parameters:
+        - $ref: "#/components/parameters/ProgramId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionProgram"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    put:
+      tags:
+        - program
+      summary: Update Interaction Program with specified ID
+      operationId: updateProgramById
+      parameters:
+        - $ref: "#/components/parameters/ProgramId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProgramRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionProgram"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+    delete:
+      tags:
+        - program
+      summary: Delete Interaction Program with specified ID
+      operationId: deleteProgramById
+      parameters:
+        - $ref: "#/components/parameters/ProgramId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionProgram"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
 components:
   parameters:
     ImageId:
@@ -238,6 +326,13 @@ components:
       name: recordingId
       in: path
       description: ID of recording
+      required: true
+      schema:
+        type: string
+    ProgramId:
+      name: programId
+      in: path
+      description: ID of program
       required: true
       schema:
         type: string
@@ -327,7 +422,7 @@ components:
         file:
           type: string
           format: binary
-
+    
     Recording:
       type: object
       properties:
@@ -380,3 +475,77 @@ components:
         file:
           type: string
           format: binary
+
+    InteractionProgram:
+      type: object
+      properties:
+        id: 
+          type: string
+        name:
+          type: string
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InteractionProgramInstruction"
+    
+    CreateProgramRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InteractionProgramInstruction"
+    
+    UpdateProgramRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        instructions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InteractionProgramInstruction"
+    
+    InteractionProgramInstruction:
+      oneOf:
+        - $ref: "#/components/schemas/RunCommandInstruction"
+        - $ref: "#/components/schemas/StartRecordingInstruction"
+        - $ref: "#/components/schemas/StopRecordingInstruction"
+      discriminator:
+        propertyName: "type"
+        mapping:
+          command: "#/components/schemas/RunCommandInstruction"
+          start_recording: "#/components/schemas/StartRecordingInstruction"
+          stop_recording: "#/components/schemas/StopRecordingInstruction"
+    
+    RunCommandInstruction:
+      type: object
+      required:
+        - type
+        - command
+      properties:
+        type:
+          type: string
+        command:
+          type: string
+    
+    StartRecordingInstruction:
+      type: object
+      required:
+        - type
+        - recording_name
+      properties:
+        type:
+          type: string
+        recording_name:
+          type: string
+    
+    StopRecordingInstruction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
