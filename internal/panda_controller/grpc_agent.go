@@ -36,13 +36,13 @@ func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 }
 
 // StartAgent implements PandaAgent
-func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
-	_, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
+func (pa *grpcPandaAgent) StartAgent(ctx context.Context) (pb.PandaAgent_StartAgentClient, error) {
+	stream, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return stream, nil
 }
 
 // StopAgent implements PandaAgent

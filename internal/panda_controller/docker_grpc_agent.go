@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 )
 
@@ -120,7 +121,7 @@ func (pa *dockerGrpcPandaAgent) RunCommand(ctx context.Context, cmd string) (*Pa
 }
 
 // StartAgent implements PandaAgent
-func (pa *dockerGrpcPandaAgent) StartAgent(ctx context.Context) error {
+func (pa *dockerGrpcPandaAgent) StartAgent(ctx context.Context) (pb.PandaAgent_StartAgentClient, error) {
 	return pa.grpcAgent.StartAgent(ctx)
 }
 

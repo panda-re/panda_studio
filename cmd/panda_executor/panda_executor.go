@@ -28,10 +28,19 @@ func main() {
 	}
 
 	fmt.Println("Starting agent")
-	err = agent.StartAgent(ctx)
+	// TODO
+	stream, err := agent.StartAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
+	if stream == nil {
+		panic("no stream")
+	}
+	resp, err := stream.Recv()
+	if err != nil {
+		panic(err)
+	}
+	println(resp.Execution)
 
 	fmt.Println("Starting recording")
 	if err := agent.StartRecording(ctx, "test"); err != nil {

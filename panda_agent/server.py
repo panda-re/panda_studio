@@ -33,7 +33,8 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         sleep(0.5) # ensures internal flags get set
-        return pb.StartAgentResponse()
+        # TODO stream file
+        yield pb.StartAgentResponse(execution="test")
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
         self.agent.stop()
