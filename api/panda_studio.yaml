@@ -519,6 +519,8 @@ components:
           command: "#/components/schemas/RunCommandInstruction"
           start_recording: "#/components/schemas/StartRecordingInstruction"
           stop_recording: "#/components/schemas/StopRecordingInstruction"
+          filesystem: "#/components/schemas/FilesystemInstruction"
+          network: "#/components/schemas/NetworkInstruction"
     
     RunCommandInstruction:
       type: object
@@ -548,4 +550,32 @@ components:
         - type
       properties:
         type:
+          type: string
+
+    FilesystemInstruction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+
+    NetworkInstruction:
+      type: object
+      required:
+        - type
+        - sock_type
+        - port
+        - packet_type
+        - packet_data
+      properties:
+        type:
+          type: string
+        sock_type:
+          type: string
+        port:
+          type: int
+        packet_type:
+          type: string
+        packet_data:
           type: string

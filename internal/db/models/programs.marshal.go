@@ -29,19 +29,43 @@ func (ip *InteractionProgramInstructionList) marshal(Marshal MarshalFunc) ([]byt
 		switch inst := inst.(type) {
 		case *RunCommandInstruction:
 			typedInstructions[i] = struct {
-				Type string `bson:"type" json:"type"`
+				Type                   string `bson:"type" json:"type"`
 				*RunCommandInstruction `bson:",inline" json:",inline"`
 			}{
-				Type: inst.GetInstructionType(),
+				Type:                  inst.GetInstructionType(),
 				RunCommandInstruction: inst,
 			}
 		case *StartRecordingInstruction:
 			typedInstructions[i] = struct {
-				Type string `bson:"type" json:"type"`
+				Type                       string `bson:"type" json:"type"`
 				*StartRecordingInstruction `bson:",inline" json:",inline"`
 			}{
-				Type: inst.GetInstructionType(),
+				Type:                      inst.GetInstructionType(),
 				StartRecordingInstruction: inst,
+			}
+		case *StopRecordingInstruction:
+			typedInstructions[i] = struct {
+				Type                      string `bson:"type" json:"type"`
+				*StopRecordingInstruction `bson:",inline" json:",inline"`
+			}{
+				Type:                     inst.GetInstructionType(),
+				StopRecordingInstruction: inst,
+			}
+		case *FilesystemInstruction:
+			typedInstructions[i] = struct {
+				Type                   string `bson:"type" json:"type"`
+				*FilesystemInstruction `bson:",inline" json:",inline"`
+			}{
+				Type:                  inst.GetInstructionType(),
+				FilesystemInstruction: inst,
+			}
+		case *NetworkInstruction:
+			typedInstructions[i] = struct {
+				Type                string `bson:"type" json:"type"`
+				*NetworkInstruction `bson:",inline" json:",inline"`
+			}{
+				Type:               inst.GetInstructionType(),
+				NetworkInstruction: inst,
 			}
 		}
 	}
@@ -50,7 +74,9 @@ func (ip *InteractionProgramInstructionList) marshal(Marshal MarshalFunc) ([]byt
 }
 
 func (ip *InteractionProgramInstructionList) unmarshal(data []byte, Unmarshal UnmarshalFunc) error {
-	var types []struct { Type string `json:"type" bson:"type"` }
+	var types []struct {
+		Type string `json:"type" bson:"type"`
+	}
 	err := Unmarshal(data, &types)
 	if err != nil {
 		return err
@@ -73,10 +99,14 @@ func (ip *InteractionProgramInstructionList) unmarshal(data []byte, Unmarshal Un
 			*item = &StartRecordingInstruction{}
 		case StopRecordingInstruction{}.GetInstructionType():
 			*item = &StopRecordingInstruction{}
+		case FilesystemInstruction{}.GetInstructionType():
+			*item = &FilesystemInstruction{}
+		case NetworkInstruction{}.GetInstructionType():
+			*item = &NetworkInstruction{}
 		default:
 			return errors.New("invalid type")
 		}
-		
+
 		err = Unmarshal(msg, item)
 		if err != nil {
 			return err
@@ -100,6 +130,6 @@ func (ip *InteractionProgramInstructionList) UnmarshalJSON(data []byte) error {
 	return ip.unmarshal(data, json.Unmarshal)
 }
 
-func (ip *InteractionProgramInstructionList) UnmarshalBSON(data []byte) (error) {
+func (ip *InteractionProgramInstructionList) UnmarshalBSON(data []byte) error {
 	return ip.unmarshal(data, bson.Unmarshal)
 }
