@@ -189,7 +189,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 						panic(err)
 					}
 					fmt.Printf(" %s\n", cmdResult)
-					result = append(result, string(cmdResult)+"\n")
+					//result = append(result, string(cmdResult)+"\n")
 					result = append(result, cmdResult.Logs+"\n")
 					break
 				case "filesystem":
