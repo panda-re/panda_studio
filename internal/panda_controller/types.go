@@ -13,6 +13,7 @@ type PandaAgent interface {
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (*PandaAgentRecording, error)
+	//SendNetworkCommand(ctx context.Context, network_request *NetworkRequest) (*NetworkResponse, error)
 	Close() error
 }
 
@@ -38,16 +39,16 @@ type PandaAgentReplayResult struct {
 }
 
 type NetworkRequest struct {
-	socketType   string
-	port         int32
-	application  string
-	command      string
-	customPacket string
+	SocketType   string
+	Port         int32
+	Application  string
+	Command      string
+	CustomPacket string
 }
 
 type NetworkResponse struct {
-	statusCode int32
-	output     string
+	StatusCode int32
+	Output     string
 }
 
 func (r *PandaAgentRecording) GetSnapshotFileName() string {
