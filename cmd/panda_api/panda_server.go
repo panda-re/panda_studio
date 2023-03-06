@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/api"
 	config "github.com/panda-re/panda_studio/internal/configuration"
+	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
@@ -19,9 +21,9 @@ type command struct {
 }
 
 type parameters struct {
-	Volume   string    `json:"volume"`
-	Commands []command `json:"commands"`
-	Name     string    `json:"name"`
+	Volume   string `json:"volume"`
+	Commands string `json:"commands"`
+	Name     string `json:"name"`
 }
 
 type responses struct {
@@ -32,6 +34,11 @@ func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
+
+	testThing()
+
+	testThing()
+
 	if err := runServer(); err != nil {
 		panic(err)
 	}
@@ -80,16 +87,70 @@ func postRecording(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func startExecutor(commands []command) ([]string, string) {
+func testThing() {
+	// var jsonArrRaw string
+	jsonArrRaw := `[
+		{
+			"id": "63d5955ed14c76798cf58c58",
+			"name": "Test Program",
+			"instructions": [
+				{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "start_recording",
+					"recording_name": "test_recording123"
+				},
+				
+				{
+					"type": "filesystem"
+				},
+				{
+					"type": "network",
+					"socket_type": "test_recording123",
+					"port": 443,
+					"packet_type": "http",
+					"packet_data": "GET /index  HTTP/1.1\r\n\r\n"
+				},
+								{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "stop_recording"
+				}
+			]
+		}
+	]`
+
+	output, _ := startExecutor(jsonArrRaw)
+	for line := range output {
+		fmt.Println("%s\n", line)
+	}
+}
+
+func startExecutor(serialized_json string) ([]string, *controller.PandaAgentRecording) {
 	ctx := context.Background()
 
 	// Create the docker contaier
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
 	defer agent.Close()
 
+	if err != nil {
+		panic(err)
+	}
+
+	var programs []models.InteractionProgram
+
+	err = json.Unmarshal([]byte(serialized_json), &programs)
 	if err != nil {
 		panic(err)
 	}
@@ -103,46 +164,56 @@ func startExecutor(commands []command) ([]string, string) {
 
 	var result []string
 
-	var recording string
-	//var cmdResult string
+	var recording *controller.PandaAgentRecording
+	for _, interactions := range programs {
+		fmt.Printf(" %s\n", interactions)
+		for _, cmd := range interactions.Instructions {
+			// Check Type of command and then execute backend as needed for that command.
+			if cmd != nil {
+				switch cmd.GetInstructionType() {
+				case "start_recording":
+					err := agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
+					if err != nil {
+						panic(err)
+					}
+					break
+				case "stop_recording":
+					recording, err = agent.StopRecording(ctx)
+					if err != nil {
+						panic(err)
+					}
+					break
+				case "command":
+					cmdResult, err := agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf(" %s\n", cmdResult)
+					result = append(result, cmdResult+"\n")
+					result = append(result, cmdResult.Logs+"\n")
+					break
+				case "filesystem":
+					fmt.Printf("Filesystem placeholder\n")
+					break
+				case "network":
+					fmt.Printf("Network Placeholder\n")
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).SocketType)
+					fmt.Printf("%d\n", cmd.(*models.NetworkInstruction).Port)
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketType)
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketData)
+					break
+				default:
+					fmt.Printf("Incorrect Command Type or end of List, Correct options can be found in the commands.md file")
+					break
+				}
 
-	for _, cmd := range commands {
-		fmt.Printf("> %s\n", cmd)
-		// Check Type of command and then execute backend as needed for that command.
-		switch cmd.Type {
-		case "Recording":
-			if cmd.Command == "start" {
-				cmdResult, err := agent.StartRecording(ctx, cmd.Name)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf("%s\n", cmdResult.Logs)
-				result = append(result, cmdResult.Logs+"\n")
-			} else if cmd.Command == "stop" {
-				recording, err = agent.StopRecording(ctx)
-				if err != nil {
-					panic(err)
-				}
-			} else {
-				panic("Error, Recording Instruction Type with incorrect instruction")
 			}
-			break
-		case "Serial":
-			cmdResult, err := agent.RunCommand(ctx, cmd.Command)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("%s\n", cmdResult.Logs)
-			result = append(result, cmdResult.Logs+"\n")
-			break
-		case "Filesystem":
-			break
-		case "Network":
-			break
-		default:
-			panic("Incorrect Command Type, Correct Options are: Recording, Serial, Filesystem or Network")
 		}
+	}
 
+	err = agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	return result, recording
