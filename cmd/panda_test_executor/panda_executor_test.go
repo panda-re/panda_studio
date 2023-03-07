@@ -111,7 +111,6 @@ func TestAgent(t *testing.T) {
 		t.Fatal("Could not stream")
 	}
 	stream.Recv() // Necessary to prevent lockup
-	// TODO figure out why it doesn't prevent extra start
 	t.Run("ExtraStart", TestExtraStart)
 	if !t.Failed() {
 		num_passed++
@@ -163,7 +162,12 @@ func TestPrematureStop(t *testing.T) {
 // Should be run after agent.StartAgent
 func TestExtraStart(t *testing.T) {
 	num_tests++
-	_, err := agent.StartAgent(ctx)
+	stream, err := agent.StartAgent(ctx)
+	if err != nil {
+		t.Fatal("Error occured starting agent")
+	}
+	// Must receive exception from stream
+	_, err = stream.Recv()
 	if err == nil {
 		t.Fatal("Did not prevent a second PANDA start")
 	} else {
