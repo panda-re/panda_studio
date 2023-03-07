@@ -1,12 +1,27 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
+import { useQueryClient } from '@tanstack/react-query';
 import axios, { AxiosRequestConfig } from 'axios';
 import prettyBytes from 'pretty-bytes';
-import { useNavigate } from 'react-router-dom';
-import { findAllImages, Image, ImageFile, useFindAllImages } from '../api';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { findAllImages, Image, ImageFile, useDeleteImageById, useFindAllImages } from '../api';
 
 function ImagesDataGrid() {
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const deleteFunction = useDeleteImageById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   const {isLoading, error, data} = useFindAllImages();
+
+  const deleteImage = ({imageId}: {imageId: string}) => {
+    deleteFunction.mutate({imageId: imageId});
+  }
+
+  useEffect(() => {
+    if(location.state) {
+      deleteImage({imageId: location.state.recordingId});
+    }
+  }, []);
 
   const tableColumns: EuiBasicTableColumn<Image>[] = [
     {

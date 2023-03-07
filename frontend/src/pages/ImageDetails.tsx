@@ -8,7 +8,7 @@ import { ImageFile, useDeleteImageById, useUpdateImage } from '../api';
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const deleteFn = useDeleteImageById();
+  // const deleteFn = useDeleteImageById({mutation: {onSuccess: ()=> {navigate('/images')}}});
   const updateFn = useUpdateImage();
 
   // Modal Constants
@@ -168,8 +168,8 @@ function CreateImageDetailsPage() {
           <EuiButton 
               style={buttonStyle}
               onClick= {() => {
-                deleteFn.mutate({imageId: location.state.item.id})
-                navigate('/images')
+                // deleteFn.mutate({imageId: location.state.item.id})
+                navigate('/images', {state: {recordingId: location.state.item.id}})
               }}
             >Delete Image</EuiButton>
           </EuiFlexItem>

@@ -18,8 +18,10 @@ import ImagesDataGrid from '../components/ImagesDataGrid';
 import {EuiFlexGrid} from "@elastic/eui";
 import { useState } from 'react';
 import { CreateImageFileRequest, CreateImageRequest, Image, ImageFileType, PandaConfig, useCreateImage, useCreateImageFile } from '../api';
+import { useNavigate } from 'react-router';
 
 function ImagesPage() {
+  const navigate = useNavigate()
   const createFileFn = useCreateImageFile()
   // File picker constants
   const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
@@ -34,13 +36,11 @@ function ImagesPage() {
   const [modalName, setModalName] = useState("");
   const [modalDesc, setModalDesc] = useState("");
   const [modalConfig, setModalConfig] = useState("");
-  const [modalType, setModalType] = useState("");
 
   const closeModal = () => {
     setModalName("");
     setModalDesc("");
     setModalConfig("");
-    setModalType("");
     setIsModalVisible(false)
   };
   const showModal = () => {
@@ -48,6 +48,10 @@ function ImagesPage() {
   }
 
   function createImageFiles(image: Image){
+    
+  }
+
+  function createFiles(image: Image){
     for(var f of files){
       const fileReq: CreateImageFileRequest = {
         file_name: modalName,
@@ -56,11 +60,10 @@ function ImagesPage() {
       }
       createFileFn.mutate({data: fileReq, imageId: image.id ?? ""})
     }
+    navigate(0);
   }
 
-  const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {
-    createImageFiles(data);
-  },}})
+  const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
 
   function createFile(){
     const conf: PandaConfig = {
@@ -96,12 +99,6 @@ function ImagesPage() {
                         setModalDesc(e.target.value);
                       }}/>
                       <EuiFieldText 
-                      placeholder="Enter File Type"  
-                      name="imageFileType" 
-                      onChange={(e) => {
-                        setModalType(e.target.value);
-                      }}/>
-                      <EuiFieldText 
                       placeholder="Enter config key"  
                       name="pandaConfig" 
                       onChange={(e) => {
@@ -119,7 +116,7 @@ function ImagesPage() {
                   <EuiButton 
                     onClick={() => {
                       createFile();
-                      closeModal();
+                      // closeModal();
                     }} 
                     fill>
                       Submit</EuiButton>
