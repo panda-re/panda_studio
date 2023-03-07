@@ -4,12 +4,13 @@ import axios, { AxiosRequestConfig } from 'axios';
 import prettyBytes from 'pretty-bytes';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { findAllImages, Image, ImageFile, useDeleteImageById, useFindAllImages } from '../api';
+import { CreateImageRequest, findAllImages, Image, ImageFile, PandaConfig, updateImage, useDeleteImageById, useFindAllImages, useUpdateImage } from '../api';
 
 function ImagesDataGrid() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const deleteFunction = useDeleteImageById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
+  const updateFn = useUpdateImage({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   const {isLoading, error, data} = useFindAllImages();
 
@@ -17,9 +18,30 @@ function ImagesDataGrid() {
     deleteFunction.mutate({imageId: imageId});
   }
 
+  const updateImage = ({image}: {image: Image}) => {
+    if(image.id == null){
+      return;
+    }
+    const conf: PandaConfig = {
+      key: image.config,
+    }
+    const req: CreateImageRequest = {
+      name: image.name,
+      description: image.description,
+      config: conf,
+    };
+    updateFn.mutate({data: req, imageId: image.id});
+  }
+
   useEffect(() => {
     if(location.state) {
-      deleteImage({imageId: location.state.recordingId});
+      if(location.state.image){
+        updateImage({image: location.state.image});
+      }
+      else{
+        deleteImage({imageId: location.state.imageId});
+      }
+      window.history.replaceState({}, document.title)
     }
   }, []);
 

@@ -22,8 +22,8 @@ import { useNavigate } from 'react-router';
 
 function ImagesPage() {
   const navigate = useNavigate()
-  const createFileFn = useCreateImageFile()
   // File picker constants
+  const createFileFn = useCreateImageFile()
   const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
   const [files, setFiles] = useState(new Array<File>);
 
@@ -47,14 +47,10 @@ function ImagesPage() {
     setIsModalVisible(true);
   }
 
-  function createImageFiles(image: Image){
-    
-  }
-
   function createFiles(image: Image){
     for(var f of files){
       const fileReq: CreateImageFileRequest = {
-        file_name: modalName,
+        file_name: f.name,
         file_type: ImageFileType.qcow2,
         file: f,
       }

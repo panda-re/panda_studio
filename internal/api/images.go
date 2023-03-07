@@ -42,9 +42,9 @@ func (s *PandaStudioServer) CreateImage(ctx *gin.Context) {
 	}
 
 	created, err := s.imageRepo.Create(ctx, &models.Image{
-		Name: *createReq.Name,
+		Name:        *createReq.Name,
 		Description: *createReq.Description,
-	})	
+	})
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -64,7 +64,24 @@ func (s *PandaStudioServer) DeleteImageById(ctx *gin.Context, imageId string) {
 }
 
 func (s *PandaStudioServer) UpdateImage(ctx *gin.Context, imageId string) {
-	ctx.Error(errors.New("Not yet implemented"))
+	var updateReq CreateImageRequest
+	err := ctx.BindJSON(&updateReq)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "invalid request"))
+		return
+	}
+
+	updated, err := s.imageRepo.Update(ctx, &models.Image{
+		Name:        *updateReq.Name,
+		Description: *updateReq.Description,
+		ID:          db.ParseObjectID(imageId),
+	})
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, updated)
 }
 
 func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
@@ -73,9 +90,9 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 		ctx.Error(errors.WithStack(err))
 		return
 	}
-	
+
 	fileObj, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
-		ImageID: db.ParseObjectID(imageId),
+		ImageID:  db.ParseObjectID(imageId),
 		FileName: form.Value["file_name"][0],
 		FileType: form.Value["file_type"][0],
 	})
@@ -99,7 +116,7 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 
 	fileObj, err = s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
 		ImageId: db.ParseObjectID(imageId),
-		FileId: fileObj.ID,
+		FileId:  fileObj.ID,
 	}, fileReader)
 
 	if err != nil {

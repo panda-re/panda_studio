@@ -3,28 +3,40 @@ import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { ImageFile, useDeleteImageById, useUpdateImage } from '../api';
+import { CreateImageRequest, ImageFile, PandaConfig, useDeleteImageById, useUpdateImage } from '../api';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  // const deleteFn = useDeleteImageById({mutation: {onSuccess: ()=> {navigate('/images')}}});
-  const updateFn = useUpdateImage();
+  
 
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalName, setModalName] = useState("");
   const [modalDesc, setModalDesc] = useState("");
+  const [modalConfig, setModalConfig] = useState("");
 
   const closeModal = () => {
     setModalName("");
     setModalDesc("");
+    setModalConfig("");
     setIsModalVisible(false)
   };
   const showModal = () => {
     setModalName(location.state.item.name);
     setModalDesc(location.state.item.description);
+    setModalConfig(location.state.item.config);
     setIsModalVisible(true);
+  }
+
+  function createUpdateImageAndReturn(){
+    var img = {
+      id: location.state.item.id,
+      name: modalName,
+      description: modalDesc,
+      config: modalConfig,
+    }
+    navigate('/images', {state: {image: img}});
   }
 
   function CreateModal(){
@@ -48,14 +60,18 @@ function CreateImageDetailsPage() {
                       onChange={(e) => {
                         setModalDesc(e.target.value);
                       }}/>
+                      <EuiFieldText 
+                      placeholder="Enter New Config"  
+                      name="imageConfig" 
+                      value={modalConfig}
+                      onChange={(e) => {
+                        setModalConfig(e.target.value);
+                      }}/>
                 </EuiModalBody>
                 <EuiModalFooter>
                   <EuiButton onClick={closeModal} fill>Close</EuiButton>
                   <EuiButton 
-                    onClick={() => {
-                      // updateFn.mutate({imageId: location.state.item.id});
-                      closeModal();
-                    }} 
+                    onClick={createUpdateImageAndReturn}
                     fill>
                       Submit</EuiButton>
                 </EuiModalFooter>
@@ -168,8 +184,7 @@ function CreateImageDetailsPage() {
           <EuiButton 
               style={buttonStyle}
               onClick= {() => {
-                // deleteFn.mutate({imageId: location.state.item.id})
-                navigate('/images', {state: {recordingId: location.state.item.id}})
+                navigate('/images', {state: {imageId: location.state.item.id}})
               }}
             >Delete Image</EuiButton>
           </EuiFlexItem>
