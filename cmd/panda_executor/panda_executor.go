@@ -36,11 +36,13 @@ func main() {
 	if stream == nil {
 		panic("no stream")
 	}
+	// Required for proper startup
 	resp, err := stream.Recv()
 	if err != nil {
 		panic(err)
+	} else if resp.Execution != "" {
+		print("first resp not empty")
 	}
-	println(resp.Execution)
 
 	fmt.Println("Starting recording")
 	if err := agent.StartRecording(ctx, "test"); err != nil {
@@ -72,12 +74,21 @@ func main() {
 
 	fmt.Printf("Log file: %s\n", log.GetLogFileName())
 
+	for {
+		resp, err = stream.Recv()
+		// Errors out when done
+		if err != nil {
+			break
+		}
+		print(resp.Execution)
+	}
+
 	// Replay agent
 	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer agent.Close()
+	defer replay_agent.Close()
 
 	if err != nil {
 		panic(err)

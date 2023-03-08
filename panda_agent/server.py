@@ -15,6 +15,8 @@ from agent import PandaAgent
 from agent import ErrorCode
 from time import sleep
 
+EXECUTION_LOG = "./shared/execution.log"
+
 PORTS = [
     "[::]:50051",
     "unix:///panda/shared/panda-agent.sock"
@@ -33,13 +35,21 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         sleep(0.5) # ensures internal flags get set
-        # TODO stream file
-        yield pb.StartAgentResponse(execution="test")
+        yield pb.StartAgentResponse(execution="") # Required to finish startup
+        with (open(EXECUTION_LOG)) as file:
+            while True:
+                where = file.tell()
+                line = file.readline()
+                if not line:
+                    sleep(1)
+                    file.seek(where)
+                else:
+                    yield pb.StartAgentResponse(execution=line)
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
         self.agent.stop()
         self.server.stop(grace=5)
-        return pb.StopAgentResponse(log_filename="./shared/execution.log")
+        return pb.StopAgentResponse(log_filename=EXECUTION_LOG)
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)
@@ -61,13 +71,13 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         if self.agent.panda.started.is_set(): 
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         serial = self.agent.start_replay(request.recording_name)
-        with (open("./shared/execution.log")) as file:
+        with (open(EXECUTION_LOG)) as file:
             replay = file.read()
         return pb.StartReplayResponse(serial=serial, replay=replay)
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
         serial = self.agent.stop_replay()
-        with (open("./shared/execution.log")) as file:
+        with (open(EXECUTION_LOG)) as file:
             replay = file.read()
         return pb.StopReplayResponse(serial=serial, replay=replay)
 
