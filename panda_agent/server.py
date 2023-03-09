@@ -70,12 +70,21 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def StartReplay(self, request: pb.StartReplayRequest, context):
         if self.agent.panda.started.is_set(): 
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
-        # TODO stream serial and execution
-        serial = self.agent.start_replay(request.recording_name)
-        yield pb.StartReplayResponse(serial="", replay="")
+        self.agent.start_replay(request.recording_name)
+        yield pb.StartReplayResponse(serial="", replay="") # Required to finish startup
         with (open(EXECUTION_LOG)) as file:
-            replay = file.read()
-        yield pb.StartReplayResponse(serial=serial, replay=replay)
+            while self.agent.panda.running:
+                where = file.tell()
+                line = file.readline()
+                s = self.agent.serial_out
+                self.agent.serial_out = ""
+                if not line:
+                    file.seek(where)
+                    yield pb.StartReplayResponse(serial=s, replay="")
+                else:
+                    yield pb.StartReplayResponse(serial=s, replay=line)
+                    if "Replay completed successfully" in line:
+                        yield
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
         serial = self.agent.stop_replay()

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
@@ -75,9 +76,12 @@ func main() {
 
 	for {
 		resp, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
 		// Errors out when done
 		if err != nil {
-			break
+			panic(err)
 		}
 		print(resp.Execution)
 	}
@@ -108,17 +112,26 @@ func main() {
 	} else if replay_resp.Replay != "" || replay_resp.Serial != "" {
 		print("first resp not empty")
 	}
-	replay_resp, err = replay_stream.Recv()
-	if err != nil {
-		panic(err)
+
+	for {
+		replay_resp, err = replay_stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		if replay_resp.Replay != "" {
+			print(replay_resp.Replay)
+		}
+		if replay_resp.Serial != "" {
+			print(replay_resp.Serial)
+		}
 	}
-	println(replay_resp.Replay)
-	println(replay_resp.Serial)
 
 	log, err = replay_agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
-
 	fmt.Printf("Log file: %s\n", log.GetLogFileName())
 }

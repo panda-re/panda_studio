@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -438,16 +439,29 @@ func TestRunReplay(t *testing.T) {
 	} else if resp.Replay != "" || resp.Serial != "" {
 		t.Error("first resp not empty")
 	}
-	resp, err = stream.Recv()
-	if err != nil {
-		t.Error(err)
+	var serial string
+	var replay string
+	for {
+		resp, err = stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		if resp.Replay != "" {
+			replay += resp.Replay
+		}
+		if resp.Serial != "" {
+			serial += resp.Serial
+		}
 	}
-	if resp.Serial == "" {
+	if serial == "" {
 		t.Error("Replay did not return serial")
 	} else {
 		// Check serial I/O, currently only works with single-line I/O
-		serial := strings.Split(resp.Serial, "\r\n")
-		for i, cmd := range serial {
+		serial_lines := strings.Split(serial, "\r\n")
+		for i, cmd := range serial_lines {
 			index := i / 2 // Lines alternate between command and response
 			if i%2 == 0 {
 				// Test for the serial command
@@ -463,11 +477,11 @@ func TestRunReplay(t *testing.T) {
 		}
 
 	}
-	if resp.Replay == "" {
+	if replay == "" {
 		t.Error("Replay did not return execution")
 	} else {
 		// Check replay execution
-		if !strings.Contains(resp.Replay, "Replay completed successfully") {
+		if !strings.Contains(replay, "Replay completed successfully") {
 			t.Fatal("Replay did not complete successfully")
 		}
 	}
