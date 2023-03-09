@@ -14,12 +14,6 @@ import (
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
-type command struct {
-	Type    string `json:"type"`
-	Command string `json:"command"`
-	Name    string `json:"name"`
-}
-
 type parameters struct {
 	Volume   string `json:"volume"`
 	Commands string `json:"commands"`
@@ -34,10 +28,6 @@ func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
-
-	testThing()
-
-	testThing()
 
 	if err := runServer(); err != nil {
 		panic(err)
@@ -87,57 +77,9 @@ func postRecording(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func testThing() {
-	// var jsonArrRaw string
-	jsonArrRaw := `[
-		{
-			"id": "63d5955ed14c76798cf58c58",
-			"name": "Test Program",
-			"instructions": [
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "start_recording",
-					"recording_name": "test_recording123"
-				},
-				
-				{
-					"type": "filesystem"
-				},
-				{
-					"type": "network",
-					"socket_type": "test_recording123",
-					"port": 443,
-					"packet_type": "http",
-					"packet_data": "GET /index  HTTP/1.1\r\n\r\n"
-				},
-								{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "stop_recording"
-				}
-			]
-		}
-	]`
-
-	output, _ := startExecutor(jsonArrRaw)
-	for line := range output {
-		fmt.Println("%s\n", line)
-	}
-}
-
 func startExecutor(serialized_json string) ([]string, *controller.PandaAgentRecording) {
 	ctx := context.Background()
 
-	// Create the docker contaier
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
@@ -172,6 +114,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 			if cmd != nil {
 				switch cmd.GetInstructionType() {
 				case "start_recording":
+					// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
 					err := agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
 					if err != nil {
 						panic(err)
@@ -189,7 +132,6 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 						panic(err)
 					}
 					fmt.Printf(" %s\n", cmdResult)
-					//result = append(result, string(cmdResult)+"\n")
 					result = append(result, cmdResult.Logs+"\n")
 					break
 				case "filesystem":
@@ -203,10 +145,9 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketData)
 					break
 				default:
-					fmt.Printf("Incorrect Command Type or end of List, Correct options can be found in the commands.md file")
+					fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
 					break
 				}
-
 			}
 		}
 	}
