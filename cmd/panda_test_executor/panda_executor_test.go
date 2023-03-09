@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 )
 
 // Each enum represents the state panda was in that caused the exception
@@ -78,11 +79,21 @@ var ctx = context.Background()
 // Tests premature execution and that commands return properly
 func TestAgent(t *testing.T) {
 	var err error
+	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
-		// TODO check logs
 		_, err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
+		}
+		for {
+			resp, err := stream.Recv()
+			// Errors out when done
+			if err != nil {
+				break
+			}
+			if resp.Execution == "" {
+				t.Error("Empty stream")
+			}
 		}
 		err = agent.Close()
 		if err != nil {
@@ -102,15 +113,20 @@ func TestAgent(t *testing.T) {
 	if !t.Failed() {
 		num_passed++
 	}
-	stream, err := agent.StartAgent(ctx)
-	// TODO stream
+	stream, err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if stream == nil {
 		t.Fatal("Could not stream")
 	}
-	stream.Recv() // Necessary to prevent lockup
+	// Required for proper startup
+	resp, err := stream.Recv()
+	if err != nil {
+		t.Error(err)
+	} else if resp.Execution != "" {
+		t.Error("First execution log stream not empty")
+	}
 	t.Run("ExtraStart", TestExtraStart)
 	if !t.Failed() {
 		num_passed++
@@ -201,6 +217,7 @@ func TestCommands(t *testing.T) {
 // Tests premature start and stop and proper recording
 func TestRecord(t *testing.T) {
 	var err error
+	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
 		err = agent.Close()
 		if err != nil {
@@ -212,14 +229,20 @@ func TestRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stream, err := agent.StartAgent(ctx)
+	stream, err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if stream == nil {
 		t.Fatal("Could not stream")
 	}
-	stream.Recv() // Necessary to prevent lockup
+	// Required for proper startup
+	resp, err := stream.Recv()
+	if err != nil {
+		t.Error(err)
+	} else if resp.Execution != "" {
+		t.Error("First execution log stream not empty")
+	}
 	t.Run("PreStop", TestPrematureStopRecording)
 	if !t.Failed() {
 		num_passed++

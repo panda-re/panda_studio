@@ -37,7 +37,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         sleep(0.5) # ensures internal flags get set
         yield pb.StartAgentResponse(execution="") # Required to finish startup
         with (open(EXECUTION_LOG)) as file:
-            while True:
+            while self.agent.panda.running:
                 where = file.tell()
                 line = file.readline()
                 if not line:
