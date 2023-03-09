@@ -19,7 +19,7 @@ type PandaAgent interface {
 }
 
 type PandaReplayAgent interface {
-	StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
+	StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error)
 	StopAgent(ctx context.Context) (*PandaAgentLog, error)
 	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
 	Close() error

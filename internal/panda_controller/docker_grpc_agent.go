@@ -285,7 +285,7 @@ func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgen
 }
 
 // StartReplay implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+func (pa *dockerGrpcPandaReplayAgent) StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error) {
 	// Copy file into shared directory
 	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
 	snapshotName := fmt.Sprintf("%s-rr-snp", recordingName)

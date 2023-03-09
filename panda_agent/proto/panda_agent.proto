@@ -9,7 +9,7 @@ service PandaAgent {
     rpc RunCommand (RunCommandRequest) returns (RunCommandResponse) {}
     rpc StartRecording (StartRecordingRequest) returns (StartRecordingResponse) {}
     rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
-    rpc StartReplay (StartReplayRequest) returns (StartReplayResponse) {}
+    rpc StartReplay (StartReplayRequest) returns (stream StartReplayResponse) {}
     rpc StopReplay (StopReplayRequest) returns (StopReplayResponse) {}
 }
 

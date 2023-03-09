@@ -425,18 +425,28 @@ func TestPrematureReplayStop(t *testing.T) {
 // Tests that a recording can be replayed without error
 func TestRunReplay(t *testing.T) {
 	num_tests++
-	replay, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	stream, err := replay_agent.StartReplayAgent(ctx, recording_name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if replay == nil {
+	if stream == nil {
 		t.Fatal("Replay did not return")
 	}
-	if replay.Serial == "" {
+	resp, err := stream.Recv()
+	if err != nil {
+		t.Error(err)
+	} else if resp.Replay != "" || resp.Serial != "" {
+		t.Error("first resp not empty")
+	}
+	resp, err = stream.Recv()
+	if err != nil {
+		t.Error(err)
+	}
+	if resp.Serial == "" {
 		t.Error("Replay did not return serial")
 	} else {
 		// Check serial I/O, currently only works with single-line I/O
-		serial := strings.Split(replay.Serial, "\r\n")
+		serial := strings.Split(resp.Serial, "\r\n")
 		for i, cmd := range serial {
 			index := i / 2 // Lines alternate between command and response
 			if i%2 == 0 {
@@ -453,11 +463,11 @@ func TestRunReplay(t *testing.T) {
 		}
 
 	}
-	if replay.Replay == "" {
+	if resp.Replay == "" {
 		t.Error("Replay did not return execution")
 	} else {
 		// Check replay execution
-		if !strings.Contains(replay.Replay, "Replay completed successfully") {
+		if !strings.Contains(resp.Replay, "Replay completed successfully") {
 			t.Fatal("Replay did not complete successfully")
 		}
 	}
@@ -468,7 +478,12 @@ func TestRunReplay(t *testing.T) {
 // Should be run before replay_agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
 	num_tests++
-	_, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	stream, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	if err != nil {
+		t.Fatal("error occured starting replay agent")
+	}
+	// Must receive exception from stream
+	_, err = stream.Recv()
 	if err == nil {
 		t.Fatal("Did not prevent extra replay")
 	} else {

@@ -28,7 +28,6 @@ func main() {
 	}
 
 	fmt.Println("Starting agent")
-	// TODO
 	stream, err := agent.StartAgent(ctx)
 	if err != nil {
 		panic(err)
@@ -95,12 +94,26 @@ func main() {
 	}
 
 	fmt.Println("Starting replay")
-	replay, err := replay_agent.StartReplayAgent(ctx, "test")
+	replay_stream, err := replay_agent.StartReplayAgent(ctx, "test")
 	if err != nil {
 		panic(err)
 	}
-	println(replay.Serial)
-	println(replay.Replay)
+	if replay_stream == nil {
+		panic("no stream")
+	}
+	// Required for proper startup
+	replay_resp, err := replay_stream.Recv()
+	if err != nil {
+		panic(err)
+	} else if replay_resp.Replay != "" || replay_resp.Serial != "" {
+		print("first resp not empty")
+	}
+	replay_resp, err = replay_stream.Recv()
+	if err != nil {
+		panic(err)
+	}
+	println(replay_resp.Replay)
+	println(replay_resp.Serial)
 
 	log, err = replay_agent.StopAgent(ctx)
 	if err != nil {

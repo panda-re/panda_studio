@@ -100,18 +100,15 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 }
 
 // StartReplayAgent implements PandaReplayAgent
-func (pa *grpcPandaAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
-	resp, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
+func (pa *grpcPandaAgent) StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error) {
+	stream, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
 		RecordingName: recordingName,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &PandaAgentReplayResult{
-		Serial: resp.GetSerial(),
-		Replay: resp.GetReplay(),
-	}, nil
+	return stream, nil
 }
 
 // StopReplay implements PandaReplayAgent
