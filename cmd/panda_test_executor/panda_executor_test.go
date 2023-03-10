@@ -350,7 +350,6 @@ func TestStopRecording(t *testing.T) {
 // Should be run after agent.StartRecording
 func TestHangingRecording(t *testing.T) {
 	num_tests++
-	// TODO check logs
 	_, err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not receive warning for stopping a hanging recording")
@@ -371,7 +370,6 @@ var replay_agent controller.PandaReplayAgent
 func TestReplay(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		// TODO check logs
 		_, err = replay_agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
