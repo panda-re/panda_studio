@@ -76,12 +76,9 @@ func main() {
 
 	for {
 		resp, err = stream.Recv()
-		if err == io.EOF {
-			break
-		}
 		// Errors out when done
 		if err != nil {
-			panic(err)
+			break
 		}
 		print(resp.Execution)
 	}

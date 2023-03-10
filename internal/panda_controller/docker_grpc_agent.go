@@ -133,7 +133,6 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, 
 	}
 
 	// Strip off the shared folder prefix so that paths are correct on this system
-	// TODO rename based on agent
 	logName := strings.Replace(l.LogName, "./shared/", "", 1)
 
 	log := PandaAgentLog{
@@ -142,7 +141,7 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, 
 	}
 
 	// Copy log into shared directory
-	nBytes, err := copyFileHelper(log.GetLogFileName(), "/tmp/panda-studio/", logName)
+	nBytes, err := copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying log")
 	}
@@ -260,14 +259,12 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 
 // StopAgent implements PandaReplayAgent
 func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
-	// return pa.grpcAgent.StopAgent(ctx)
 	l, err := pa.grpcAgent.StopAgent(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Strip off the shared folder prefix so that paths are correct on this system
-	// TODO rename based on agent
 	logName := strings.Replace(l.LogName, "./shared/", "", 1)
 
 	log := PandaAgentLog{
@@ -276,7 +273,7 @@ func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgen
 	}
 
 	// Copy log into shared directory
-	nBytes, err := copyFileHelper(log.GetLogFileName(), "/tmp/panda-studio/", logName)
+	nBytes, err := copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying log")
 	}
