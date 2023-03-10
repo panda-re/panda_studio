@@ -149,7 +149,7 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, 
 	return &log, err
 }
 
-func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error) {
+func CreateReplayDockerPandaAgent(ctx context.Context, file_path string) (PandaReplayAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -167,6 +167,15 @@ func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error)
 		cli:         cli,
 		containerId: nil,
 		sharedDir:   &sharedDir,
+	}
+
+	if file_path != "" {
+		// Copy given image into shared directory
+		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
+		if (err != nil && err != io.EOF) || nBytes == 0 {
+			print("Error in copying")
+			return nil, err
+		}
 	}
 
 	// Start the container
@@ -371,12 +380,6 @@ func (pa *dockerGrpcPandaReplayAgent) startContainer(ctx context.Context) error 
 				Type:   "bind",
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
-			},
-			// So PANDA doesn't need to download the same image
-			{
-				Type:   "bind",
-				Source: "/root/.panda",
-				Target: "/root/.panda",
 			},
 		},
 		// make sure the container is removed on exit

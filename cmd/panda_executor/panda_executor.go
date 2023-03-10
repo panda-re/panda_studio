@@ -15,11 +15,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer agent.Close()
-
-	if err != nil {
-		panic(err)
-	}
 
 	commands := []string{
 		"uname -a",
@@ -83,12 +78,16 @@ func main() {
 		print(resp.Execution)
 	}
 
-	// Replay agent
-	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx)
+	err = agent.Close()
 	if err != nil {
 		panic(err)
 	}
-	defer replay_agent.Close()
+
+	// Replay agent
+	replay_agent, err := controller.CreateReplayDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		panic(err)
+	}
 
 	if err != nil {
 		panic(err)
@@ -131,4 +130,9 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("Log file: %s\n", log.GetLogFileName())
+
+	err = replay_agent.Close()
+	if err != nil {
+		panic(err)
+	}
 }

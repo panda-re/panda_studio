@@ -382,7 +382,7 @@ func TestReplay(t *testing.T) {
 		}
 	})
 
-	replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx)
+	replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		t.Fatal(err)
 	}
