@@ -1,6 +1,10 @@
 from pandare import Panda
 from enum import Enum
 import queue
+import pb.panda_agent_pb2 as pb
+import socket
+
+PANDA_IP = '127.0.0.1'
 
 # Each enum represents the state panda was in that caused the exception
 # Enum should match that in /cmd/panda_test_executor/panda_executor_test.go
@@ -139,3 +143,50 @@ class PandaAgent:
         
         self._run_function(panda_stop_replay)
         return self.serial_out
+
+    def execute_network_command(self, request: pb.NetworkRequest):
+        
+        response = b''
+        message = b''
+
+        if request.application == "HTTP" or request.application == "http":
+            if request.command == "GET":
+                message = b'GET'
+            elif request.command == "HEAD":
+                message = b'HEAD'
+            elif request.command == "POST":
+                message = b'POST'
+            elif request.command == "PUT":
+                message = b'PUT'
+            elif request.command == "DELETE":
+                message = b'DELETE'
+            elif request.command == "CONNECT":
+                message = b'CONNECT'
+            elif request.command == "OPTIONS":
+                message = b'OPTIONS'
+            elif request.command == "TRACE":
+                message = b'TRACE'
+            elif request.command == "PATCH":
+                message = b'PATCH'
+            else:
+                return "Invalid HTTP Command, make sure its somehting like GET, POST, or PUT"
+            
+            # Add a space then add the custome message (may be '' which is fine as long as its something)
+            message += bytes(' ', encoding='utf-8')
+            message += bytes(request.customPacket, encoding='utf-8')
+            message += b' HTTP/1.1\r\n\r\n'
+
+        else:
+            message = bytes(request.customPacket, encoding='utf-8')
+
+
+
+
+
+        with socket.socket(socket.AF_INET, request.socketType) as con:
+            con.connect((PANDA_IP, request.port))
+            con.send(message)
+            response = con.recv(4096)
+            con.close()
+        
+        return response

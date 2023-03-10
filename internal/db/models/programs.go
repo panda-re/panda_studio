@@ -7,8 +7,8 @@ import (
 type InteractionProgramInstructionList []InteractionProgramInstruction
 
 type InteractionProgram struct {
-	ID db.ObjectID `bson:"_id" json:"id"`
-	Name string `bson:"name" json:"name"`
+	ID           db.ObjectID                       `bson:"_id" json:"id"`
+	Name         string                            `bson:"name" json:"name"`
 	Instructions InteractionProgramInstructionList `bson:"instructions" json:"instructions"`
 }
 
@@ -33,9 +33,26 @@ func (StartRecordingInstruction) GetInstructionType() string {
 }
 
 type StopRecordingInstruction struct {
-
 }
 
 func (StopRecordingInstruction) GetInstructionType() string {
 	return "stop_recording"
+}
+
+type FilesystemInstruction struct {
+}
+
+func (FilesystemInstruction) GetInstructionType() string {
+	return "filesystem"
+}
+
+type NetworkInstruction struct {
+	SocketType string `bson:"sock_type" json:"sock_type"`
+	Port       int    `bson:"port" json:"port"`
+	PacketType string `bson:"packet_type" json:"packet_type"`
+	PacketData string `bson:"packet_data" json:"packet_data"`
+}
+
+func (NetworkInstruction) GetInstructionType() string {
+	return "network"
 }

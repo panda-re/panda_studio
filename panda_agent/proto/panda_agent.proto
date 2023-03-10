@@ -11,6 +11,7 @@ service PandaAgent {
     rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
     rpc StartReplay (StartReplayRequest) returns (StartReplayResponse) {}
     rpc StopReplay (StopReplayRequest) returns (StopReplayResponse) {}
+    rpc SendNetworkCommand (NetworkRequest) returns (NetworkResponse) {}
 }
 
 message StartAgentRequest {}
@@ -52,4 +53,17 @@ message StopReplayRequest {}
 message StopReplayResponse {
     string serial = 1;
     string replay = 2;
+}
+
+message NetworkRequest {
+    string socketType = 1;
+    int32 port = 2;
+    string application = 3;
+    string command = 4;
+    string customPacket = 5;
+}
+
+message NetworkResponse {
+    int32 statusCode = 1;
+    string output = 2;
 }
