@@ -141,8 +141,8 @@ func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, 
 	}
 
 	// Copy log into shared directory
-	nBytes, err := copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
-	if (err != nil && err != io.EOF) || nBytes == 0 {
+	_, err = copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
+	if err != nil && err != io.EOF {
 		return nil, errors.Wrap(err, "Error in copying log")
 	}
 
@@ -282,8 +282,8 @@ func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgen
 	}
 
 	// Copy log into shared directory
-	nBytes, err := copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
-	if (err != nil && err != io.EOF) || nBytes == 0 {
+	_, err = copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
+	if err != nil && err != io.EOF {
 		return nil, errors.Wrap(err, "Error in copying log")
 	}
 

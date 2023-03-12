@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +39,8 @@ func getError(err error) int {
 
 var num_passed int = 0
 var num_tests int = 0
+
+var log *controller.PandaAgentLog
 
 // Runs a test for the agent, recording and replay
 // Prints the number of tests and success rate
@@ -82,20 +85,31 @@ func TestAgent(t *testing.T) {
 	var err error
 	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
-		_, err = agent.StopAgent(ctx)
+		log, err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+		if log == nil {
+			t.Fatal("Agent returned a nil log")
+		}
+		log_file, err := os.ReadFile(log.GetLogFileName())
+		if err != nil {
+			t.Error("File not found")
+		}
+		var log_stream string = ""
 		for {
 			resp, err := stream.Recv()
 			// Errors out when done
 			if err != nil {
 				break
 			}
-			if resp.Execution == "" {
-				t.Error("Empty stream")
-			}
+			log_stream += resp.Execution
 		}
+		// These should be empty because nothing important happens
+		if !strings.Contains(log_stream, string(log_file)) {
+			t.Error("Panda VM execution log file and stream did not match")
+		}
+
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -220,6 +234,30 @@ func TestRecord(t *testing.T) {
 	var err error
 	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
+		log, err = agent.StopAgent(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if log == nil {
+			t.Fatal("Agent returned a nil log")
+		}
+		log_file, err := os.ReadFile(log.GetLogFileName())
+		if err != nil {
+			t.Error("File not found")
+		}
+		var log_stream string = ""
+		for {
+			resp, err := stream.Recv()
+			// Errors out when done
+			if err != nil {
+				break
+			}
+			log_stream += resp.Execution
+		}
+		if !strings.Contains(log_stream, string(log_file)) {
+			t.Error("Panda VM execution log file and stream did not match")
+		}
+
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -370,9 +408,20 @@ var replay_agent controller.PandaReplayAgent
 func TestReplay(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		_, err = replay_agent.StopAgent(ctx)
+		log, err = replay_agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if log == nil {
+			t.Fatal("Agent returned a nil log")
+		}
+		log_file, err := os.ReadFile(log.GetLogFileName())
+		if err != nil {
+			t.Error("File not found")
+		}
+		// These should be empty because nothing important happens
+		if !strings.Contains(string(log_file), "Replay completed successfully") {
+			t.Error("Replay did not complete successfully")
 		}
 		err = replay_agent.Close()
 		if err != nil {

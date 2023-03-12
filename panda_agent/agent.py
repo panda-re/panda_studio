@@ -45,6 +45,7 @@ class PandaAgent:
             raise RuntimeError(ErrorCode.NOT_RUNNING.value, "Cannot stop a PANDA instance when one is not running")
         if self.current_recording is not None:
             self.panda.end_analysis()
+            self.current_recording = None
             raise RuntimeWarning(ErrorCode.RECORDING.value, "Request for PANDA stop before recording ended")    
         
         @self.panda.queue_blocking
