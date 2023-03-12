@@ -92,6 +92,12 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             replay = file.read()
         return pb.StopReplayResponse(serial=serial, replay=replay)
 
+    def SendNetworkCommand(self, request: pb.NetworkRequest, context):
+        
+        response = self.agent.execute_network_command(request)
+
+        return pb.NetworkResponse(0, response)
+
 
 def serve():
     #TODO remove hardcoding to replace with param solution and move into agent
