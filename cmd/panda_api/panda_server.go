@@ -152,7 +152,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 		}
 	}
 
-	err = agent.StopAgent(ctx)
+	_, err = agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
