@@ -88,7 +88,7 @@ func startExecutor(commands []string) []string {
 	}
 
 	fmt.Println("Starting agent")
-	err = agent.StartAgent(ctx)
+	_, err = agent.StartAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
