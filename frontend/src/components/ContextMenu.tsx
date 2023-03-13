@@ -10,7 +10,10 @@ import {
 import {Recording, useDeleteRecordingById} from "../api";
 import {useQueryClient} from "@tanstack/react-query";
 
-export default ({recordingId, deleteCallback}: {recordingId: string, deleteCallback: any}) => {
+type DeleteFunction = (recordingId: {recordingId: string}) => void;
+type ContextMenuProps = {recordingId: string, deleteCallback: DeleteFunction}
+
+export default ({recordingId, deleteCallback}: ContextMenuProps) => {
   const [isPopoverOpen, setPopover] = useState(false);
   const smallContextMenuPopoverId = useGeneratedHtmlId({
     prefix: 'smallContextMenuPopover',
