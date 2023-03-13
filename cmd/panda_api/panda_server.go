@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/api"
@@ -109,25 +110,29 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 	var recording *controller.PandaAgentRecording
 	for _, interactions := range programs {
 		fmt.Printf(" %s\n", interactions)
-		for _, cmd := range interactions.Instructions {
+		instructionList := interactions.Instructions
+		commandArray := strings.Split(instructionList, "\n")
+		for _, cmd := range commandArray {
 			// Check Type of command and then execute backend as needed for that command.
-			if cmd != nil {
-				switch cmd.GetInstructionType() {
-				case "start_recording":
+			if cmd != "" {
+				instArray := strings.SplitN(cmd, " ", 2)
+				fmt.Println(instArray)
+				switch instArray[0] {
+				case "START_RECORDING":
 					// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
-					err := agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
+					err := agent.StartRecording(ctx, instArray[1])
 					if err != nil {
 						panic(err)
 					}
 					break
-				case "stop_recording":
+				case "STOP_RECORDING":
 					recording, err = agent.StopRecording(ctx)
 					if err != nil {
 						panic(err)
 					}
 					break
-				case "command":
-					cmdResult, err := agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
+				case "CMD":
+					cmdResult, err := agent.RunCommand(ctx, instArray[1])
 					if err != nil {
 						panic(err)
 					}
@@ -136,13 +141,6 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 					break
 				case "filesystem":
 					fmt.Printf("Filesystem placeholder\n")
-					break
-				case "network":
-					fmt.Printf("Network Placeholder\n")
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).SocketType)
-					fmt.Printf("%d\n", cmd.(*models.NetworkInstruction).Port)
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketType)
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketData)
 					break
 				default:
 					fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")

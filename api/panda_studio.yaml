@@ -484,9 +484,7 @@ components:
         name:
           type: string
         instructions:
-          type: array
-          items:
-            $ref: "#/components/schemas/InteractionProgramInstruction"
+          type: string
     
     CreateProgramRequest:
       type: object
@@ -494,9 +492,7 @@ components:
         name:
           type: string
         instructions:
-          type: array
-          items:
-            $ref: "#/components/schemas/InteractionProgramInstruction"
+          type: string
     
     UpdateProgramRequest:
       type: object
