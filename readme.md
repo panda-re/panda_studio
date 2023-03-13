@@ -71,14 +71,14 @@ docker run -it --rm \
 
 2. Start the API server with the required services
 ```
-docker compose -f ./docker/docker-compose.dev.yml --build panda_api
+docker compose -f ./docker/docker-compose.dev.yml up --build panda_api
 ```
 
 Note: you can use ctrl-C to quit the API. Changes made to the API will automatically be rebuilt
 
 ### Accessing the UI for backend services
 
-- Minio's GUI is available on `localhost:9001`. The sign-in information can be found in `docker/config.dev.yml` as access key and secret key
+- Minio's GUI is available on `localhost:9001`. The sign-in information can be found in `docker/docker-compose.dev.yml` as access key and secret key
 
 - Mongo Express is a GUI for MongoDB and can be found at `localhost:8081`
 
