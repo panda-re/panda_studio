@@ -48,16 +48,12 @@ function CreateRecordingPage() {
   const [commands, setCommands] = useState('');
   const terminal = useRef(null);
 
-  const reqConfig: AxiosRequestConfig = {
-    baseURL: "http://localhost:8080/api"
-  }
-
   var imageEntities: EuiSelectableOption[] = [];
 
-  const {isLoading, error, data} = useFindAllImages({ axios: reqConfig});
+  const {isLoading, error, data} = useFindAllImages();
 
-  if(data?.data != null){
-    data.data.map((r) =>{
+  if(data != null){
+    data.map((r) =>{
       var size = 0;
       if(r.files != null){
         for(var f of r.files){
