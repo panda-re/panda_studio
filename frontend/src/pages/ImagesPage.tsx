@@ -12,6 +12,7 @@ import {
   EuiOverlayMask,
   EuiPageTemplate,
   EuiSpacer,
+  EuiText,
   useGeneratedHtmlId
 } from '@elastic/eui';
 import ImagesDataGrid from '../components/ImagesDataGrid';
@@ -23,9 +24,9 @@ import { useNavigate } from 'react-router';
 function ImagesPage() {
   const navigate = useNavigate()
   // File picker constants
-  const createFileFn = useCreateImageFile()
+  const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {setIsLoadingVisible(false)}}})
   const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
-  const [files, setFiles] = useState(new Array<File>);
+  const [files, setFiles] = useState(new Array<Blob>);
 
   const onFileChange = (files: FileList | null) => {
     setFiles(files!.length > 0 ? Array.from(files!) : []);
@@ -36,6 +37,8 @@ function ImagesPage() {
   const [modalName, setModalName] = useState("");
   const [modalDesc, setModalDesc] = useState("");
   const [modalConfig, setModalConfig] = useState("");
+
+  const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
   const closeModal = () => {
     setModalName("");
@@ -48,15 +51,14 @@ function ImagesPage() {
   }
 
   function createFiles(image: Image){
-    for(var f of files){
-      const fileReq: CreateImageFileRequest = {
-        file_name: f.name,
-        file_type: ImageFileType.qcow2,
-        file: f,
-      }
-      createFileFn.mutate({data: fileReq, imageId: image.id ?? ""})
+    const fileReq: CreateImageFileRequest = {
+      file_name: modalName,
+      file_type: ImageFileType.qcow2,
+      file: files[0],
     }
-    navigate(0);
+    createFileFn.mutate({data: fileReq, imageId: image.id!})
+    setIsLoadingVisible(true);
+    closeModal();
   }
 
   const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
@@ -73,6 +75,21 @@ function ImagesPage() {
     if(modalName != ""){
       createFn.mutate({data: req})
     }
+  }
+
+  function LoadingModal(){
+    return <EuiOverlayMask>
+              <EuiModal onClose={closeModal}>
+                <EuiModalHeader>
+                  <EuiModalHeaderTitle>Uploading Image</EuiModalHeaderTitle>
+                </EuiModalHeader>
+                <EuiModalBody>
+                    <EuiText>
+                      Loading...
+                    </EuiText>
+                </EuiModalBody>
+              </EuiModal>
+            </EuiOverlayMask>
   }
 
   function CreateModal(){
@@ -148,6 +165,7 @@ function ImagesPage() {
       <EuiSpacer size="xl" />
       <ImagesDataGrid />
       {(isModalVisible) ? (CreateModal()) : null}
+      {(isLoadingVisible) ? (LoadingModal()) : null}
     </EuiPageTemplate.Section>
 
   </>)
