@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,14 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/api"
 	config "github.com/panda-re/panda_studio/internal/configuration"
+	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/middleware"
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
 type parameters struct {
-	Volume   string   `json:"volume"`
-	Commands []string `json:"commands"`
-	Name     string   `json:"name"`
+	Volume   string `json:"volume"`
+	Commands string `json:"commands"`
+	Name     string `json:"name"`
 }
 
 type responses struct {
@@ -28,6 +30,7 @@ func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
+
 	if err := runServer(); err != nil {
 		panic(err)
 	}
@@ -82,15 +85,15 @@ func postRecording(c *gin.Context) {
 		return
 	}
 
-	response.Response = startExecutor(params.Commands)
+	response.Response, _ = startExecutor(params.Commands)
 
 	c.IndentedJSON(http.StatusCreated, response)
 }
 
-func startExecutor(commands []string) []string {
+func startExecutor(serialized_json string) ([]string, *controller.PandaAgentRecording) {
 	ctx := context.Background()
 
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "")
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
@@ -100,6 +103,14 @@ func startExecutor(commands []string) []string {
 		panic(err)
 	}
 
+	var programs []models.InteractionProgram
+
+	err = json.Unmarshal([]byte(serialized_json), &programs)
+	if err != nil {
+		panic(err)
+	}
+
+	// Start Agent assuming that we are not running a replay
 	fmt.Println("Starting agent")
 	err = agent.StartAgent(ctx)
 	if err != nil {
@@ -108,15 +119,56 @@ func startExecutor(commands []string) []string {
 
 	var result []string
 
-	for _, cmd := range commands {
-		fmt.Printf("> %s\n", cmd)
-		cmdResult, err := agent.RunCommand(ctx, cmd)
-		if err != nil {
-			panic(err)
+	var recording *controller.PandaAgentRecording
+	for _, interactions := range programs {
+		fmt.Printf(" %s\n", interactions)
+		for _, cmd := range interactions.Instructions {
+			// Check Type of command and then execute backend as needed for that command.
+			if cmd != nil {
+				switch cmd.GetInstructionType() {
+				case "start_recording":
+					// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
+					err := agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
+					if err != nil {
+						panic(err)
+					}
+					break
+				case "stop_recording":
+					recording, err = agent.StopRecording(ctx)
+					if err != nil {
+						panic(err)
+					}
+					break
+				case "command":
+					cmdResult, err := agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf(" %s\n", cmdResult)
+					result = append(result, cmdResult.Logs+"\n")
+					break
+				case "filesystem":
+					fmt.Printf("Filesystem placeholder\n")
+					break
+				case "network":
+					fmt.Printf("Network Placeholder\n")
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).SocketType)
+					fmt.Printf("%d\n", cmd.(*models.NetworkInstruction).Port)
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketType)
+					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketData)
+					break
+				default:
+					fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
+					break
+				}
+			}
 		}
-		fmt.Printf("%s\n", cmdResult.Logs)
-		result = append(result, cmdResult.Logs+"\n")
 	}
 
-	return result
+	err = agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return result, recording
 }
