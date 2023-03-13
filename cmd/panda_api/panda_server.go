@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	// "time"
-
-	// "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/api"
 	config "github.com/panda-re/panda_studio/internal/configuration"
