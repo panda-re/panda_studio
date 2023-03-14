@@ -1,9 +1,20 @@
-import {EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation} from "react-router";
+import {useNavigate} from "react-router-dom";
 
 function InteractionDetails() {
-  const location = useLocation()
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const buttonStyle = {
+    marginRight: "25px",
+    marginTop: "25px"
+  }
+
+  const deleteCurrentInteractionProgram = () => {
+    navigate('/interactions', {state: {programId: location.state.item.id}});
+  }
 
   return(<>
     <EuiPageTemplate.Header pageTitle="Interaction Details" />
@@ -37,6 +48,24 @@ function InteractionDetails() {
           </EuiText>
         </EuiPageTemplate.Section>
 
+      </EuiFlexItem>
+
+      <EuiFlexItem>
+        <EuiFlexGroup direction={"column"}>
+          <EuiFlexItem grow={false}>
+            <EuiButton
+              style={buttonStyle}
+              onClick={() => {
+                navigate('/interactions')
+              }}
+            >
+              Interactions Dashboard
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton style={buttonStyle} onClick={deleteCurrentInteractionProgram}>Delete Interaction</EuiButton>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiFlexItem>
 
 

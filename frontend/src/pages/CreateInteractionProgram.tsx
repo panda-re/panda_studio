@@ -4,6 +4,7 @@ import { useState } from "react";
 import EntitySearchBar from "../components/EntitySearchBar";
 import {CreateProgramRequest, useCreateProgram} from "../api";
 import {useNavigate} from "react-router-dom";
+import {useQueryClient} from "@tanstack/react-query";
 
 function CreateInteractionProgramPage (){
   const makeId = htmlIdGenerator();
@@ -14,7 +15,8 @@ function CreateInteractionProgramPage (){
     setValue(e.target.value);
   }
 
-  const createInteractionProgram = useCreateProgram();
+  const queryClient = useQueryClient();
+  const createInteractionProgram = useCreateProgram({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   // Use to make temp data. Will replace once object storage and db implemented
   const makeList = (number: number, start = 1) =>
