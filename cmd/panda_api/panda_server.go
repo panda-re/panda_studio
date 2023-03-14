@@ -27,10 +27,60 @@ type responses struct {
 	Response []string `json:"response"`
 }
 
+func testThing() {
+	// var jsonArrRaw string
+	jsonArrRaw := `[
+		{
+			"id": "63d5955ed14c76798cf58c58",
+			"name": "Test Program",
+			"instructions": [
+				{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "start_recording",
+					"recording_name": "test_recording123"
+				},
+				
+				{
+					"type": "filesystem"
+				},
+				{
+					"type": "network",
+					"socket_type": "test_recording123",
+					"port": 443,
+					"packet_type": "http",
+					"packet_data": "GET /index  HTTP/1.1\r\n\r\n"
+				},
+								{
+					"type": "command",
+					"command": "touch hello123.txt"
+				},
+				{
+					"type": "stop_recording"
+				}
+			]
+		}
+	]`
+
+	output, _ := startExecutor(jsonArrRaw)
+	for _, line := range output {
+		fmt.Printf("%s\n", line)
+	}
+}
+
 func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
+
+	testThing()
+	return
 
 	if err := runServer(); err != nil {
 		panic(err)
@@ -83,6 +133,7 @@ func postRecording(c *gin.Context) {
 func startExecutor(serialized_json string) ([]string, *controller.PandaAgentRecording) {
 	ctx := context.Background()
 
+	// todo: change this method to take in a `Reader` interface instead of a path
 	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
@@ -121,6 +172,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 		for _, cmd := range instructions {
 			// Check Type of command and then execute backend as needed for that command.
 			if cmd != nil {
+				// todo: I think we should make this polymorphic
 				switch cmd.GetInstructionType() {
 				case "start_recording":
 					// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
