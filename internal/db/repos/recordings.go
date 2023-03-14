@@ -110,7 +110,7 @@ func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordi
 		return nil, err
 	}
 
-	for _, recordingFile := range recording.RecordingFiles {
+	for _, recordingFile := range recording.Files {
 		_, err := m.DeleteRecordingFile(ctx, recordingId, recordingFile.ID)
 		if err != nil {
 			return nil, err
@@ -202,11 +202,11 @@ func (m *mongoS3RecordingRepository) FindRecordingFile(ctx context.Context, reco
 		return nil, errors.Wrap(err, "db error")
 	}
 
-	if len(recording.RecordingFiles) > 1 {
+	if len(recording.Files) > 1 {
 		return nil, errors.New("Something is off with the query")
 	}
 
-	recordingFile := recording.RecordingFiles[0]
+	recordingFile := recording.Files[0]
 
 	return recordingFile, nil
 }

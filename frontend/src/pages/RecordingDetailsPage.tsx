@@ -1,10 +1,22 @@
-import { EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText } from '@elastic/eui';
-import { useLocation } from 'react-router';
+import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {useLocation, useNavigate} from 'react-router';
 
 import prettyBytes from 'pretty-bytes';
+import {useDeleteRecordingById} from "../api";
+import {useQueryClient} from "@tanstack/react-query";
+import {render} from "react-dom";
 
 function RecordingDetailsPage() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const buttonStyle = {
+    marginRight: "25px",
+    marginTop: "25px"
+  }
+
+  const deleteCurrentRecording = () => {
+    navigate('/recordings', {state: {recordingId: location.state.item.id}});
+  }
 
   return (<>
     <EuiPageTemplate.Header pageTitle="Recording Details" />
@@ -48,9 +60,27 @@ function RecordingDetailsPage() {
             <strong>Date Created:</strong>
           </EuiText>
           <EuiText textAlign={"center"}>
-            {location.state.item.date.toString()}
+            {location.state.item.date}
           </EuiText>
         </EuiPageTemplate.Section>
+      </EuiFlexItem>
+
+      <EuiFlexItem>
+        <EuiFlexGroup direction={"column"}>
+          <EuiFlexItem grow={false}>
+            <EuiButton
+              style={buttonStyle}
+              onClick={() => {
+                navigate('/recordings')
+              }}
+            >
+              Recording Dashboard
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton style={buttonStyle} onClick={deleteCurrentRecording}>Delete Recording</EuiButton>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiFlexItem>
     </EuiFlexGroup>
   </>)
