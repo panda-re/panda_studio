@@ -1,4 +1,38 @@
-import { EuiTextArea, EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiDragDropContext, euiDragDropCopy, euiDragDropReorder, EuiDraggable, EuiDroppable, EuiFieldSearch, EuiFieldText, EuiFlexGroup, EuiFlexItem, EuiFlyout, EuiFlyoutBody, EuiFlyoutFooter, EuiFlyoutHeader, EuiForm, EuiFormRow, EuiIcon, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiPanel, EuiSelectableOption, EuiSpacer, EuiTitle, htmlIdGenerator } from "@elastic/eui";
+import {
+  EuiTextArea,
+  EuiButton,
+  EuiButtonEmpty,
+  EuiButtonIcon,
+  EuiDragDropContext,
+  euiDragDropCopy,
+  euiDragDropReorder,
+  EuiDraggable,
+  EuiDroppable,
+  EuiFieldSearch,
+  EuiFieldText,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiFlyout,
+  EuiFlyoutBody,
+  EuiFlyoutFooter,
+  EuiFlyoutHeader,
+  EuiForm,
+  EuiFormRow,
+  EuiIcon,
+  EuiModal,
+  EuiModalBody,
+  EuiModalFooter,
+  EuiModalHeader,
+  EuiModalHeaderTitle,
+  EuiOverlayMask,
+  EuiPageTemplate,
+  EuiPanel,
+  EuiSelectableOption,
+  EuiSpacer,
+  EuiTitle,
+  htmlIdGenerator,
+  EuiText
+} from "@elastic/eui";
 import React from "react";
 import { useState } from "react";
 import EntitySearchBar from "../components/EntitySearchBar";
@@ -8,11 +42,16 @@ import {useQueryClient} from "@tanstack/react-query";
 
 function CreateInteractionProgramPage (){
   const makeId = htmlIdGenerator();
-  const [value, setValue] = useState('');
+  const [instructionsValue, setInstructions] = useState('');
+  const [nameValue, setName] = useState('');
   const navigate = useNavigate();
 
-  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
+  const onInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInstructions(e.target.value);
+  }
+
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
   }
 
   const queryClient = useQueryClient();
@@ -294,23 +333,31 @@ function CreateInteractionProgramPage (){
     <EuiPageTemplate.Section>
       <EuiTextArea
         fullWidth={true}
-        value={value}
-        onChange={e => onChange(e)}>
+        value={instructionsValue}
+        onChange={e => onInstructionsChange(e)}>
       </EuiTextArea>
     </EuiPageTemplate.Section>
 
     <EuiPageTemplate.Section>
-      <EuiFlexGroup justifyContent={"spaceAround"}>
-        <EuiFlexItem grow={false}>
+      <EuiFlexGroup justifyContent={"spaceEvenly"}>
+        <EuiFlexItem grow={3}>
+          <EuiFieldText
+            placeholder={"Program Name"}
+            value={nameValue}
+            onChange={e => onNameChange(e)}>
+          </EuiFieldText>
+        </EuiFlexItem>
+
+        <EuiFlexItem grow={6}>
           <div>
             <EuiButton onClick={() => {
-              if (value == "") {
+              if (instructionsValue == "") {
                 alert('No instructions?')
                 return
               }
               const createProgramRequest: CreateProgramRequest = {
-                name: 'new_recording',
-                instructions: value
+                name: nameValue,
+                instructions: instructionsValue
               }
               createInteractionProgram.mutate({data: createProgramRequest})
               navigate('/interactions')
