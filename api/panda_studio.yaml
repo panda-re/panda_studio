@@ -62,6 +62,12 @@ paths:
         - image
       summary: Update image
       operationId: updateImage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateImageRequest"
       parameters:
         - $ref: "#/components/parameters/ImageId"
       responses:
