@@ -5,82 +5,22 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	config "github.com/panda-re/panda_studio/internal/configuration"
-	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 
+	config "github.com/panda-re/panda_studio/internal/configuration"
+	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/pkg/errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/api"
-	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/middleware"
-	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
-
-type parameters struct {
-	Volume   string `json:"volume"`
-	Commands string `json:"commands"`
-	Name     string `json:"name"`
-}
-
-type responses struct {
-	Response []string `json:"response"`
-}
-
-func testThing() {
-	// var jsonArrRaw string
-	jsonArrRaw := `[
-		{
-			"id": "63d5955ed14c76798cf58c58",
-			"name": "Test Program",
-			"instructions": [
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "start_recording",
-					"recording_name": "test_recording123"
-				},
-				
-				{
-					"type": "filesystem"
-				},
-				{
-					"type": "network",
-					"socket_type": "test_recording123",
-					"port": 443,
-					"packet_type": "http",
-					"packet_data": "GET /index  HTTP/1.1\r\n\r\n"
-				},
-								{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "stop_recording"
-				}
-			]
-		}
-	]`
-
-	output, _ := startExecutor(jsonArrRaw)
-	for _, line := range output {
-		fmt.Printf("%s\n", line)
-	}
-}
 
 func main() {
 	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
-
-	testThing()
-	return
 
 	if err := runServer(); err != nil {
 		panic(err)
@@ -106,9 +46,6 @@ func runServer() error {
 	api.RegisterHandlersWithOptions(r, server, api.GinServerOptions{
 		BaseURL: "/api",
 	})
-	//images.ImagesRegister(apiGroup.Group("/images"))
-
-	r.POST("/panda", postRecording)
 
 	if err := r.Run(); err != nil {
 		return err
