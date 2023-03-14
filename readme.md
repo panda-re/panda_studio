@@ -1,5 +1,7 @@
 # PANDA Studio
 
+The overall task of PANDA Studio is to design a service around PANDA which enables the creation of recordings from an image specification and a set of interaction.
+
 ## Docker Instructions
 
 First, make sure Docker is properly installed on your system.
@@ -26,32 +28,17 @@ sudo make full_initial_setup
 ```
 
 ### Preparation
-1. Create a cache to store the default PANDA images:
-```
-sudo mkdir -p /root/.panda
-```
-1.5. Download the default x86_64 image
-```
-sudo wget -O /root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2 \
-    "https://www.dropbox.com/s/4avqfxqemd29i5j/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2?dl=1"
-```
-
-2. Create a directory for the executor to communicate with the agent:
-```
-mkdir -p /tmp/panda-agent
-```
-
-3. Build the PANDA agent image
+1. Build the PANDA agent image
 ```
 docker build -f ./docker/Dockerfile.panda-agent -t pandare/panda_agent ./panda_agent
 ```
 
-4. Build the PANDA executor image
+2. Build the PANDA executor image
 ```
 docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 ```
 
-6. Run it!
+3. Run it!
 ```
 docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -60,10 +47,22 @@ docker run -it --rm \
     pandare/panda_executor
 ```
 
-7. Open the Dev Container (optional)
+4. Open the Dev Container (optional)
     - This contains a mostly complete toolchain with all the tools needed for local development
     - In VSCode, a toast will appear in the bottom right corner asking you to open the dev container
     - The dev container is not yet fully supported (working on it!)
+
+## Running Tests
+PANDA Studio is equipped with a test to verify the functionality of the agent that controls PANDA. More information can be found in [`cmd/panda_test_executor/`](https://github.com/panda-re/panda_studio/tree/main/cmd/panda_test_executor)
+
+Run the tests with
+```
+docker run -it --rm \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     -v /root/.panda:/root/.panda \
+     -v /tmp/panda-studio:/tmp/panda-studio \
+     pandare/panda_test_executor
+```
 
 ## Running the API
 
