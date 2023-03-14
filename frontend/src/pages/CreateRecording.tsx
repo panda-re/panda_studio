@@ -3,7 +3,6 @@ import {MutableRefObject, Ref, useCallback, useEffect, useRef, useState} from "r
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import React, { Component } from 'react'
 import EntitySearchBar from '../components/EntitySearchBar';
-import { InteractionProgram } from '../components/Interfaces';
 
 import prettyBytes from 'pretty-bytes';
 import { useNavigate } from 'react-router';
@@ -65,6 +64,13 @@ function CreateRecordingPage() {
       data: r});
     })
   }
+
+  // TODO, remove after
+  interface InteractionProgram {
+    id: string;
+    name: string;
+    date: Date;
+  };
 
   function getProgramEntities(){
     const programs: InteractionProgram[] = [
