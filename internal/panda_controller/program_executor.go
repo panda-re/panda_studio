@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
-	"github.com/pkg/errors"
 )
 
 type PandaProgramExecutor struct {
@@ -16,9 +16,8 @@ type PandaProgramExecutor struct {
 }
 
 type PandaProgramExecutorJob struct {
+	opts *PandaProgramExecutorOptions
 	agent PandaAgent
-	image *models.Image
-	program *models.InteractionProgram
 }
 
 type PandaProgramExecutorOptions struct {
@@ -35,21 +34,36 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions)
 	//	  - passed in as 'opts'
 	// 2. open a stream to the file in blob storage
 	//    - caller's responsibility for now
+	// Rest in StartJob
+
+	job := &PandaProgramExecutorJob{
+		opts: opts,
+	}
+	return job, nil
+}
+
+func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	// 3. create a panda instance using that file
-	// 4. start the agent
+	agent, err := CreateDefaultDockerPandaAgent(ctx, p.opts.ImageFileReader)
+	if err != nil {
+		// todo: return via a channel
+		panic(err)
+	}
+	p.agent = agent
+	// 4. start the agent with the given image and configuration
 	// 5. send the commands to the agent
 	//    - offer an interface for real-time feedback, even if we don't currently use it
 	//    - keep track of any recording files that are created
 	// 6. stop the agent
 	// 7. upload the recording files to blob storage
-	return nil, errors.New("not implemented")
 }
 
 func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 	ctx := context.Background()
 
 	// todo: change this method to take in a `Reader` interface instead of a path
-	agent, err := CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	file, err := os.Open("../images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	agent, err := CreateDefaultDockerPandaAgent(ctx, file)
 	if err != nil {
 		panic(err)
 	}

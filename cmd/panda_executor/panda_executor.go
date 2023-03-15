@@ -21,6 +21,8 @@ func main() {
 		panic(err)
 	}
 
+	ctx := context.Background()
+
 	fmt.Println(testProgram)
 
 	prog, err := models.ParseInteractionProgram(testProgram)
@@ -38,7 +40,7 @@ func main() {
 	progExec := controller.PandaProgramExecutor{}
 
 	// open a stream to the file in blob storage
-	file, err := os.Open("../images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	file, err := os.Open("images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
@@ -76,12 +78,18 @@ func main() {
 	}
 
 	fmt.Printf("job: %v\n", job)
+
+	job.StartJob(ctx)
 }
 
 func old_main() {
 	// Default agent
 	ctx := context.Background()
-	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	file, err := os.Open("../images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		panic(err)
+	}
+	agent, err := controller.CreateDefaultDockerPandaAgent(ctx, file)
 	if err != nil {
 		panic(err)
 	}

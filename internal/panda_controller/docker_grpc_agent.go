@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/pkg/errors"
 )
 
@@ -26,7 +27,7 @@ type dockerGrpcPandaAgent struct {
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
 
-func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (PandaAgent, error) {
+func CreateDefaultDockerPandaAgent(ctx context.Context, fileReader io.Reader) (*dockerGrpcPandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -46,13 +47,13 @@ func CreateDefaultDockerPandaAgent(ctx context.Context, file_path string) (Panda
 		sharedDir:   &sharedDir,
 	}
 
-	if file_path != "" {
-		// Copy given image into shared directory
-		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
-		if (err != nil && err != io.EOF) || nBytes == 0 {
-			print("Error in copying")
-			return nil, err
-		}
+	// Copy given image into shared directory
+	dstFile := sharedDir + "/system_image.qcow2"
+	dst, err := os.Create(dstFile)
+	nBytes, err := util.Copy(ctx, dst, fileReader)
+	if (err != nil && err != io.EOF) || nBytes == 0 {
+		print("Error in copying")
+		return nil, err
 	}
 
 	// Start the container
