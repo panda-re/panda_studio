@@ -31,6 +31,7 @@ type ImageRepository interface {
 	UploadImageFile(ctx context.Context, req *models.ImageFileUploadRequest, reader io.Reader) (*models.ImageFile, error)
 	OpenImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error)
 	DeleteImageFile(ctx context.Context, imageId db.ObjectID, fileId db.ObjectID) (*models.ImageFile, error)
+	Update(ctx context.Context, obj *models.Image) (*models.Image, error)
 }
 
 type mongoS3ImageRepository struct {
@@ -99,6 +100,21 @@ func (r *mongoS3ImageRepository) Create(ctx context.Context, obj *models.Image) 
 	return obj, nil
 }
 
+func (r *mongoS3ImageRepository) Update(ctx context.Context, obj *models.Image) (*models.Image, error) {
+	_, err := r.coll.UpdateByID(ctx, obj.ID, bson.D{
+		{"$set", bson.D{
+			{"name", obj.Name},
+			{"description", obj.Description},
+		},
+		}})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "db error")
+	}
+
+	return obj, nil
+}
+
 func (r *mongoS3ImageRepository) DeleteOne(ctx context.Context, id db.ObjectID) (*models.Image, error) {
 	img, err := r.FindOne(ctx, id)
 	if err != nil {
@@ -122,7 +138,6 @@ func (r *mongoS3ImageRepository) DeleteOne(ctx context.Context, id db.ObjectID) 
 
 	return img, nil
 }
-
 
 func (r *mongoS3ImageRepository) CreateImageFile(ctx context.Context, req *models.ImageFileCreateRequest) (*models.ImageFile, error) {
 	newFile := models.ImageFile{

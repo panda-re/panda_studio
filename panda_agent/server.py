@@ -12,6 +12,8 @@ sys.path.append("pb")
 import pb.panda_agent_pb2_grpc as pb_grpc
 import pb.panda_agent_pb2 as pb
 from agent import PandaAgent
+from agent import ErrorCode
+from time import sleep
 
 PORTS = [
     "[::]:50051",
@@ -26,10 +28,11 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         self.agent = agent
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
-        if self.agent.isRunning:
-            return
+        if self.agent.panda.started.is_set():
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
+        sleep(0.5) # ensures internal flags get set
         return pb.StartAgentResponse()
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
@@ -54,6 +57,8 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         )
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
+        if self.agent.panda.started.is_set(): 
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         serial = self.agent.start_replay(request.recording_name)
         with (open("./shared/execution.log")) as file:
             replay = file.read()
@@ -64,6 +69,12 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         with (open("./shared/execution.log")) as file:
             replay = file.read()
         return pb.StopReplayResponse(serial=serial, replay=replay)
+
+    def SendNetworkCommand(self, request: pb.NetworkRequest, context):
+        
+        response = self.agent.execute_network_command(request)
+
+        return pb.NetworkResponse(0, response)
 
 
 def serve():

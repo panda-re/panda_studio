@@ -1,8 +1,10 @@
-import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
-import { useNavigate } from 'react-router';
-import { Recording } from './Interfaces';
-
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps} from '@elastic/eui';
+import {useLoaderData, useLocation, useNavigate} from 'react-router';
+import {Recording, useDeleteRecordingById, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
+import ContextMenu from "./ContextMenu";
+import {useEffect, useState} from "react";
+import {useQueryClient} from "@tanstack/react-query";
 
 const tableColumns: EuiBasicTableColumn<Recording>[] = [
   {
@@ -14,13 +16,13 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
     name: 'File Name',
   },
   {
-    field: 'imageName',
+    field: 'recordingImage',
     name: 'Image Name',
   },
   {
     field: 'size',
     name: 'Size',
-    render: (value: number) => prettyBytes(value, { maximumFractionDigits: 2 }),
+    render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
   },
   {
     field: 'date',
@@ -28,44 +30,51 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
   },
 ]
 
-const data: Recording[] = [
-  {
-    id: 'record_1',
-    name: 'test_recording',
-    imageName: 'wheezy.qcow2',
-    date: new Date(),
-    size: 150*1024*1024,
-  },
-  {
-    id: 'record_2',
-    name: 'test_recording2',
-    imageName: 'wheezy.qcow2',
-    date: new Date(),
-    size: 150*1024*1024,
-  }
-];
-
 function RecordingDataGrid() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const {isLoading, error, data} = useFindAllRecordings();
+  const queryClient = useQueryClient();
+  const deleteFunction = useDeleteRecordingById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
-  const getRowProps = (item: Recording) => {
-    const { id } = item;
+  const deleteRecording = ({recordingId}: {recordingId: string}) => {
+    deleteFunction.mutate({recordingId: recordingId});
+  }
+
+  useEffect(() => {
+    if(location.state) {
+      deleteRecording({recordingId: location.state.recordingId});
+    }
+  }, []);
+
+  const getRowProps: EuiBasicTableProps<Recording>['rowProps'] = (item) => {
+    const {id} = item;
     return {
       'data-test-subj': `recording-row-${id}`,
       onClick: () => {
-        navigate('/recordingDetails', {state:{item: item}});
+        navigate('/recordingDetails', {state: {item: item}});
       },
     }
   };
 
+  const columnsWithActions = [
+    ...tableColumns,
+    {
+      name: 'Actions',
+        render: (item: Recording) => <ContextMenu recordingId={item.id!} deleteCallback={deleteRecording} />
+    },
+  ]
+
   return (<>
-    <EuiBasicTable
-      tableCaption="Recordings"
-      items={data}
-      rowHeader="firstName"
-      columns={tableColumns}
-      rowProps={getRowProps}
-    />
+    {isLoading && <div>Loading...</div> ||
+      <EuiBasicTable
+        tableCaption="Recordings"
+        items={data ?? []}
+        rowHeader="firstName"
+        columns={columnsWithActions}
+        rowProps={getRowProps}
+      />
+      }
   </>)
 }
 

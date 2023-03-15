@@ -125,3 +125,22 @@ func (pa *grpcPandaAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResu
 func (pa *grpcPandaAgent) Close() error {
 	return pa.cc.Close()
 }
+
+func (pa *grpcPandaAgent) SendNetworkCommand(ctx context.Context, in *NetworkRequest, opts ...grpc.CallOption) (*NetworkResponse, error) {
+	resp, err := pa.cli.SendNetworkCommand(ctx, &pb.NetworkRequest{
+		SocketType:   in.SocketType,
+		Port:         in.Port,
+		Application:  in.Application,
+		Command:      in.Command,
+		CustomPacket: in.CustomPacket,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &NetworkResponse{
+		StatusCode: resp.GetStatusCode(),
+		Output:     resp.GetOutput(),
+	}, nil
+}
