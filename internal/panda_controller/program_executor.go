@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"io"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
@@ -18,20 +18,23 @@ type PandaProgramExecutor struct {
 type PandaProgramExecutorJob struct {
 	agent PandaAgent
 	image *models.Image
-	prgram *models.InteractionProgram
+	program *models.InteractionProgram
 }
 
 type PandaProgramExecutorOptions struct {
 	Image *models.Image
 	Program *models.InteractionProgram
+	Instructions models.InteractionProgramInstructionList
+	ImageFileReader io.Reader
 }
 
-func (p *PandaProgramExecutor) NewExecutorJob(opts PandaProgramExecutorOptions) (*PandaProgramExecutorJob, error) {
+func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions) (*PandaProgramExecutorJob, error) {
 	// Basic rundown of what will happen:
 	// 1. pull information from the database
 	//    - making this the caller's responsibility
 	//	  - passed in as 'opts'
 	// 2. open a stream to the file in blob storage
+	//    - caller's responsibility for now
 	// 3. create a panda instance using that file
 	// 4. start the agent
 	// 5. send the commands to the agent
@@ -40,53 +43,6 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts PandaProgramExecutorOptions) 
 	// 6. stop the agent
 	// 7. upload the recording files to blob storage
 	return nil, errors.New("not implemented")
-}
-
-func testThing() {
-	// var jsonArrRaw string
-	jsonArrRaw := `[
-		{
-			"id": "63d5955ed14c76798cf58c58",
-			"name": "Test Program",
-			"instructions": [
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "start_recording",
-					"recording_name": "test_recording123"
-				},
-				
-				{
-					"type": "filesystem"
-				},
-				{
-					"type": "network",
-					"socket_type": "test_recording123",
-					"port": 443,
-					"packet_type": "http",
-					"packet_data": "GET /index  HTTP/1.1\r\n\r\n"
-				},
-								{
-					"type": "command",
-					"command": "touch hello123.txt"
-				},
-				{
-					"type": "stop_recording"
-				}
-			]
-		}
-	]`
-
-	output, _ := startExecutor(jsonArrRaw)
-	for _, line := range output {
-		fmt.Printf("%s\n", line)
-	}
 }
 
 func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
@@ -123,7 +79,7 @@ func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 	for _, interactions := range programs {
 		fmt.Printf(" %s\n", interactions)
 		instructionList := interactions.Instructions
-		instructions, err := parseProgram(instructionList)
+		instructions, err := models.ParseInteractionProgram(instructionList)
 		if err != nil {
 			panic(err)
 		}
@@ -179,48 +135,4 @@ func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 	}
 
 	return result, recording
-}
-
-func parseProgram(instructionList string) (models.InteractionProgramInstructionList, error) {
-	var interactionProgramInstructionList models.InteractionProgramInstructionList
-	commandArray := strings.Split(instructionList, "\n")
-	for _, cmd := range commandArray {
-		res, err := parseInstruction(cmd)
-		if err != nil {
-			return nil, err
-		}
-		if res != nil {
-			interactionProgramInstructionList = append(interactionProgramInstructionList, res)
-		}
-	}
-	return interactionProgramInstructionList, nil
-}
-
-func parseInstruction(cmd string) (models.InteractionProgramInstruction, error) {
-	if cmd != "" {
-		cmd := strings.TrimSpace(cmd)
-		if strings.HasPrefix(cmd, "#") {
-			return nil, nil
-		}
-		instArray := strings.SplitN(cmd, " ", 2)
-		switch instArray[0] {
-		case "START_RECORDING":
-			return &models.StartRecordingInstruction{RecordingName: instArray[1]}, nil
-		case "STOP_RECORDING":
-			return &models.StopRecordingInstruction{}, nil
-		case "CMD":
-			return &models.RunCommandInstruction{Command: instArray[1]}, nil
-		case "filesystem":
-			fmt.Printf("Filesystem placeholder\n")
-			return nil, errors.New("Filesystem interactions not yet supported")
-		case "network":
-			fmt.Printf("Network placeholder\n")
-			return nil, errors.New("Network interactions not yet supported")
-		default:
-			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
-			return nil, errors.New("Incorrect Command Type, Correct options can be found in the commands.md file")
-		}
-	}
-
-	return nil, nil
 }
