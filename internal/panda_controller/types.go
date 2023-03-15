@@ -3,12 +3,17 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 )
+
+type StartAgentRequest = pb.StartAgentRequest
 
 type PandaAgent interface {
 	// todo: add options such as architecture, image, networking, etc. to pass
 	// to the agent
 	StartAgent(ctx context.Context) error
+	StartAgentWithOpts(ctx context.Context, opts *StartAgentRequest) error
 	StopAgent(ctx context.Context) error
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error

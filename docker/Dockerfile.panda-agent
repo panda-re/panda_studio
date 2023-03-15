@@ -1,6 +1,7 @@
 FROM pandare/panda
 
 RUN mkdir /panda
+RUN mkdir /panda/shared
 WORKDIR /panda
 
 # Uncomment the following lines if any system packages need to be installed

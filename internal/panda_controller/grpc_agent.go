@@ -13,6 +13,8 @@ type grpcPandaAgent struct {
 	cli pb.PandaAgentClient
 }
 
+var _ PandaAgent = &grpcPandaAgent{}
+
 const DEFAULT_GRPC_ADDR = "localhost:50051"
 
 // Either PandaAgent or PandaReplayAgent interface
@@ -37,7 +39,12 @@ func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 
 // StartAgent implements PandaAgent
 func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
-	_, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
+	return pa.StartAgentWithOpts(ctx, &pb.StartAgentRequest{})
+}
+
+// StartAgentWithOpts implements PandaAgent
+func (pa *grpcPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
+	_, err := pa.cli.StartAgent(ctx, opts)
 	if err != nil {
 		return err
 	}

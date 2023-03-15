@@ -9,6 +9,7 @@ import (
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 )
 
 type PandaProgramExecutor struct {
@@ -17,14 +18,14 @@ type PandaProgramExecutor struct {
 
 type PandaProgramExecutorJob struct {
 	opts *PandaProgramExecutorOptions
-	agent PandaAgent
+	agent *DockerGrpcPandaAgent2
 }
 
 type PandaProgramExecutorOptions struct {
 	Image *models.Image
 	Program *models.InteractionProgram
 	Instructions models.InteractionProgramInstructionList
-	ImageFileReader io.Reader
+	ImageFileReader io.ReadSeeker
 }
 
 func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions) (*PandaProgramExecutorJob, error) {
@@ -44,13 +45,39 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions)
 
 func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	// 3. create a panda instance using that file
-	agent, err := CreateDefaultDockerPandaAgent(ctx, p.opts.ImageFileReader)
+	agent, err := CreateDockerPandaAgent2(ctx)
 	if err != nil {
 		// todo: return via a channel
 		panic(err)
 	}
 	p.agent = agent
+
+	err = p.agent.Connect(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	// Copy the image to the agent
+	fmt.Println("Copying image to agent...")
+	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, fileSize, "system_image.qcow2")
+	if err != nil {
+		panic(err)
+	}
+
 	// 4. start the agent with the given image and configuration
+	err = agent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{
+		QcowFileName: "system_image.qcow2",
+		Arch: "x86_64",
+		Os: "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+		Prompt: "root@ubuntu:.*#",
+		Cdrom: "ide1-cd0",
+		Snapshot: "root",
+		Memory: "1024M",
+		ExtraArgs: "-display none",
+	})
+	if err != nil {
+		panic(err)
+	}
 	// 5. send the commands to the agent
 	//    - offer an interface for real-time feedback, even if we don't currently use it
 	//    - keep track of any recording files that are created
