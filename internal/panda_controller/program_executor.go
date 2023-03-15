@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
@@ -121,7 +122,13 @@ func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 	var recording *PandaAgentRecording
 	for _, interactions := range programs {
 		fmt.Printf(" %s\n", interactions)
-		for _, cmd := range interactions.Instructions {
+		instructionList := interactions.Instructions
+		instructions, err := parseProgram(instructionList)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, cmd := range instructions {
 			// Check Type of command and then execute backend as needed for that command.
 			if cmd != nil {
 				// todo: I think we should make this polymorphic
@@ -163,6 +170,7 @@ func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 				}
 			}
 		}
+
 	}
 
 	err = agent.StopAgent(ctx)
@@ -171,4 +179,48 @@ func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
 	}
 
 	return result, recording
+}
+
+func parseProgram(instructionList string) (models.InteractionProgramInstructionList, error) {
+	var interactionProgramInstructionList models.InteractionProgramInstructionList
+	commandArray := strings.Split(instructionList, "\n")
+	for _, cmd := range commandArray {
+		res, err := parseInstruction(cmd)
+		if err != nil {
+			return nil, err
+		}
+		if res != nil {
+			interactionProgramInstructionList = append(interactionProgramInstructionList, res)
+		}
+	}
+	return interactionProgramInstructionList, nil
+}
+
+func parseInstruction(cmd string) (models.InteractionProgramInstruction, error) {
+	if cmd != "" {
+		cmd := strings.TrimSpace(cmd)
+		if strings.HasPrefix(cmd, "#") {
+			return nil, nil
+		}
+		instArray := strings.SplitN(cmd, " ", 2)
+		switch instArray[0] {
+		case "START_RECORDING":
+			return &models.StartRecordingInstruction{RecordingName: instArray[1]}, nil
+		case "STOP_RECORDING":
+			return &models.StopRecordingInstruction{}, nil
+		case "CMD":
+			return &models.RunCommandInstruction{Command: instArray[1]}, nil
+		case "filesystem":
+			fmt.Printf("Filesystem placeholder\n")
+			return nil, errors.New("Filesystem interactions not yet supported")
+		case "network":
+			fmt.Printf("Network placeholder\n")
+			return nil, errors.New("Network interactions not yet supported")
+		default:
+			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
+			return nil, errors.New("Incorrect Command Type, Correct options can be found in the commands.md file")
+		}
+	}
+
+	return nil, nil
 }
