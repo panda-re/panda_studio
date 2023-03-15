@@ -19,7 +19,7 @@ function InteractionDashboard() {
 
     <EuiPageTemplate.Section>
       <EuiFlexGrid columns={4}>
-        <EuiFlexItem>
+        {/* <EuiFlexItem>
           <EuiFieldSearch
             placeholder="Enter Interaction ID"
           />
@@ -33,7 +33,7 @@ function InteractionDashboard() {
           <EuiFieldSearch
             placeholder="Enter Date"
           />
-        </EuiFlexItem>
+        </EuiFlexItem> */}
         <EuiFlexItem>
           <EuiButton iconType={'plusInCircle'}>Create New Interaction</EuiButton>
         </EuiFlexItem>

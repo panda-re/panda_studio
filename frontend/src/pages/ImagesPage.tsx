@@ -143,7 +143,7 @@ function ImagesPage() {
 
     <EuiPageTemplate.Section>
       <EuiFlexGrid columns={4}>
-        <EuiFlexItem>
+        {/* <EuiFlexItem>
           <EuiFieldSearch
             placeholder="Enter Image ID"
           />
@@ -157,7 +157,7 @@ function ImagesPage() {
           <EuiFieldSearch
             placeholder="Enter Date"
           />
-        </EuiFlexItem>
+        </EuiFlexItem> */}
         <EuiFlexItem>
           <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
         </EuiFlexItem>

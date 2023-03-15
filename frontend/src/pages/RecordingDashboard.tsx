@@ -9,7 +9,7 @@ function RecordingDashboardPage () {
     <EuiPageTemplate.Header pageTitle='Recording Dashboard' rightSideItems={[]} />
     <EuiPageTemplate.Section>
     <EuiFlexGrid columns={4}>
-        <EuiFlexItem>
+        {/* <EuiFlexItem>
           <EuiFieldSearch
             placeholder="Enter Recording ID"
           />
@@ -23,7 +23,7 @@ function RecordingDashboardPage () {
           <EuiFieldSearch
             placeholder="Enter Image Name"
           />
-        </EuiFlexItem>
+        </EuiFlexItem> */}
         <EuiFlexItem>
           <EuiButton iconType={'plusInCircle'} onClick={() => navigate('/createRecording')}>Create New Recording</EuiButton>
         </EuiFlexItem>
