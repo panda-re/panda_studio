@@ -1,10 +1,61 @@
-import { EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiDragDropContext, euiDragDropCopy, euiDragDropReorder, EuiDraggable, EuiDroppable, EuiFieldSearch, EuiFieldText, EuiFlexGroup, EuiFlexItem, EuiFlyout, EuiFlyoutBody, EuiFlyoutFooter, EuiFlyoutHeader, EuiForm, EuiFormRow, EuiIcon, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiPanel, EuiSelectableOption, EuiSpacer, EuiTitle, htmlIdGenerator } from "@elastic/eui";
+import {
+  EuiTextArea,
+  EuiButton,
+  EuiButtonEmpty,
+  EuiButtonIcon,
+  EuiDragDropContext,
+  euiDragDropCopy,
+  euiDragDropReorder,
+  EuiDraggable,
+  EuiDroppable,
+  EuiFieldSearch,
+  EuiFieldText,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiFlyout,
+  EuiFlyoutBody,
+  EuiFlyoutFooter,
+  EuiFlyoutHeader,
+  EuiForm,
+  EuiFormRow,
+  EuiIcon,
+  EuiModal,
+  EuiModalBody,
+  EuiModalFooter,
+  EuiModalHeader,
+  EuiModalHeaderTitle,
+  EuiOverlayMask,
+  EuiPageTemplate,
+  EuiPanel,
+  EuiSelectableOption,
+  EuiSpacer,
+  EuiTitle,
+  htmlIdGenerator,
+  EuiText
+} from "@elastic/eui";
 import React from "react";
 import { useState } from "react";
 import EntitySearchBar from "../components/EntitySearchBar";
+import {CreateProgramRequest, useCreateProgram} from "../api";
+import {useNavigate} from "react-router-dom";
+import {useQueryClient} from "@tanstack/react-query";
 
 function CreateInteractionProgramPage (){
   const makeId = htmlIdGenerator();
+  const [instructionsValue, setInstructions] = useState('');
+  const [nameValue, setName] = useState('');
+  const navigate = useNavigate();
+
+  const onInstructionsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInstructions(e.target.value);
+  }
+
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+  }
+
+  const queryClient = useQueryClient();
+  const createInteractionProgram = useCreateProgram({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
   // Use to make temp data. Will replace once object storage and db implemented
   const makeList = (number: number, start = 1) =>
@@ -277,6 +328,43 @@ function CreateInteractionProgramPage (){
       <CreateDroppableWidget></CreateDroppableWidget>
       {(isFlyoutVisible) ? (CreateFlyout()) : null}
       {(isModalVisible) ? (CreateModal()) : null}
+    </EuiPageTemplate.Section>
+
+    <EuiPageTemplate.Section>
+      <EuiTextArea
+        fullWidth={true}
+        value={instructionsValue}
+        onChange={e => onInstructionsChange(e)}>
+      </EuiTextArea>
+    </EuiPageTemplate.Section>
+
+    <EuiPageTemplate.Section>
+      <EuiFlexGroup justifyContent={"spaceEvenly"}>
+        <EuiFlexItem grow={3}>
+          <EuiFieldText
+            placeholder={"Program Name"}
+            value={nameValue}
+            onChange={e => onNameChange(e)}>
+          </EuiFieldText>
+        </EuiFlexItem>
+
+        <EuiFlexItem grow={6}>
+          <div>
+            <EuiButton onClick={() => {
+              if (instructionsValue == "") {
+                alert('No instructions?')
+                return
+              }
+              const createProgramRequest: CreateProgramRequest = {
+                name: nameValue,
+                instructions: instructionsValue
+              }
+              createInteractionProgram.mutate({data: createProgramRequest})
+              navigate('/interactions')
+            }}>Create Interaction Program</EuiButton>
+          </div>
+        </EuiFlexItem>
+      </EuiFlexGroup>
     </EuiPageTemplate.Section>
   </>);
 }
