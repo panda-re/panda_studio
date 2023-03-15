@@ -17,9 +17,6 @@ import (
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
-//go:embed exampleInteractions.txt
-var exampleInteractions string
-
 type parameters struct {
 	Volume   string `json:"volume"`
 	Commands string `json:"commands"`
