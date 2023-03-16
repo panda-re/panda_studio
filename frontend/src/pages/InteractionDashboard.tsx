@@ -19,13 +19,11 @@ function InteractionDashboard() {
   return (<>
     <EuiPageTemplate.Header pageTitle='Interactions Dashboard' rightSideItems={[]} />
     <EuiPageTemplate.Section>
-      <EuiFlexGrid columns={4}>
-        <EuiFlexItem>
+      <EuiFlexGroup justifyContent='flexEnd'>
+        <EuiFlexItem grow={false}>
           <EuiButton iconType={'plusInCircle'} onClick={() => navigate('/createInteractionProgram')}>Create New Interaction</EuiButton>
         </EuiFlexItem>
-      </EuiFlexGrid>
-      <EuiSpacer size="xl" />
-
+      </EuiFlexGroup>
       <InteractionsDataGrid />
     </EuiPageTemplate.Section>
   </>)
