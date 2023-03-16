@@ -3,6 +3,7 @@ import {
   EuiFieldSearch,
   EuiFieldText,
   EuiFilePicker,
+  EuiFlexGroup,
   EuiFlexItem,
   EuiModal,
   EuiModalBody,
@@ -129,7 +130,6 @@ function ImagesPage() {
                   <EuiButton 
                     onClick={() => {
                       createFile();
-                      // closeModal();
                     }} 
                     fill>
                       Submit</EuiButton>
@@ -140,29 +140,12 @@ function ImagesPage() {
 
   return (<>
     <EuiPageTemplate.Header pageTitle='Image Dashboard' rightSideItems={[]} />
-
     <EuiPageTemplate.Section>
-      <EuiFlexGrid columns={4}>
-        {/* <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Image ID"
-          />
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Image Name"
-          />
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Date"
-          />
-        </EuiFlexItem> */}
-        <EuiFlexItem>
+      <EuiFlexGroup justifyContent='flexEnd'>
+        <EuiFlexItem grow={false}>
           <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
         </EuiFlexItem>
-      </EuiFlexGrid>
-      <EuiSpacer size="xl" />
+      </EuiFlexGroup>
       <ImagesDataGrid />
       {(isModalVisible) ? (CreateModal()) : null}
       {(isLoadingVisible) ? (LoadingModal()) : null}

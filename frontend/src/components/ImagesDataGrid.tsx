@@ -1,4 +1,4 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButtonIcon, RIGHT_ALIGNMENT } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT } from '@elastic/eui';
 import { getItemId } from '@elastic/eui/src/components/basic_table/basic_table';
 import { useQueryClient } from '@tanstack/react-query';
 import axios, { AxiosRequestConfig } from 'axios';
@@ -96,11 +96,32 @@ function ImagesDataGrid() {
     }
   }
 
+  const initialQuery = EuiSearchBar.Query.MATCH_ALL;
+
+  const [query, setQuery] = useState(initialQuery);
+
+  const onChange = (args: EuiSearchBarOnChangeArgs) => {
+    setQuery(args.query ?? initialQuery);
+  };
+
+  const queriedItems = EuiSearchBar.Query.execute(query, data ?? []);
+
   return (<>
+    <EuiFlexGroup justifyContent='flexStart'>
+      <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
+        <EuiSearchBar 
+          box={{
+            incremental: true,
+          }}
+          defaultQuery={initialQuery}
+          onChange={onChange}/>
+      </EuiFlexItem>
+    </EuiFlexGroup>
+    <EuiSpacer></EuiSpacer>
     {isLoading && <div>Loading...</div> ||
     <EuiBasicTable
       tableCaption="Images"
-      items={data ?? []}
+      items={queriedItems ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
