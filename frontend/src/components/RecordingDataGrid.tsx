@@ -1,6 +1,6 @@
 import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT} from '@elastic/eui';
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
-import {Recording, useDeleteRecordingById, useFindAllRecordings} from '../api';
+import {Recording, useDeleteRecordingById, useFindAllRecordings, useFindImageById} from '../api';
 import prettyBytes from 'pretty-bytes';
 import {useEffect, useState} from "react";
 import {useQueryClient} from "@tanstack/react-query";
@@ -38,16 +38,12 @@ function RecordingDataGrid() {
     },
     {
       field: 'recordingImage',
-      name: 'Image Name',
+      name: 'Image Id',
     },
     {
       field: 'size',
       name: 'Size',
       render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
-    },
-    {
-      field: 'date',
-      name: 'Timestamp',
     },
     {
       align: RIGHT_ALIGNMENT,
@@ -98,7 +94,7 @@ function RecordingDataGrid() {
     {isLoading && <div>Loading...</div> ||
       <EuiBasicTable
         tableCaption="Recordings"
-        items={data ?? []}
+        items={queriedItems ?? []}
         rowHeader="firstName"
         columns={tableColumns}
         rowProps={getRowProps}
