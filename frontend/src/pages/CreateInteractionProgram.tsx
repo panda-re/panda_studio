@@ -316,29 +316,6 @@ function CreateInteractionProgramPage (){
   return (<>
     <EuiPageTemplate.Header pageTitle='Create Interaction Program' />
     <EuiPageTemplate.Section>
-      <EuiFlexGroup style={{ maxWidth: '50%' }}>
-        <EuiFlexItem grow={1}>
-          <EuiFieldSearch placeholder="Search for Interaction"/>
-        </EuiFlexItem>
-        <EuiFlexItem grow={false}>
-          <EuiButton onClick={showModal}>Create New Interaction</EuiButton>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-      <EuiSpacer size="m"></EuiSpacer>
-      <CreateDroppableWidget></CreateDroppableWidget>
-      {(isFlyoutVisible) ? (CreateFlyout()) : null}
-      {(isModalVisible) ? (CreateModal()) : null}
-    </EuiPageTemplate.Section>
-
-    <EuiPageTemplate.Section>
-      <EuiTextArea
-        fullWidth={true}
-        value={instructionsValue}
-        onChange={e => onInstructionsChange(e)}>
-      </EuiTextArea>
-    </EuiPageTemplate.Section>
-
-    <EuiPageTemplate.Section>
       <EuiFlexGroup justifyContent={"spaceEvenly"}>
         <EuiFlexItem grow={3}>
           <EuiFieldText
@@ -365,6 +342,14 @@ function CreateInteractionProgramPage (){
           </div>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiSpacer size="m"></EuiSpacer>
+      {(isFlyoutVisible) ? (CreateFlyout()) : null}
+      {(isModalVisible) ? (CreateModal()) : null}
+      <EuiTextArea
+        fullWidth={true}
+        value={instructionsValue}
+        onChange={e => onInstructionsChange(e)}>
+      </EuiTextArea>
     </EuiPageTemplate.Section>
   </>);
 }
