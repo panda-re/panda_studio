@@ -18,24 +18,8 @@ function InteractionDashboard() {
 
   return (<>
     <EuiPageTemplate.Header pageTitle='Interactions Dashboard' rightSideItems={[]} />
-
     <EuiPageTemplate.Section>
       <EuiFlexGrid columns={4}>
-        {/* <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Interaction ID"
-          />
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Interaction Name"
-          />
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiFieldSearch
-            placeholder="Enter Date"
-          />
-        </EuiFlexItem> */}
         <EuiFlexItem>
           <EuiButton iconType={'plusInCircle'} onClick={() => navigate('/createInteractionProgram')}>Create New Interaction</EuiButton>
         </EuiFlexItem>

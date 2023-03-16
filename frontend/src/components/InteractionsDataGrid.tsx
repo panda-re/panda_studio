@@ -1,10 +1,9 @@
-import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer } from '@elastic/eui';
 import { useNavigate } from 'react-router-dom';
 import {InteractionProgram, Recording, useDeleteProgramById, useDeleteRecordingById, useFindAllPrograms} from "../api";
 import {useQueryClient} from "@tanstack/react-query";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 import {useLocation} from "react-router";
-import ContextMenu from "./ContextMenu";
 
 
 const tableColumns: EuiBasicTableColumn<InteractionProgram>[] = [
@@ -46,11 +45,32 @@ function ImagesDataGrid() {
     }
   }
 
+  const initialQuery = EuiSearchBar.Query.MATCH_ALL;
+
+  const [query, setQuery] = useState(initialQuery);
+
+  const onChange = (args: EuiSearchBarOnChangeArgs) => {
+    setQuery(args.query ?? initialQuery);
+  };
+
+  const queriedItems = EuiSearchBar.Query.execute(query, data ?? []);
+
   return (<>
+  <EuiFlexGroup justifyContent='flexStart'>
+      <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
+        <EuiSearchBar 
+          box={{
+            incremental: true,
+          }}
+          defaultQuery={initialQuery}
+          onChange={onChange}/>
+      </EuiFlexItem>
+    </EuiFlexGroup>
+    <EuiSpacer></EuiSpacer>
     {isLoading && <div>Loading...</div> ||
     <EuiBasicTable
       tableCaption="Interaction Programs"
-      items={data ?? []}
+      items={queriedItems ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}

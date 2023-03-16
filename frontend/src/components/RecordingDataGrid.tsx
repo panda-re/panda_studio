@@ -1,4 +1,4 @@
-import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButtonIcon, RIGHT_ALIGNMENT} from '@elastic/eui';
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT} from '@elastic/eui';
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useDeleteRecordingById, useFindAllRecordings} from '../api';
 import prettyBytes from 'pretty-bytes';
@@ -73,7 +73,28 @@ function RecordingDataGrid() {
     }
   };
 
+  const initialQuery = EuiSearchBar.Query.MATCH_ALL;
+
+  const [query, setQuery] = useState(initialQuery);
+
+  const onChange = (args: EuiSearchBarOnChangeArgs) => {
+    setQuery(args.query ?? initialQuery);
+  };
+
+  const queriedItems = EuiSearchBar.Query.execute(query, data ?? []);
+
   return (<>
+  <EuiFlexGroup justifyContent='flexStart'>
+      <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
+        <EuiSearchBar 
+          box={{
+            incremental: true,
+          }}
+          defaultQuery={initialQuery}
+          onChange={onChange}/>
+      </EuiFlexItem>
+    </EuiFlexGroup>
+    <EuiSpacer></EuiSpacer>
     {isLoading && <div>Loading...</div> ||
       <EuiBasicTable
         tableCaption="Recordings"
