@@ -138,6 +138,16 @@ func (pa *DockerGrpcPandaAgent2) CopyFileFromContainer(ctx context.Context, file
 	return r, nil
 }
 
+func (pa *DockerGrpcPandaAgent2) OpenRecordingSnapshot(ctx context.Context, recordingName string) (io.ReadCloser, error) {
+	snapshotFileName := fmt.Sprintf("%s-rr-snp", recordingName)
+	return pa.CopyFileFromContainer(ctx, snapshotFileName)
+}
+
+func (pa *DockerGrpcPandaAgent2) OpenRecordingNdlog(ctx context.Context, recordingName string) (io.ReadCloser, error) {
+	ndlogFileName := fmt.Sprintf("%s-rr-nondet.log", recordingName)
+	return pa.CopyFileFromContainer(ctx, ndlogFileName)
+}
+
 // Close implements PandaAgent
 func (pa *DockerGrpcPandaAgent2) Close() error {
 	// Close grpc connection
@@ -210,6 +220,7 @@ func (pa *DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (*PandaAgent
 
 	return &newRecording, nil
 }
+
 
 func (pa *DockerGrpcPandaAgent2) createTempDir() error {
 	if pa.sharedDir != nil {
