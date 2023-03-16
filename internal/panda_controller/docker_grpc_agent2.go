@@ -170,13 +170,13 @@ func (pa *DockerGrpcPandaAgent2) Close() error {
 }
 
 // RunCommand implements PandaAgent
-func (*DockerGrpcPandaAgent2) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
-	panic("unimplemented")
+func (pa *DockerGrpcPandaAgent2) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
+	return pa.grpcAgent.RunCommand(ctx, cmd)
 }
 
 // StartAgent implements PandaAgent
-// Starts the agent using the default x86_64 image
 func (*DockerGrpcPandaAgent2) StartAgent(ctx context.Context) error {
+	// todo: Starts the agent using the default x86_64 image
 	panic("unimplemented")
 }
 
@@ -185,18 +185,30 @@ func (pa *DockerGrpcPandaAgent2) StartAgentWithOpts(ctx context.Context, opts *p
 }
 
 // StartRecording implements PandaAgent
-func (*DockerGrpcPandaAgent2) StartRecording(ctx context.Context, recordingName string) error {
-	panic("unimplemented")
+func (pa *DockerGrpcPandaAgent2) StartRecording(ctx context.Context, recordingName string) error {
+	return pa.grpcAgent.StartRecording(ctx, recordingName)
 }
 
 // StopAgent implements PandaAgent
-func (*DockerGrpcPandaAgent2) StopAgent(ctx context.Context) error {
-	panic("unimplemented")
+func (pa *DockerGrpcPandaAgent2) StopAgent(ctx context.Context) error {
+	return pa.grpcAgent.StopAgent(ctx)
 }
 
 // StopRecording implements PandaAgent
-func (*DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
-	panic("unimplemented")
+func (pa *DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
+	recording, err := pa.grpcAgent.StopRecording(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	newRecording := PandaAgentRecording{
+		RecordingName: recording.RecordingName,
+		Location:      "not applicable - use CopyFileFromContainer",
+	}
+
+	fmt.Println("Warning: not the correct location")
+
+	return &newRecording, nil
 }
 
 func (pa *DockerGrpcPandaAgent2) createTempDir() error {
