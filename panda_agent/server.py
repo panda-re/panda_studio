@@ -23,13 +23,17 @@ PORTS = [
 executor = futures.ThreadPoolExecutor(max_workers=10)
 
 class PandaAgentServicer(pb_grpc.PandaAgentServicer):
-    def __init__(self, server, agent: PandaAgent):
+    def __init__(self, server):
         self.server = server
-        self.agent = agent
+        self.agent = None
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
-        if self.agent.panda.started.is_set():
+        if self.agent is not None:
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
+
+        print("Starting agent")
+        self.agent = PandaAgent(request.config)
+
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         sleep(0.5) # ensures internal flags get set
@@ -57,6 +61,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         )
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
+        raise RuntimeError("Needs to be fixed")
         if self.agent.panda.started.is_set(): 
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         serial = self.agent.start_replay(request.recording_name)
@@ -78,18 +83,10 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 
 
 def serve():
-    #TODO remove hardcoding to replace with param solution and move into agent
-    if(os.path.isfile("/panda/shared/system_image.qcow2")):
-        panda = Panda(arch='x86_64', qcow='/panda/shared/system_image.qcow2', mem='1024',
-                 os='linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr', expect_prompt='root@ubuntu:.*# ',
-                 extra_args='-display none')
-    else:
-        panda = Panda(generic='x86_64')
-
-    agent = PandaAgent(panda)
+    print("Starting server...")
     server = grpc.server(executor)
     pb_grpc.add_PandaAgentServicer_to_server(
-        PandaAgentServicer(server, agent), server)
+        PandaAgentServicer(server), server)
 
     for port in PORTS:
         server.add_insecure_port(port)

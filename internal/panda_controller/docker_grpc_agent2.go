@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path"
 	"time"
 
 	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
 	"github.com/panda-re/panda_studio/internal/util"
@@ -21,11 +23,14 @@ type DockerGrpcPandaAgent2 struct {
 	grpcAgent   PandaAgent
 	cli         *docker.Client
 	containerId *string
+	sharedDir   *string
 }
 
 var _ PandaAgent = &DockerGrpcPandaAgent2{}
 
 const PANDA_STUDIO_TEMP_DIR = "/tmp/panda-studio"
+const CONTAINER_SHARED_DIR = "/panda/shared"
+const CONTAINER_DATA_DIR = "/panda/data"
 
 func CreateDockerPandaAgent2(ctx context.Context) (*DockerGrpcPandaAgent2, error) {
 	// Connect to docker daemon
@@ -54,15 +59,31 @@ func (pa *DockerGrpcPandaAgent2) Connect(ctx context.Context) error {
 	time.Sleep(1 * time.Second)
 
 	// connect to the grpc agent
+	err = pa.connectGrpc(ctx)
+	if err != nil {
+		return err
+	}
 
 	// ping the agent to ensure successful connection
 	// panic("unimplemented")
 	return nil
 }
 
+func (pa *DockerGrpcPandaAgent2) connectGrpc(ctx context.Context) error {
+	grpcSocketPath := path.Join(*pa.sharedDir, "panda-agent.sock")
+	grpcSocketUrl := fmt.Sprintf("unix://%s", grpcSocketPath)
+	grpcAgent, err := CreateGrpcPandaAgent(grpcSocketUrl)
+	if err != nil {
+		return err
+	}
+	pa.grpcAgent = grpcAgent.(PandaAgent)
+
+	return nil
+}
+
+
 // See documentation for docker CopyToContainer
 func (pa *DockerGrpcPandaAgent2) CopyFileToContainer(ctx context.Context, data io.Reader, size int64, file string) error {
-	fmt.Println("Container ID: " + *pa.containerId)
 	r, w := io.Pipe()
 	tarWriter := tar.NewWriter(w)
 	go func() {
@@ -82,14 +103,14 @@ func (pa *DockerGrpcPandaAgent2) CopyFileToContainer(ctx context.Context, data i
 			return
 		}
 	}()
-	return pa.cli.CopyToContainer(ctx, *pa.containerId, "/panda/shared", r, dockerTypes.CopyToContainerOptions{})
+	return pa.cli.CopyToContainer(ctx, *pa.containerId, CONTAINER_DATA_DIR, r, dockerTypes.CopyToContainerOptions{})
 }
 
 // See documentation for docker CopyFromContainer
 func (pa *DockerGrpcPandaAgent2) CopyFileFromContainer(ctx context.Context, file string) (io.ReadCloser, error) {
 	r, w := io.Pipe()
 
-	srcFile := path.Join("/panda/shared", file)
+	srcFile := path.Join(CONTAINER_DATA_DIR, file)
 	reader, pathStat, err := pa.cli.CopyFromContainer(ctx, *pa.containerId, srcFile)
 	if err != nil {
 		return nil, err
@@ -133,6 +154,12 @@ func (pa *DockerGrpcPandaAgent2) Close() error {
 		return err
 	}
 
+	// Ensure temp dir is removed
+	err = pa.removeTempDir()
+	if err != nil {
+		return err
+	}
+
 	// Close docker client
 	err = pa.cli.Close()
 	if err != nil {
@@ -153,8 +180,8 @@ func (*DockerGrpcPandaAgent2) StartAgent(ctx context.Context) error {
 	panic("unimplemented")
 }
 
-func (*DockerGrpcPandaAgent2) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
-	panic("unimplemented")
+func (pa *DockerGrpcPandaAgent2) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
+	return pa.grpcAgent.StartAgentWithOpts(ctx, opts)
 }
 
 // StartRecording implements PandaAgent
@@ -172,10 +199,48 @@ func (*DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (*PandaAgentRec
 	panic("unimplemented")
 }
 
+func (pa *DockerGrpcPandaAgent2) createTempDir() error {
+	if pa.sharedDir != nil {
+		return nil
+	}
+
+	// Create temp dir
+	sharedDir, err := os.MkdirTemp("", "panda-studio-*")
+	if err != nil {
+		return err
+	}
+
+	pa.sharedDir = &sharedDir
+	return nil
+}
+
+func (pa *DockerGrpcPandaAgent2) removeTempDir() error {
+	if pa.sharedDir == nil {
+		return nil
+	}
+
+	// Remove temp dir
+	err := os.RemoveAll(*pa.sharedDir)
+	if err != nil {
+		return err
+	}
+
+	pa.sharedDir = nil
+	return nil
+}
+
+
 func (pa *DockerGrpcPandaAgent2) startContainer(ctx context.Context) error {
 	if pa.containerId != nil {
 		return errors.New("container already started")
 	}
+
+	// Ensure temp dir exists
+	err := pa.createTempDir()
+	if err != nil {
+		return err
+	}
+
 	// Create the container and save the name
 	ccResp, err := pa.cli.ContainerCreate(ctx, &container.Config{
 		Image:        DOCKER_IMAGE,
@@ -184,15 +249,13 @@ func (pa *DockerGrpcPandaAgent2) startContainer(ctx context.Context) error {
 		AttachStderr: true,
 	}, &container.HostConfig{
 		// Instead of mounting we will copy files to the container
-		/*
 		Mounts: []mount.Mount{
 			{
 				Type:   "bind",
 				Source: *pa.sharedDir,
-				Target: "/panda/shared",
+				Target: CONTAINER_SHARED_DIR,
 			},
 		},
-		*/
 		// make sure the container is removed on exit
 		// AutoRemove: true,
 		AutoRemove: false,

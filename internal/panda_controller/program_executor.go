@@ -43,6 +43,24 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions)
 	return job, nil
 }
 
+func getReaderSize(reader io.ReadSeeker) (size int64, err error) {
+	// Get the size of the file
+	// https://stackoverflow.com/a/24563853
+	currentPos, err := reader.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return 0, err
+	}
+	defer reader.Seek(currentPos, io.SeekStart)
+
+	endPos, err := reader.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, err
+	}
+	defer reader.Seek(currentPos, io.SeekStart)
+
+	return endPos, nil
+}
+
 func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	// 3. create a panda instance using that file
 	agent, err := CreateDockerPandaAgent2(ctx)
@@ -59,21 +77,28 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 
 	// Copy the image to the agent
 	fmt.Println("Copying image to agent...")
+	fileSize, err := getReaderSize(p.opts.ImageFileReader)
+	if err != nil {
+		panic(err)
+	}
 	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, fileSize, "system_image.qcow2")
 	if err != nil {
 		panic(err)
 	}
 
 	// 4. start the agent with the given image and configuration
-	err = agent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{
-		QcowFileName: "system_image.qcow2",
-		Arch: "x86_64",
-		Os: "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
-		Prompt: "root@ubuntu:.*#",
-		Cdrom: "ide1-cd0",
-		Snapshot: "root",
-		Memory: "1024M",
-		ExtraArgs: "-display none",
+	fmt.Println("Starting PANDA instance")
+	err = agent.StartAgentWithOpts(ctx, &StartAgentRequest{
+		Config: &pb.PandaConfig{
+			QcowFileName: "system_image.qcow2",
+			Arch: "x86_64",
+			Os: "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+			Prompt: "root@ubuntu:.*#",
+			Cdrom: "ide1-cd0",
+			Snapshot: "root",
+			Memory: "1024M",
+			ExtraArgs: "-display none",
+		},
 	})
 	if err != nil {
 		panic(err)

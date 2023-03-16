@@ -20,10 +20,22 @@ class PandaAgent:
     # sentinel object to signal end of queue
     STOP_PANDA = object()
 
-    def __init__(self, panda: Panda):
-        self.panda = panda
+    def __init__(self, config: pb.PandaConfig):
+        self.config = config
+        self.panda = self.init_panda(config)
         self.current_recording = None
         self.serial_out = ""
+    
+    def init_panda(self, config: pb.PandaConfig):
+        FILE_PREFIX="data"
+        # Construct PANDA instance based on config
+        return Panda(
+            arch=config.arch,
+            qcow=f"{FILE_PREFIX}/{config.qcow_file_name}",
+            mem=config.memory,
+            os=config.os,
+            expect_prompt=config.prompt,
+            extra_args=config.extra_args)
     
     # This function is meant to run in a different thread
     def start(self):
@@ -33,10 +45,12 @@ class PandaAgent:
 
         @panda.queue_blocking
         def panda_start():
-            print("panda agent started")
+            print("panda agent started with config:")
+            # print config as struct
+            print(self.config)
             
             # revert to the qcow's root snapshot
-            message = panda.revert_sync("root")
+            message = panda.revert_sync(self.config.snapshot)
             if message != "":
                 raise RuntimeError(ErrorCode.RUNNING, message)
         
