@@ -102,7 +102,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 
 	// Start Agent assuming that we are not running a replay
 	fmt.Println("Starting agent")
-	err = agent.StartAgent(ctx)
+	_, err = agent.StartAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +162,7 @@ func startExecutor(serialized_json string) ([]string, *controller.PandaAgentReco
 
 	}
 
-	err = agent.StopAgent(ctx)
+	_, err = agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}

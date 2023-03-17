@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
+	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 )
 
@@ -120,16 +121,35 @@ func (pa *dockerGrpcPandaAgent) RunCommand(ctx context.Context, cmd string) (*Pa
 }
 
 // StartAgent implements PandaAgent
-func (pa *dockerGrpcPandaAgent) StartAgent(ctx context.Context) error {
+func (pa *dockerGrpcPandaAgent) StartAgent(ctx context.Context) (pb.PandaAgent_StartAgentClient, error) {
 	return pa.grpcAgent.StartAgent(ctx)
 }
 
 // StopAgent implements PandaAgent
-func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) error {
-	return pa.grpcAgent.StopAgent(ctx)
+func (pa *dockerGrpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
+	l, err := pa.grpcAgent.StopAgent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip off the shared folder prefix so that paths are correct on this system
+	logName := strings.Replace(l.LogName, "./shared/", "", 1)
+
+	log := PandaAgentLog{
+		LogName:  logName,
+		Location: *pa.sharedDir,
+	}
+
+	// Copy log into shared directory
+	_, err = copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
+	if err != nil && err != io.EOF {
+		return nil, errors.Wrap(err, "Error in copying log")
+	}
+
+	return &log, err
 }
 
-func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error) {
+func CreateReplayDockerPandaAgent(ctx context.Context, file_path string) (PandaReplayAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -147,6 +167,15 @@ func CreateReplayDockerPandaAgent(ctx context.Context) (PandaReplayAgent, error)
 		cli:         cli,
 		containerId: nil,
 		sharedDir:   &sharedDir,
+	}
+
+	if file_path != "" {
+		// Copy given image into shared directory
+		nBytes, err := copyFileHelper(file_path, sharedDir, "/system_image.qcow2")
+		if (err != nil && err != io.EOF) || nBytes == 0 {
+			print("Error in copying")
+			return nil, err
+		}
 	}
 
 	// Start the container
@@ -238,12 +267,31 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 }
 
 // StopAgent implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) error {
-	return pa.grpcAgent.StopAgent(ctx)
+func (pa *dockerGrpcPandaReplayAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
+	l, err := pa.grpcAgent.StopAgent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Strip off the shared folder prefix so that paths are correct on this system
+	logName := strings.Replace(l.LogName, "./shared/", "", 1)
+
+	log := PandaAgentLog{
+		LogName:  logName,
+		Location: *pa.sharedDir,
+	}
+
+	// Copy log into shared directory
+	_, err = copyFileHelper(log.GetLogFileName(), fmt.Sprintf("%s-", *pa.sharedDir), logName)
+	if err != nil && err != io.EOF {
+		return nil, errors.Wrap(err, "Error in copying log")
+	}
+
+	return &log, err
 }
 
 // StartReplay implements PandaReplayAgent
-func (pa *dockerGrpcPandaReplayAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+func (pa *dockerGrpcPandaReplayAgent) StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error) {
 	// Copy file into shared directory
 	sharedFolder := fmt.Sprintf("%s/", *pa.sharedDir)
 	snapshotName := fmt.Sprintf("%s-rr-snp", recordingName)
@@ -332,12 +380,6 @@ func (pa *dockerGrpcPandaReplayAgent) startContainer(ctx context.Context) error 
 				Type:   "bind",
 				Source: *pa.sharedDir,
 				Target: "/panda/shared",
-			},
-			// So PANDA doesn't need to download the same image
-			{
-				Type:   "bind",
-				Source: "/root/.panda",
-				Target: "/root/.panda",
 			},
 		},
 		// make sure the container is removed on exit
