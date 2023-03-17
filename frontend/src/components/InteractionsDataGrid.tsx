@@ -1,4 +1,4 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer } from '@elastic/eui';
 import { useNavigate } from 'react-router-dom';
 import {InteractionProgram, Recording, useDeleteProgramById, useDeleteRecordingById, useFindAllPrograms} from "../api";
 import {useQueryClient} from "@tanstack/react-query";
@@ -56,7 +56,7 @@ function ImagesDataGrid() {
   const queriedItems = EuiSearchBar.Query.execute(query, data ?? []);
 
   return (<>
-  <EuiFlexGroup justifyContent='flexStart'>
+  <EuiFlexGroup justifyContent='spaceBetween'>
       <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
         <EuiSearchBar 
           box={{
@@ -65,6 +65,9 @@ function ImagesDataGrid() {
           defaultQuery={initialQuery}
           onChange={onChange}/>
       </EuiFlexItem>
+      <EuiFlexItem grow={false}>
+          <EuiButton iconType={'plusInCircle'} onClick={() => navigate('/createInteractionProgram')}>Create New Interaction</EuiButton>
+        </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
     {isLoading && <div>Loading...</div> ||

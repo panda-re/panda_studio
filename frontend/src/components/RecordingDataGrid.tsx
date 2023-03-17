@@ -1,4 +1,4 @@
-import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT} from '@elastic/eui';
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButton, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT} from '@elastic/eui';
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useDeleteRecordingById, useFindAllRecordings, useFindImageById} from '../api';
 import prettyBytes from 'pretty-bytes';
@@ -80,7 +80,7 @@ function RecordingDataGrid() {
   const queriedItems = EuiSearchBar.Query.execute(query, data ?? []);
 
   return (<>
-  <EuiFlexGroup justifyContent='flexStart'>
+  <EuiFlexGroup justifyContent='spaceBetween'>
       <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
         <EuiSearchBar 
           box={{
@@ -89,6 +89,9 @@ function RecordingDataGrid() {
           defaultQuery={initialQuery}
           onChange={onChange}/>
       </EuiFlexItem>
+      <EuiFlexItem grow={false}>
+          <EuiButton iconType={'plusInCircle'} onClick={() => navigate('/createRecording')}>Create New Recording</EuiButton>
+        </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
     {isLoading && <div>Loading...</div> ||
