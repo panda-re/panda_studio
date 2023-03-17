@@ -18,7 +18,7 @@ function ImagesDataGrid() {
    // File picker constants
    const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {setIsLoadingVisible(false)}}})
    const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
-   const [files, setFiles] = useState(new Array<Blob>);
+   const [files, setFiles] = useState(new Array<File>);
  
    const onFileChange = (files: FileList | null) => {
      setFiles(files!.length > 0 ? Array.from(files!) : []);
