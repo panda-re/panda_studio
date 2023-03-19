@@ -164,11 +164,11 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 
 func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newImageName string, newImageSize int) error {
 	//get the image from the repo
-	image, err := s.imageRepo.FindOneImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return err
-	}
+	// image, err := s.imageRepo.FindOneImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
+	// if err != nil {
+	// 	ctx.Error(errors.WithStack(err))
+	// 	return err
+	// }
 
 	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
 	if err != nil {
