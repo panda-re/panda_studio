@@ -2,7 +2,12 @@ package api
 
 import (
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
@@ -155,4 +160,82 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	}
 
 	ctx.JSON(http.StatusOK, imgFile)
+}
+
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newImageName string, newImageSize int) error {
+	//get the image from the repo
+	image, err := s.imageRepo.FindOneImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return err
+	}
+
+	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return err
+	}
+	defer fileReader.Close()
+
+	//create temp shared directory
+	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "derive-image-tmp")
+	if err != nil {
+		return err
+	}
+
+	//save image to temp shared directory
+	nBytes, err := io.Copy(sharedDir, fileReader)
+	if err != nil {
+		return err
+	}
+
+	//run docker container for derive image job
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+	defer cli.Close()
+
+	reader, err := cli.ImagePull(ctx, "docker.io/library/alpine", types.ImagePullOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	defer reader.Close()
+	io.Copy(os.Stdout, reader)
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: "alpine",
+		Cmd:   []string{"docker build", "Dockerfile.derive-image"},
+		Tty:   false,
+	}, nil, nil, nil, "")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+
+	//once the job is finished, the new derived image will be in the shared directory
+
+	//retrieve derived image from temp shared directory
+	//sharedDir + newImageName
+	contents, err := os.ReadFile(sharedDir + "/" + newImageName)
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return err
+	}
+
+	//upload derived image to object storage
+	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
+		ImageId: db.ParseObjectID(newImageId),
+		FileId:  fileObj,
+	}, contents) //TODO: make sure this is right
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return err
+	}
+
+	return nil
 }

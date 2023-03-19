@@ -140,6 +140,31 @@ paths:
                 format: binary
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+    post:
+      tags:
+        - image
+        - file
+      summary: Derive new image
+      operationId: createDerivedImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
+        //TODO add other paramters
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DeriveImageFileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
     delete:
       tags:
         - image
