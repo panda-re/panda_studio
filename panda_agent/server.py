@@ -15,8 +15,6 @@ from agent import PandaAgent
 from agent import ErrorCode
 from time import sleep
 
-EXECUTION_LOG = "./shared/execution.log"
-
 PORTS = [
     "[::]:50051",
     "unix:///panda/shared/panda-agent.sock"
@@ -31,25 +29,16 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
         if self.agent.panda.started.is_set():
-            raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
         # start panda in a new thread, because qemu blocks this thread otherwise
         executor.submit(self.agent.start)
         sleep(0.5) # ensures internal flags get set
-        yield pb.StartAgentResponse(execution="") # Required to finish startup
-        with (open(EXECUTION_LOG)) as file:
-            while self.agent.panda.running:
-                where = file.tell()
-                line = file.readline()
-                if not line:
-                    sleep(1)
-                    file.seek(where)
-                else:
-                    yield pb.StartAgentResponse(execution=line)
+        return pb.StartAgentResponse()
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
         self.agent.stop()
         self.server.stop(grace=5)
-        return pb.StopAgentResponse(log_filename=EXECUTION_LOG)
+        return pb.StopAgentResponse()
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
         output = self.agent.run_command(request.command)
@@ -69,26 +58,15 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
         if self.agent.panda.started.is_set(): 
-            raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
-        self.agent.start_replay(request.recording_name)
-        yield pb.StartReplayResponse(serial="", replay="") # Required to finish startup
-        with (open(EXECUTION_LOG)) as file:
-            while self.agent.panda.running:
-                where = file.tell()
-                line = file.readline()
-                s = self.agent.serial_out
-                self.agent.serial_out = ""
-                if not line:
-                    file.seek(where)
-                    yield pb.StartReplayResponse(serial=s, replay="")
-                else:
-                    yield pb.StartReplayResponse(serial=s, replay=line)
-                    if "Replay completed successfully" in line:
-                        yield
+            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
+        serial = self.agent.start_replay(request.recording_name)
+        with (open("./shared/execution.log")) as file:
+            replay = file.read()
+        return pb.StartReplayResponse(serial=serial, replay=replay)
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
         serial = self.agent.stop_replay()
-        with (open(EXECUTION_LOG)) as file:
+        with (open("./shared/execution.log")) as file:
             replay = file.read()
         return pb.StopReplayResponse(serial=serial, replay=replay)
 

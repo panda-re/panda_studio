@@ -3,15 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
-	"github.com/panda-re/panda_studio/panda_agent/pb"
 )
 
 // Each enum represents the state panda was in that caused the exception
@@ -29,49 +26,31 @@ var error_to_string [6]string = [6]string{"RUNNING", "NOT_RUNNING", "RECORDING",
 
 // Extracts the error number from an err from agent
 func getError(err error) int {
-	// Upon error, the following regex will be in the message
-	re := regexp.MustCompile(`<ErrorCode\.\w+: `)
-	// Regex splits right before error number
-	nums := re.Split(err.Error(), -1)
-	// Check if error matches regex. If not, it's not from agent
-	if len(nums) < 2 {
-		return -1
-	}
-	// Extract the error number from the message
-	num, err := strconv.Atoi(nums[1][0:1])
-	if err != nil {
-		return -1
-	}
+	// Find the numbers in the error message
+	re := regexp.MustCompile("[0-9]+")
+	// Return the first one as an integer
+	nums := re.FindAllString(err.Error(), -1)
+	num, _ := strconv.Atoi(nums[0])
 	return num
-}
-
-// Checks if the error matches what is expected
-// Prints a message if not
-func checkError(err error, err_expected int, t *testing.T) {
-	err_num := getError(err)
-	if err_num != err_expected {
-		if err_num != -1 {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-		}
-		t.Error(err)
-	}
 }
 
 var num_passed int = 0
 var num_tests int = 0
 
-var log *controller.PandaAgentLog
-
 // Runs a test for the agent, recording and replay
 // Prints the number of tests and success rate
 func TestMain(t *testing.T) {
 	t.Cleanup(func() {
-		if num_tests != 0 {
-			fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
-		}
+		fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
 	})
 	t.Run("Agent", TestAgent)
+	if t.Failed() {
+		t.Fatal("Agent unsuccessful")
+	}
 	t.Run("Recording", TestRecord)
+	if t.Failed() {
+		t.Fatal("Recording unsuccessful")
+	}
 	t.Run("Replay", TestReplay)
 }
 
@@ -99,33 +78,11 @@ var ctx = context.Background()
 // Tests premature execution and that commands return properly
 func TestAgent(t *testing.T) {
 	var err error
-	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
-		log, err = agent.StopAgent(ctx)
+		err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if log == nil {
-			t.Fatal("Agent returned a nil log")
-		}
-		log_file, err := os.ReadFile(log.GetLogFileName())
-		if err != nil {
-			t.Error("File not found")
-		}
-		var log_stream string = ""
-		for {
-			resp, err := stream.Recv()
-			// Errors out when done
-			if err != nil {
-				break
-			}
-			log_stream += resp.Execution
-		}
-		// These should be empty because nothing important happens
-		if !strings.Contains(log_stream, string(log_file)) {
-			t.Error("Panda VM execution log file and stream did not match")
-		}
-
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -137,23 +94,25 @@ func TestAgent(t *testing.T) {
 	}
 
 	t.Run("PreCommand", TestPrematureCommand)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("PreStop", TestPrematureStop)
-	stream, err = agent.StartAgent(ctx)
+	if !t.Failed() {
+		num_passed++
+	}
+	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stream == nil {
-		t.Fatal("Could not stream")
-	}
-	// Required for proper startup
-	resp, err := stream.Recv()
-	if err != nil {
-		t.Error(err)
-	} else if resp.Execution != "" {
-		t.Error("First execution log stream not empty")
-	}
 	t.Run("ExtraStart", TestExtraStart)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("Commands", TestCommands)
+	if !t.Failed() {
+		num_passed++
+	}
 }
 
 // Tests executing a command before the agent has started
@@ -165,10 +124,12 @@ func TestPrematureCommand(t *testing.T) {
 	if err == nil {
 		t.Fatal("Did not prevent premature command")
 	} else {
-		checkError(err, NOT_RUNNING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := NOT_RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -177,14 +138,16 @@ func TestPrematureCommand(t *testing.T) {
 // Should be run before agent.StartAgent
 func TestPrematureStop(t *testing.T) {
 	num_tests++
-	_, err := agent.StopAgent(ctx)
+	err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent premature stop")
 	} else {
-		checkError(err, NOT_RUNNING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := NOT_RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -193,19 +156,16 @@ func TestPrematureStop(t *testing.T) {
 // Should be run after agent.StartAgent
 func TestExtraStart(t *testing.T) {
 	num_tests++
-	stream, err := agent.StartAgent(ctx)
-	if err != nil {
-		t.Fatal("Error occured starting agent")
-	}
-	// Must receive exception from stream
-	_, err = stream.Recv()
+	err := agent.StartAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent a second PANDA start")
 	} else {
-		checkError(err, RUNNING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -224,41 +184,13 @@ func TestCommands(t *testing.T) {
 			t.Fatalf("Did not receive correct response from command %s. Expected: %s Got: %s", commands[i], commands_output[i], response.Logs)
 		}
 	}
-	if !t.Failed() {
-		num_passed++
-	}
 }
 
 // Tests to ensure the agent can record properly
 // Tests premature start and stop and proper recording
 func TestRecord(t *testing.T) {
 	var err error
-	var stream pb.PandaAgent_StartAgentClient
 	t.Cleanup(func() {
-		log, err = agent.StopAgent(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if log == nil {
-			t.Fatal("Agent returned a nil log")
-		}
-		log_file, err := os.ReadFile(log.GetLogFileName())
-		if err != nil {
-			t.Error("File not found")
-		}
-		var log_stream string = ""
-		for {
-			resp, err := stream.Recv()
-			// Errors out when done
-			if err != nil {
-				break
-			}
-			log_stream += resp.Execution
-		}
-		if !strings.Contains(log_stream, string(log_file)) {
-			t.Error("Panda VM execution log file and stream did not match")
-		}
-
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
@@ -269,33 +201,40 @@ func TestRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stream, err = agent.StartAgent(ctx)
+	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stream == nil {
-		t.Fatal("Could not stream")
-	}
-	// Required for proper startup
-	resp, err := stream.Recv()
-	if err != nil {
-		t.Error(err)
-	} else if resp.Execution != "" {
-		t.Error("First execution log stream not empty")
-	}
 	t.Run("PreStop", TestPrematureStopRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("StartRecording", TestStartRecording)
 	if t.Failed() {
 		t.FailNow()
+	} else {
+		num_passed++
 	}
 	t.Run("ExtraStart", TestExtraStartRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("Commands", TestCommands)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("StopRecording", TestStopRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 	err = agent.StartRecording(ctx, "_")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Run("HangingStop", TestHangingRecording)
+	if !t.Failed() {
+		num_passed++
+	}
 }
 
 // Tests attempting to stop recording before a recording has started
@@ -307,10 +246,12 @@ func TestPrematureStopRecording(t *testing.T) {
 	if err == nil {
 		t.Fatal("Did not prevent stopping a non-existant recording")
 	} else {
-		checkError(err, NOT_RECORDING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := NOT_RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -319,9 +260,6 @@ func TestStartRecording(t *testing.T) {
 	num_tests++
 	if err := agent.StartRecording(ctx, recording_name); err != nil {
 		t.Error(err)
-	}
-	if !t.Failed() {
-		num_passed++
 	}
 }
 
@@ -334,10 +272,12 @@ func TestExtraStartRecording(t *testing.T) {
 	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
 	} else {
-		checkError(err, RECORDING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -364,9 +304,6 @@ func TestStopRecording(t *testing.T) {
 	} else {
 		t.Fatal("Did not return recording")
 	}
-	if !t.Failed() {
-		num_passed++
-	}
 }
 
 // Tests that a recording is stopped when agent is stopped
@@ -374,14 +311,16 @@ func TestStopRecording(t *testing.T) {
 // Should be run after agent.StartRecording
 func TestHangingRecording(t *testing.T) {
 	num_tests++
-	_, err := agent.StopAgent(ctx)
+	err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not receive warning for stopping a hanging recording")
 	} else {
-		checkError(err, RECORDING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := RECORDING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -392,20 +331,9 @@ var replay_agent controller.PandaReplayAgent
 func TestReplay(t *testing.T) {
 	var err error
 	t.Cleanup(func() {
-		log, err = replay_agent.StopAgent(ctx)
+		err = replay_agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
-		}
-		if log == nil {
-			t.Fatal("Agent returned a nil log")
-		}
-		log_file, err := os.ReadFile(log.GetLogFileName())
-		if err != nil {
-			t.Error("File not found")
-		}
-		// These should be empty because nothing important happens
-		if !strings.Contains(string(log_file), "Replay completed successfully") {
-			t.Error("Replay did not complete successfully")
 		}
 		err = replay_agent.Close()
 		if err != nil {
@@ -413,15 +341,27 @@ func TestReplay(t *testing.T) {
 		}
 	})
 
-	replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("PreStop", TestPrematureReplayStop)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("WrongReplay", TestNonexistantReplay)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("RunReplay", TestRunReplay)
+	if !t.Failed() {
+		num_passed++
+	}
 	t.Run("RunExtraReplay", TestRunExtraReplay)
+	if !t.Failed() {
+		num_passed++
+	}
 }
 
 // Tests attempting to stop a replay when one is not in progress
@@ -433,52 +373,31 @@ func TestPrematureReplayStop(t *testing.T) {
 	if err == nil {
 		t.Error("Did not prevent premature stop")
 	} else {
-		checkError(err, NOT_REPLAYING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := NOT_REPLAYING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
 // Tests that a recording can be replayed without error
 func TestRunReplay(t *testing.T) {
 	num_tests++
-	stream, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	replay, err := replay_agent.StartReplayAgent(ctx, recording_name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stream == nil {
+	if replay == nil {
 		t.Fatal("Replay did not return")
 	}
-	resp, err := stream.Recv()
-	if err != nil {
-		t.Error(err)
-	} else if resp.Replay != "" || resp.Serial != "" {
-		t.Error("first resp not empty")
-	}
-	var serial string
-	var replay string
-	for {
-		resp, err = stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			panic(err)
-		}
-		if resp.Replay != "" {
-			replay += resp.Replay
-		}
-		if resp.Serial != "" {
-			serial += resp.Serial
-		}
-	}
-	if serial == "" {
+	if replay.Serial == "" {
 		t.Error("Replay did not return serial")
 	} else {
 		// Check serial I/O, currently only works with single-line I/O
-		serial_lines := strings.Split(serial, "\r\n")
-		for i, cmd := range serial_lines {
+		serial := strings.Split(replay.Serial, "\r\n")
+		for i, cmd := range serial {
 			index := i / 2 // Lines alternate between command and response
 			if i%2 == 0 {
 				// Test for the serial command
@@ -494,16 +413,13 @@ func TestRunReplay(t *testing.T) {
 		}
 
 	}
-	if replay == "" {
+	if replay.Replay == "" {
 		t.Error("Replay did not return execution")
 	} else {
 		// Check replay execution
-		if !strings.Contains(replay, "Replay completed successfully") {
+		if !strings.Contains(replay.Replay, "Replay completed successfully") {
 			t.Fatal("Replay did not complete successfully")
 		}
-	}
-	if !t.Failed() {
-		num_passed++
 	}
 }
 
@@ -512,19 +428,16 @@ func TestRunReplay(t *testing.T) {
 // Should be run before replay_agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
 	num_tests++
-	stream, err := replay_agent.StartReplayAgent(ctx, recording_name)
-	if err != nil {
-		t.Fatal("error occured starting replay agent")
-	}
-	// Must receive exception from stream
-	_, err = stream.Recv()
+	_, err := replay_agent.StartReplayAgent(ctx, recording_name)
 	if err == nil {
 		t.Fatal("Did not prevent extra replay")
 	} else {
-		checkError(err, RUNNING, t)
-	}
-	if !t.Failed() {
-		num_passed++
+		err_num := getError(err)
+		err_expected := RUNNING
+		if err_num != err_expected {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+			t.Error(err)
+		}
 	}
 }
 
@@ -539,8 +452,5 @@ func TestNonexistantReplay(t *testing.T) {
 		// Error happens before agent enumeration
 		t.Error("Incorrect error message")
 		t.Error(err)
-	}
-	if !t.Failed() {
-		num_passed++
 	}
 }
