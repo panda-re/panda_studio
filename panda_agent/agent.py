@@ -19,6 +19,7 @@ class ErrorCode(Enum):
 class PandaAgent:
     # sentinel object to signal end of queue
     STOP_PANDA = object()
+    FILE_PREFIX="data"
 
     def __init__(self, config: pb.PandaConfig):
         self.config = config
@@ -27,11 +28,10 @@ class PandaAgent:
         self.serial_out = ""
     
     def init_panda(self, config: pb.PandaConfig):
-        FILE_PREFIX="data"
         # Construct PANDA instance based on config
         return Panda(
             arch=config.arch,
-            qcow=f"{FILE_PREFIX}/{config.qcow_file_name}",
+            qcow=f"{self.FILE_PREFIX}/{config.qcow_file_name}",
             mem=config.memory,
             os=config.os,
             expect_prompt=config.prompt,
@@ -104,7 +104,7 @@ class PandaAgent:
         def panda_start_recording(panda: Panda):
             print(f'starting recording {recording_name}')
             try:
-                return panda.record(recording_name)
+                return panda.record(f"{self.FILE_PREFIX}/{recording_name}")
             except Exception as err:
                 raise RuntimeError(ErrorCode.RECORDING.value, f"Unexpected {err=}, {type(err)=}")
         

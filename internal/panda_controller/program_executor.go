@@ -2,7 +2,6 @@ package panda_controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +18,7 @@ type PandaProgramExecutor struct {
 type PandaProgramExecutorJob struct {
 	opts *PandaProgramExecutorOptions
 	agent *DockerGrpcPandaAgent2
+	recordings []*PandaAgentRecording
 }
 
 type PandaProgramExecutorOptions struct {
@@ -39,6 +39,7 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions)
 
 	job := &PandaProgramExecutorJob{
 		opts: opts,
+		recordings: []*PandaAgentRecording{},
 	}
 	return job, nil
 }
@@ -106,99 +107,86 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	// 5. send the commands to the agent
 	//    - offer an interface for real-time feedback, even if we don't currently use it
 	//    - keep track of any recording files that are created
-	// 6. stop the agent
-	// 7. upload the recording files to blob storage
-}
-
-func startExecutor(serialized_json string) ([]string, *PandaAgentRecording) {
-	ctx := context.Background()
-
-	// todo: change this method to take in a `Reader` interface instead of a path
-	file, err := os.Open("../images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	agent, err := CreateDefaultDockerPandaAgent(ctx, file)
-	if err != nil {
-		panic(err)
-	}
-	defer agent.Close()
-
-	if err != nil {
-		panic(err)
-	}
-
-	var programs []models.InteractionProgram
-
-	err = json.Unmarshal([]byte(serialized_json), &programs)
-	if err != nil {
-		panic(err)
-	}
-
-	// Start Agent assuming that we are not running a replay
-	fmt.Println("Starting agent")
-	err = agent.StartAgent(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	var result []string
-
-	var recording *PandaAgentRecording
-	for _, interactions := range programs {
-		fmt.Printf(" %s\n", interactions)
-		instructionList := interactions.Instructions
-		instructions, err := models.ParseInteractionProgram(instructionList)
+	for _, inst := range p.opts.Instructions {
+		err = p.runCommand(ctx, inst)
 		if err != nil {
 			panic(err)
 		}
-
-		for _, cmd := range instructions {
-			// Check Type of command and then execute backend as needed for that command.
-			if cmd != nil {
-				// todo: I think we should make this polymorphic
-				switch cmd.GetInstructionType() {
-				case "start_recording":
-					// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
-					err := agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
-					if err != nil {
-						panic(err)
-					}
-					break
-				case "stop_recording":
-					recording, err = agent.StopRecording(ctx)
-					if err != nil {
-						panic(err)
-					}
-					break
-				case "command":
-					cmdResult, err := agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Printf(" %s\n", cmdResult)
-					result = append(result, cmdResult.Logs+"\n")
-					break
-				case "filesystem":
-					fmt.Printf("Filesystem placeholder\n")
-					break
-				case "network":
-					fmt.Printf("Network Placeholder\n")
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).SocketType)
-					fmt.Printf("%d\n", cmd.(*models.NetworkInstruction).Port)
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketType)
-					fmt.Printf("%s\n", cmd.(*models.NetworkInstruction).PacketData)
-					break
-				default:
-					fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
-					break
-				}
-			}
-		}
-
 	}
-
-	err = agent.StopAgent(ctx)
+	// 6. stop the agent
+	err = p.agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
+	// 7. upload the recording files to blob storage
+	for _, recording := range p.recordings {
+		fmt.Printf("Copying recording %s to local disk\n", recording.RecordingName)
+		ndlogStream, err := p.agent.CopyFileFromContainer(ctx, recording.GetNdlogFileName())
+		if err != nil {
+			panic(err)
+		}
+		defer ndlogStream.Close()
+		ndlogFile, err := os.OpenFile(recording.GetNdlogFileName(), os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer ndlogFile.Close()
+		_, err = io.Copy(ndlogFile, ndlogStream)
+		if err != nil {
+			panic(err)
+		}
+		snpStream, err := p.agent.CopyFileFromContainer(ctx, recording.GetSnapshotFileName())
+		if err != nil {
+			panic(err)
+		}
+		defer snpStream.Close()
+		snpFile, err := os.OpenFile(recording.GetSnapshotFileName(), os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer snpFile.Close()
+		_, err = io.Copy(snpFile, snpStream)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
-	return result, recording
+func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.InteractionProgramInstruction) error {
+	if cmd != nil {
+		// todo: I think we should make this polymorphic
+		switch cmd.GetInstructionType() {
+		case "start_recording":
+			// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
+			err := p.agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
+			if err != nil {
+				panic(err)
+			}
+			break
+		case "stop_recording":
+			recording, err := p.agent.StopRecording(ctx)
+			// push the recording to the recordings array
+			p.recordings = append(p.recordings, recording)
+			if err != nil {
+				panic(err)
+			}
+			break
+		case "command":
+			cmdResult, err := p.agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf(" %s\n", cmdResult.Logs)
+			// result = append(result, cmdResult.Logs+"\n")
+			break
+		case "filesystem":
+			// for the future
+		case "network":
+			// for the future
+		default:
+			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
+			break
+		}
+	}
+	return nil
 }

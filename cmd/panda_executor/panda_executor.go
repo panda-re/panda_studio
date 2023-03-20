@@ -132,8 +132,8 @@ func old_main() {
 		panic(err)
 	}
 
-	fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileName())
-	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileName())
+	fmt.Printf("Snapshot file: %s\n", recording.GetSnapshotFileLocation())
+	fmt.Printf("Nondet log file: %s\n", recording.GetNdlogFileLocation())
 
 	err = agent.StopAgent(ctx)
 	if err != nil {

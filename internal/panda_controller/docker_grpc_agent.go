@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	docker "github.com/docker/docker/client"
 	"github.com/panda-re/panda_studio/internal/util"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 )
 
@@ -23,6 +24,8 @@ type dockerGrpcPandaAgent struct {
 	containerId *string
 	sharedDir   *string
 }
+
+var _ PandaAgent = &dockerGrpcPandaAgent{}
 
 const DOCKER_IMAGE = "pandare/panda_agent"
 const DOCKER_GRPC_SOCKET_PATTERN = "unix://%s/panda-agent.sock"
@@ -147,18 +150,17 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 
 	// Copy given image into shared directory
 	//TODO: Replace destination with filesystem target
-	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
+	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileLocation(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying snapshot")
 	}
 
-	nBytes, err = copyFileHelper(new_recording.GetNdlogFileName(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
+	nBytes, err = copyFileHelper(new_recording.GetNdlogFileLocation(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-nondet.log", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying nondeterministic log")
 	}
 	return &new_recording, nil
 }
-
 
 func (pa *dockerGrpcPandaAgent) startContainer(ctx context.Context) error {
 	// Create the container and save the name
@@ -243,4 +245,9 @@ func copyFileHelper(source_file_path string, shared_dir_path string, copied_file
 	destination.Close()
 
 	return nBytes, err
+}
+
+// StartAgentWithOpts implements PandaAgent
+func (*dockerGrpcPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
+	panic("unimplemented")
 }

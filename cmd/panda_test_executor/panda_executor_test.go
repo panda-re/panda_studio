@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -88,7 +89,11 @@ func TestAgent(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	imageFile, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, imageFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +201,11 @@ func TestRecord(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, "/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	imageFile, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, imageFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,12 +303,12 @@ func TestStopRecording(t *testing.T) {
 			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", recording_name, recording.RecordingName)
 		}
 		snapshotName := fmt.Sprintf("%s/%s-rr-snp", recording.Location, recording_name)
-		if recording.GetSnapshotFileName() != snapshotName {
-			t.Errorf("Did not return correct snaphot name. Expected: '%s' Got: '%s'", snapshotName, recording.GetSnapshotFileName())
+		if recording.GetSnapshotFileLocation() != snapshotName {
+			t.Errorf("Did not return correct snaphot name. Expected: '%s' Got: '%s'", snapshotName, recording.GetSnapshotFileLocation())
 		}
 		ndLogName := fmt.Sprintf("%s/%s-rr-nondet.log", recording.Location, recording_name)
-		if recording.GetNdlogFileName() != ndLogName {
-			t.Errorf("Did not return correct nondet log name. Expected: '%s' Got: '%s'", ndLogName, recording.GetNdlogFileName())
+		if recording.GetNdlogFileLocation() != ndLogName {
+			t.Errorf("Did not return correct nondet log name. Expected: '%s' Got: '%s'", ndLogName, recording.GetNdlogFileLocation())
 		}
 	} else {
 		t.Fatal("Did not return recording")

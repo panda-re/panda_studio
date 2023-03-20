@@ -57,9 +57,17 @@ type NetworkResponse struct {
 }
 
 func (r *PandaAgentRecording) GetSnapshotFileName() string {
-	return fmt.Sprintf("%s/%s-rr-snp", r.Location, r.RecordingName)
+	return fmt.Sprintf("%s-rr-snp", r.RecordingName)
+}
+
+func (r *PandaAgentRecording) GetSnapshotFileLocation() string {
+	return fmt.Sprintf("%s/%s", r.Location, r.GetSnapshotFileName())
 }
 
 func (r *PandaAgentRecording) GetNdlogFileName() string {
-	return fmt.Sprintf("%s/%s-rr-nondet.log", r.Location, r.RecordingName)
+	return fmt.Sprintf("%s-rr-nondet.log", r.RecordingName)
+}
+
+func (r *PandaAgentRecording) GetNdlogFileLocation() string {
+	return fmt.Sprintf("%s/%s", r.Location, r.GetNdlogFileName())
 }
