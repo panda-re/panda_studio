@@ -53,16 +53,6 @@ function InteractionDetails() {
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
           <EuiFlexItem grow={false}>
-            <EuiButton
-              style={buttonStyle}
-              onClick={() => {
-                navigate('/interactions')
-              }}
-            >
-              Interactions Dashboard
-            </EuiButton>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
             <EuiButton style={buttonStyle} onClick={deleteCurrentInteractionProgram}>Delete Interaction</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>

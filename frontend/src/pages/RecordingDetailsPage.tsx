@@ -68,16 +68,6 @@ function RecordingDetailsPage() {
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
           <EuiFlexItem grow={false}>
-            <EuiButton
-              style={buttonStyle}
-              onClick={() => {
-                navigate('/recordings')
-              }}
-            >
-              Recording Dashboard
-            </EuiButton>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
             <EuiButton style={buttonStyle} onClick={deleteCurrentRecording}>Delete Recording</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
