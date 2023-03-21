@@ -8,7 +8,6 @@ import (
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
-	"github.com/panda-re/panda_studio/panda_agent/pb"
 )
 
 type PandaProgramExecutor struct {
@@ -82,7 +81,7 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
-	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, fileSize, "system_image.qcow2")
+	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, fileSize, "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
@@ -90,16 +89,7 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 	// 4. start the agent with the given image and configuration
 	fmt.Println("Starting PANDA instance")
 	err = agent.StartAgentWithOpts(ctx, &StartAgentRequest{
-		Config: &pb.PandaConfig{
-			QcowFileName: "system_image.qcow2",
-			Arch: "x86_64",
-			Os: "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
-			Prompt: "root@ubuntu:.*#",
-			Cdrom: "ide1-cd0",
-			Snapshot: "root",
-			Memory: "1024M",
-			ExtraArgs: "-display none",
-		},
+		Config: &p.opts.Image.Config.PandaConfig,
 	})
 	if err != nil {
 		panic(err)

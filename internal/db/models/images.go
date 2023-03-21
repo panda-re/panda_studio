@@ -1,6 +1,9 @@
 package models
 
-import "github.com/panda-re/panda_studio/internal/db"
+import (
+	"github.com/panda-re/panda_studio/internal/db"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
+)
 
 type Architecture string
 
@@ -31,11 +34,7 @@ type ImageFile struct {
 }
 
 type ImageConfiguration struct {
-	Architecture Architecture `bson:"arch" json:"arch"`
-	DiskImage db.ObjectID `bson:"disk_image" json:"disk_image"`
-	// Kernel string
-	// Initrd string
-	// DeviceTree string
+	pb.PandaConfig `bson:",inline" json:",inline"`
 }
 
 // Data transfer objects

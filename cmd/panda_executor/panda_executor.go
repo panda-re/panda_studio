@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -15,6 +16,9 @@ import (
 
 //go:embed test_program.txt
 var testProgram string
+
+//go:embed bionic-image.json
+var testImageSpec string
 
 func main() {
 	if err := config.LoadConfig(); err != nil {
@@ -40,29 +44,23 @@ func main() {
 	progExec := controller.PandaProgramExecutor{}
 
 	// open a stream to the file in blob storage
-	file, err := os.Open("images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	IMAGE_FILE := "images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
+	// IMAGE_FILE := "images/ubuntu-2204.qcow2"
+	file, err := os.Open(IMAGE_FILE)
 	if err != nil {
 		panic(err)
 	}
 
+	var image models.Image
+	if err := json.Unmarshal([]byte(testImageSpec), &image); err != nil {
+		panic(err)
+	}
+
+	// debug print the image
+	fmt.Printf("image: %+v\n", image)
+
 	jobOpts := controller.PandaProgramExecutorOptions{
-		Image: &models.Image{
-			ID: &primitive.NilObjectID,
-			Name: "default_image",
-			Description: "Default Image",
-			Files: []*models.ImageFile{
-				{
-					ID: &primitive.NilObjectID,
-					ImageID: &primitive.NilObjectID,
-					FileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
-					FileType: "qcow2",
-					IsUploaded: true,
-					Size: 0,
-					Sha256: "",
-				},
-			},
-			Config: &models.ImageConfiguration{},
-		},
+		Image: &image,
 		Program: &models.InteractionProgram{
 			ID: &primitive.NilObjectID,
 			Name: "test_program",

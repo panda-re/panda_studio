@@ -40,7 +40,8 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         return pb.StartAgentResponse()
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
-        self.agent.stop()
+        if self.agent is not None:
+            self.agent.stop()
         self.server.stop(grace=5)
         return pb.StopAgentResponse()
     
