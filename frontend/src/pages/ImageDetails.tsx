@@ -125,6 +125,14 @@ function CreateImageDetailsPage() {
                   {(file.size != null) ? prettyBytes(file.size, { maximumFractionDigits: 2 }) : "0"}
                 </EuiText>
               </EuiFlexItem>
+              <EuiFlexItem >
+                <EuiText textAlign={"center"}>
+                  <strong>Hash:</strong>
+                </EuiText>
+                <EuiText textAlign={"center"}>
+                  {file.sha256}
+                </EuiText>
+              </EuiFlexItem>
             </EuiFlexGroup>)
     }
     return items;
@@ -136,36 +144,34 @@ function CreateImageDetailsPage() {
       <EuiFlexItem grow={6}>
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>ID:</strong>
+            <strong><u>ID:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             {location.state.item.id}
           </EuiText>
           <EuiSpacer></EuiSpacer>
           <EuiText textAlign={"center"}>
-            <strong>Name:</strong>
+            <strong><u>Name:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             {location.state.item.name}
           </EuiText>
           <EuiSpacer></EuiSpacer>
           <EuiText textAlign={"center"}>
-            <strong>Description:</strong>
+            <strong><u>Description:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             {location.state.item.description}
           </EuiText>
           <EuiSpacer></EuiSpacer>
           <EuiText textAlign={"center"}>
-            <strong>Size:</strong>
+            <strong><u>Size:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             {prettyBytes(size, { maximumFractionDigits: 2 })}
           </EuiText>
-          <EuiSpacer></EuiSpacer>
-        </EuiPageTemplate.Section>
-        <EuiPageTemplate.Section>
-          <EuiText textAlign={"center"}><strong>Image Files</strong></EuiText>
+          <EuiSpacer size='xl'></EuiSpacer>
+          <EuiText textAlign={"center"}><strong><u>Image Files</u></strong></EuiText>
           {CreateImageFileRows(location.state.item.files)}
         </EuiPageTemplate.Section>
       </EuiFlexItem>

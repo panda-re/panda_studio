@@ -28,14 +28,26 @@ function ImagesDataGrid() {
    const [isModalVisible, setIsModalVisible] = useState(false);
    const [modalName, setModalName] = useState("");
    const [modalDesc, setModalDesc] = useState("");
-   const [modalConfig, setModalConfig] = useState("");
+   const [modalArch, setModalArch] = useState("");
+   const [modalOs, setModalOs] = useState("");
+   const [modalPrompt, setModalPrompt] = useState("");
+   const [modalCdrom, setModalCdrom] = useState("");
+   const [modalSnapshot, setModalSnapshot] = useState("");
+   const [modalMemory, setModalMemory] = useState("");
+   const [modalExtraArgs, setModalExtraArgs] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
  
    const closeModal = () => {
      setModalName("");
      setModalDesc("");
-     setModalConfig("");
+     setModalArch("");
+     setModalOs("");
+     setModalPrompt("");
+     setModalCdrom("");
+     setModalSnapshot("");
+     setModalMemory("");
+     setModalExtraArgs("");
      setIsModalVisible(false)
    };
    const showModal = () => {
@@ -53,7 +65,14 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      key: image.config,
+      file_name: "",
+      arch: modalArch,
+      os: modalOs,
+      prompt: modalPrompt,
+      cdrom: modalCdrom,
+      snapshot: modalSnapshot,
+      memory: modalMemory,
+      extra_args: modalExtraArgs,      
     }
     const req: CreateImageRequest = {
       name: image.name,
@@ -110,17 +129,26 @@ function ImagesDataGrid() {
   const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
 
   function createFile(){
+    if(modalName=="" || modalArch=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+      alert("Please fill out all required fields")
+      return;
+    }
     const conf: PandaConfig = {
-      key: modalConfig,
+      file_name: "",
+      arch: modalArch,
+      os: modalOs,
+      prompt: modalPrompt,
+      cdrom: modalCdrom,
+      snapshot: modalSnapshot,
+      memory: modalMemory,
+      extra_args: modalExtraArgs,   
     }
     const req: CreateImageRequest = {
       name: modalName,
       description: modalDesc,
       config: conf,
     };
-    if(modalName != ""){
-      createFn.mutate({data: req})
-    }
+    createFn.mutate({data: req})
   }
 
   //////// UI Functions ///////////
@@ -159,7 +187,8 @@ function ImagesDataGrid() {
                 </EuiModalHeader>
                 <EuiModalBody>
                     <EuiFieldText 
-                      placeholder="Enter Name"  
+                      placeholder="Enter Name (required)"
+                      isInvalid={modalName == ""}
                       name="imageName" 
                       onChange={(e) => {
                         setModalName(e.target.value);
@@ -171,10 +200,50 @@ function ImagesDataGrid() {
                         setModalDesc(e.target.value);
                       }}/>
                       <EuiFieldText 
-                      placeholder="Enter config key"  
-                      name="pandaConfig" 
+                      placeholder="Enter image Architecture (required)"
+                      isInvalid={modalArch == ""}
+                      name="pandaConfigArch" 
                       onChange={(e) => {
-                        setModalConfig(e.target.value);
+                        setModalArch(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter image OS (required)"
+                      isInvalid={modalOs == ""}
+                      name="pandaConfigOs" 
+                      onChange={(e) => {
+                        setModalOs(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter prompt (required)"
+                      isInvalid={modalPrompt == ""}
+                      name="pandaConfigPrompt" 
+                      onChange={(e) => {
+                        setModalPrompt(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Cdrom" 
+                      name="pandaConfigCdrom" 
+                      onChange={(e) => {
+                        setModalCdrom(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Snapshot"  
+                      name="pandaConfigSnapshot" 
+                      onChange={(e) => {
+                        setModalSnapshot(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter memory amount (required)"
+                      isInvalid={modalMemory == ""}
+                      name="pandaConfigMemory" 
+                      onChange={(e) => {
+                        setModalMemory(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Extra args"  
+                      name="pandaConfigExtraArgs"
+                      onChange={(e) => {
+                        setModalExtraArgs(e.target.value);
                       }}/>
                       <EuiFilePicker
                         id={filePickerId}
