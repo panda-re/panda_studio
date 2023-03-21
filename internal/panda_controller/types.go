@@ -3,15 +3,13 @@ package panda_controller
 import (
 	"context"
 	"fmt"
-
-	pb "github.com/panda-re/panda_studio/panda_agent/pb"
 )
 
 type PandaAgent interface {
 	// todo: add options such as architecture, image, networking, etc. to pass
 	// to the agent
-	StartAgent(ctx context.Context) (pb.PandaAgent_StartAgentClient, error)
-	StopAgent(ctx context.Context) (*PandaAgentLog, error)
+	StartAgent(ctx context.Context) error
+	StopAgent(ctx context.Context) error
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (*PandaAgentRecording, error)
@@ -20,8 +18,8 @@ type PandaAgent interface {
 }
 
 type PandaReplayAgent interface {
-	StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error)
-	StopAgent(ctx context.Context) (*PandaAgentLog, error)
+	StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
+	StopAgent(ctx context.Context) error
 	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
 	Close() error
 }
@@ -38,11 +36,6 @@ type PandaAgentRecording struct {
 type PandaAgentReplayResult struct {
 	Serial string // Captured serial through PANDA callback
 	Replay string // Replay execution through redirected output to file
-}
-
-type PandaAgentLog struct {
-	LogName  string
-	Location string
 }
 
 type NetworkRequest struct {
@@ -64,8 +57,4 @@ func (r *PandaAgentRecording) GetSnapshotFileName() string {
 
 func (r *PandaAgentRecording) GetNdlogFileName() string {
 	return fmt.Sprintf("%s/%s-rr-nondet.log", r.Location, r.RecordingName)
-}
-
-func (l *PandaAgentLog) GetLogFileName() string {
-	return fmt.Sprintf("%s/%s", l.Location, l.LogName)
 }

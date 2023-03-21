@@ -4,24 +4,20 @@ package panda_studio.panda_agent;
 option go_package = "github.com/panda-re/panda_studio/panda_agent/pb";
 
 service PandaAgent {
-    rpc StartAgent (StartAgentRequest) returns (stream StartAgentResponse) {}
+    rpc StartAgent (StartAgentRequest) returns (StartAgentResponse) {}
     rpc StopAgent (StopAgentRequest) returns (StopAgentResponse) {}
     rpc RunCommand (RunCommandRequest) returns (RunCommandResponse) {}
     rpc StartRecording (StartRecordingRequest) returns (StartRecordingResponse) {}
     rpc StopRecording (StopRecordingRequest) returns (StopRecordingResponse) {}
-    rpc StartReplay (StartReplayRequest) returns (stream StartReplayResponse) {}
+    rpc StartReplay (StartReplayRequest) returns (StartReplayResponse) {}
     rpc StopReplay (StopReplayRequest) returns (StopReplayResponse) {}
     rpc SendNetworkCommand (NetworkRequest) returns (NetworkResponse) {}
 }
 
 message StartAgentRequest {}
-message StartAgentResponse {
-    string execution = 1;
-}
+message StartAgentResponse {}
 message StopAgentRequest {}
-message StopAgentResponse {
-    string log_filename = 1;
-}
+message StopAgentResponse {}
 
 message RunCommandRequest {
     string command = 1;

@@ -36,27 +36,23 @@ func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 }
 
 // StartAgent implements PandaAgent
-func (pa *grpcPandaAgent) StartAgent(ctx context.Context) (pb.PandaAgent_StartAgentClient, error) {
-	stream, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
+func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
+	_, err := pa.cli.StartAgent(ctx, &pb.StartAgentRequest{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return stream, nil
+	return nil
 }
 
 // StopAgent implements PandaAgent
-func (pa *grpcPandaAgent) StopAgent(ctx context.Context) (*PandaAgentLog, error) {
-	resp, err := pa.cli.StopAgent(ctx, &pb.StopAgentRequest{})
+func (pa *grpcPandaAgent) StopAgent(ctx context.Context) error {
+	_, err := pa.cli.StopAgent(ctx, &pb.StopAgentRequest{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &PandaAgentLog{
-		LogName: resp.LogFilename,
-		// We cannot know the location with the information we have
-		Location: "?",
-	}, nil
+	return nil
 }
 
 // RunCommand implements PandaAgent
@@ -100,15 +96,18 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecordi
 }
 
 // StartReplayAgent implements PandaReplayAgent
-func (pa *grpcPandaAgent) StartReplayAgent(ctx context.Context, recordingName string) (pb.PandaAgent_StartReplayClient, error) {
-	stream, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
+func (pa *grpcPandaAgent) StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+	resp, err := pa.cli.StartReplay(ctx, &pb.StartReplayRequest{
 		RecordingName: recordingName,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return stream, nil
+	return &PandaAgentReplayResult{
+		Serial: resp.GetSerial(),
+		Replay: resp.GetReplay(),
+	}, nil
 }
 
 // StopReplay implements PandaReplayAgent
