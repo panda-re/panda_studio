@@ -1,26 +1,20 @@
 import {EuiButton, EuiPageTemplate, EuiSelectableOption, EuiText} from '@elastic/eui';
-import {useRef, useState} from "react";
+import {useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import React from 'react'
 import EntitySearchBar from '../components/EntitySearchBar';
 
 import prettyBytes from 'pretty-bytes';
-import { useNavigate } from 'react-router';
 import { useFindAllImages, useFindAllPrograms } from '../api';
 
 function CreateRecordingPage() {
-  const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [volume, setVolume] = useState('');
-  const [program, setProgram] = useState('');
-  const [commands, setCommands] = useState('');
-  const terminal = useRef(null);
 
   var programEntities: EuiSelectableOption[] = [];
   var imageEntities: EuiSelectableOption[] = [];
 
-  const {isLoading: imagesLoading, error: imagesError, data: images} = useFindAllImages();
-  const {isLoading: programsLoading, error: programError, data: programs} = useFindAllPrograms();
+  const {isLoading: imagesLoading, data: images} = useFindAllImages();
+  const {isLoading: programsLoading, data: programs} = useFindAllPrograms();
 
   if(images != null){
     images.map((r) =>{
@@ -31,7 +25,6 @@ function CreateRecordingPage() {
         }
       }
       imageEntities.push({label: `Image Name: ${r.name}  ----   Image Id: ${r.id}  ----   Image Size: ${prettyBytes(size, { maximumFractionDigits: 2 })}`,
-      // entities.push({label: `id:${r.id} - name:${r.name} - size:${prettyBytes(size, { maximumFractionDigits: 2 })}`,
       data: r});
     })
   }
@@ -42,7 +35,6 @@ function CreateRecordingPage() {
       programEntities.push({label: `Program Name: ${r.name} ------  Id: ${r.id}`, data: r})
     );
   }
-
 
   const [selectedImage, setSelectedImage] = React.useState<EuiSelectableOption | undefined>(undefined);
   function returnSelectedImage(message: EuiSelectableOption){
