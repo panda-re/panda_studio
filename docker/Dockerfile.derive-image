@@ -1,7 +1,7 @@
 # https://github.com/djui/docker-guestfs/blob/master/Dockerfile
 FROM ubuntu:22.04
 
-WORKDIR /root
+WORKDIR /tmp/panda-studio/derive-image-tmp
 
 # -- Install Dependencies --
 RUN apt-get update && \
@@ -13,35 +13,10 @@ RUN apt-get update && \
 ENV LIBGUESTFS_BACKEND=direct \
     HOME=/root
 
-#todo: make these runtime arguments, not build args
-
-# Name of the image we are creating
+# Build arguments
 ARG NEW_IMAGE
-ENV NEW_IMAGE_NAME = ${NEW_IMAGE}
-
-# Name of the old image we are basing it off of
 ARG BASE_IMAGE
-ENV BASE_IMAGE_NAME = ${BASE_IMAGE}
-
-# Name of the Docker Hub image we are pulling from
 ARG DOCKER_IMAGE
-ENV DOCKER_IMAGE_NAME = ${DOCKER_IMAGE}
 
-# Copy image into directory (pulled from min.io beforehand)
-COPY ${BASE_IMAGE.qcow2} .
-
-# todo: Add error logging here
-ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
-
-# docker build --build-arg new_image="ubuntu-2204-derived.qcow2" base_image="ubuntu-2204.qcow2" docker_image="hello-world"
-
-
-#notes
-#don't do it this way
-#need to download file from object storage using existing endpoints for that
-#put that into a temporary directory
-#share the directory with the Docker container
-
-
-#docker grpc agent -> file copy helper (see docker_grpc_agent)
-#
+# ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
+RUN ./derive_image/derive_image.sh $NEW_IMAGE $BASE_IMAGE $DOCKER_IMAGE

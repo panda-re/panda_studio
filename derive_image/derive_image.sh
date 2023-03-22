@@ -1,7 +1,7 @@
 #!/bin/bash
 # -- expand size of the main drive --
-cp ${BASE_IMAGE_NAME} ${NEW_IMAGE_NAME}	
-virt-resize --expand /dev/sda1 ${BASE_IMAGE_NAME} ${NEW_IMAGE_NAME}
+cp ${BASE_IMAGE} ${NEW_IMAGE}	
+virt-resize --expand /dev/sda1 ${BASE_IMAGE} ${NEW_IMAGE}
 
 # -- Open Guestfish --
 sudo guestfish --network << EOF
@@ -16,6 +16,6 @@ command "sudo apt-key add gpg"
 command "sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
 command "sudo apt install docker-ce docker-ce-cli containerd.io cgroupfs-mount -y"
 command "sudo service docker start"
-command "docker pull ${DOCKER_IMAGE_NAME}"
+command "docker pull ${DOCKER_IMAGE}"
 exit
 EOF

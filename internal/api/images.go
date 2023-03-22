@@ -162,7 +162,7 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	ctx.JSON(http.StatusOK, imgFile)
 }
 
-func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newImageName string, newImageSize int) error {
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newName string, oldName string, dockerHubImageName string, size int) error {
 	//get the image from the repo
 	// image, err := s.imageRepo.FindOneImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
 	// if err != nil {
@@ -206,7 +206,10 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "alpine",
-		Cmd:   []string{"docker build", "Dockerfile.derive-image"},
+		Cmd:   []string{"docker build", "Dockerfile.derive-image", 
+						"--build-arg new_image="+newName+" ", 
+						"--build-arg base_image="+oldName+" ", 
+						"--build-arg docker_image="+dockerHubImageName},
 		Tty:   false,
 	}, nil, nil, nil, "")
 	if err != nil {
