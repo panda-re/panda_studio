@@ -94,30 +94,15 @@ func (s *PandaStudioServer) ExecuteProgramById(ctx *gin.Context, programId strin
 		return
 	}
 
-	qcowFile, err := s.imageRepo.OpenImageFile(ctx, image.ID, image.Files[0].ID)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "Could not open image file"))
-		return
-	}
-
 	program, err := s.programRepo.FindOne(ctx, db.ParseObjectID(programId))
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "Could not find program"))
-		return
-	}
-
-	instructions, err := models.ParseInteractionProgram(program.Instructions)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "Could not parse program instructions"))
 		return
 	}
 	
 	job, err := s.programExecutor.NewExecutorJob(ctx, &panda_controller.PandaProgramExecutorOptions{
 		Image: image,
 		Program: program,
-		Instructions: instructions,
-		ImageFileReader: qcowFile,
-		ImageFileSize: image.Files[0].Size,
 	})
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "Could not create job"))

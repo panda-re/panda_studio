@@ -8,6 +8,7 @@ import (
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
+	"github.com/pkg/errors"
 )
 
 type PandaProgramExecutor struct {
@@ -16,6 +17,7 @@ type PandaProgramExecutor struct {
 }
 
 type PandaProgramExecutorJob struct {
+	imageRepo repos.ImageRepository
 	opts *PandaProgramExecutorOptions
 	agent *DockerGrpcPandaAgent2
 	recordings []*PandaAgentRecording
@@ -24,9 +26,6 @@ type PandaProgramExecutorJob struct {
 type PandaProgramExecutorOptions struct {
 	Image *models.Image
 	Program *models.InteractionProgram
-	Instructions models.InteractionProgramInstructionList
-	ImageFileReader io.Reader
-	ImageFileSize int64
 }
 
 func NewPandaProgramExecutor(ctx context.Context) (*PandaProgramExecutor, error) {
@@ -56,31 +55,31 @@ func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaPr
 	// Rest in StartJob
 
 	job := &PandaProgramExecutorJob{
+		imageRepo: p.imageRepo,
 		opts: opts,
 		recordings: []*PandaAgentRecording{},
 	}
 	return job, nil
 }
 
-func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
+func (p *PandaProgramExecutorJob) setupContainer(ctx context.Context) error {
 	// 3. create a panda instance using that file
 	agent, err := CreateDockerPandaAgent2(ctx)
 	if err != nil {
 		// todo: return via a channel
-		panic(err)
+		return errors.Wrap(err, "failed to create panda agent")
 	}
 	p.agent = agent
 
 	err = p.agent.Connect(ctx)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to connect to agent")
 	}
 
 	// Copy the image to the agent
-	fmt.Println("Copying image to agent...")
-	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, p.opts.ImageFileSize, "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	err = p.copyImageFiles(ctx)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to copy image files to agent")
 	}
 
 	// 4. start the agent with the given image and configuration
@@ -89,22 +88,49 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 		Config: &p.opts.Image.Config.PandaConfig,
 	})
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to start agent")
 	}
-	// 5. send the commands to the agent
-	//    - offer an interface for real-time feedback, even if we don't currently use it
-	//    - keep track of any recording files that are created
-	for _, inst := range p.opts.Instructions {
-		err = p.runCommand(ctx, inst)
+
+	return err
+}
+
+func (p *PandaProgramExecutorJob) copyImageFiles(ctx context.Context) error {
+	image := p.opts.Image
+	for _, file := range p.opts.Image.Files {
+		fmt.Printf("Copying file %s to agent\n", file.FileName)
+		fileReader, err := p.imageRepo.OpenImageFile(ctx, image.ID, file.ID)
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to open image file")
+		}
+
+		err = p.agent.CopyFileToContainer(ctx, fileReader, file.Size, file.FileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to copy file to agent")
 		}
 	}
-	// 6. stop the agent
+
+	return nil
+}
+
+func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
+	// Initialize the container
+	err := p.setupContainer(ctx)
+	if err != nil {
+		panic(err)
+	}
+	
+	// Parse the interaction program instructions and run them
+	err = p.runProgram(ctx, p.opts.Program)
+	if err != nil {
+		panic(err)
+	}
+
+	// stop the agent
 	err = p.agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
+
 	// 7. upload the recording files to blob storage
 	for _, recording := range p.recordings {
 		fmt.Printf("Copying recording %s to local disk\n", recording.RecordingName)
@@ -137,6 +163,22 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 			panic(err)
 		}
 	}
+}
+
+func (p *PandaProgramExecutorJob) runProgram(ctx context.Context, prog *models.InteractionProgram) error {
+	instructions, err := models.ParseInteractionProgram(p.opts.Program.Instructions)
+	if err != nil {
+		return err
+	}
+
+	for _, inst := range instructions {
+		err := p.runCommand(ctx, inst)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return nil
 }
 
 func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.InteractionProgramInstruction) error {
