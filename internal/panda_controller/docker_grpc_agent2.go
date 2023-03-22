@@ -228,7 +228,7 @@ func (pa *DockerGrpcPandaAgent2) createTempDir() error {
 	}
 
 	// Create temp dir
-	sharedDir, err := os.MkdirTemp("", "panda-studio-*")
+	sharedDir, err := os.MkdirTemp(PANDA_STUDIO_TEMP_DIR, "panda-studio-*")
 	if err != nil {
 		return err
 	}

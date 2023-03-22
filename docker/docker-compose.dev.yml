@@ -23,6 +23,11 @@ services:
     depends_on:
       - minio
       - mongodb
+    volumes:
+      # Need access to docker.sock to run docker commands
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Temp files so docker binding works properly
+      - /tmp/panda-studio:/tmp/panda-studio
     networks:
       - panda_studio
   minio:
