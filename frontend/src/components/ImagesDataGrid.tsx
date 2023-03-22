@@ -65,7 +65,7 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      file_name: "",
+      file_name: image.config?.file_name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
@@ -117,7 +117,7 @@ function ImagesDataGrid() {
       return;
     }
     const fileReq: CreateImageFileRequest = {
-      file_name: modalName,
+      file_name: files[0].name,
       file_type: fileType,
       file: files[0],
     }
@@ -134,7 +134,7 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      file_name: "",
+      file_name: files[0].name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
