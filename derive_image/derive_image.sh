@@ -1,11 +1,12 @@
 #!/bin/bash
 # -- expand size of the main drive --
 cp ${BASE_IMAGE} ${NEW_IMAGE}	
-virt-resize --expand /dev/sda1 ${BASE_IMAGE} ${NEW_IMAGE}
+virt-resize --resize /dev/sda1=+${SIZE}G ${BASE_IMAGE} ${NEW_IMAGE}
+# expands into /dev/sda3
 
 # -- Open Guestfish --
 sudo guestfish --network << EOF
-add ${NEW_IMAGE_NAME}
+add ${NEW_IMAGE}
 set-network true
 run
 mount /dev/sda3 /

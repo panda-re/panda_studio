@@ -17,6 +17,7 @@ ENV LIBGUESTFS_BACKEND=direct \
 ARG NEW_IMAGE
 ARG BASE_IMAGE
 ARG DOCKER_IMAGE
+ARG SIZE
 
 # ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
-RUN ./derive_image/derive_image.sh $NEW_IMAGE $BASE_IMAGE $DOCKER_IMAGE
+RUN ./derive_image/derive_image.sh $NEW_IMAGE $BASE_IMAGE $DOCKER_IMAGE $SIZE

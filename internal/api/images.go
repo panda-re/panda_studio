@@ -209,7 +209,8 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 		Cmd:   []string{"docker build", "Dockerfile.derive-image", 
 						"--build-arg new_image="+newName+" ", 
 						"--build-arg base_image="+oldName+" ", 
-						"--build-arg docker_image="+dockerHubImageName},
+						"--build-arg docker_image="+dockerHubImageName+" ",
+						"--build-arg size="+size},
 		Tty:   false,
 	}, nil, nil, nil, "")
 	if err != nil {
