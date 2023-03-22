@@ -312,6 +312,29 @@ paths:
                 $ref: "#/components/schemas/InteractionProgram"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+  /programs/{programId}/execute:
+    post:
+      tags:
+        - program
+      summary: Execute Interaction Program with specified ID
+      operationId: executeProgramById
+      parameters:
+        - $ref: "#/components/parameters/ProgramId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecuteProgramRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecuteProgramResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
 components:
   parameters:
     ImageId:
@@ -510,6 +533,18 @@ components:
           items:
             $ref: "#/components/schemas/InteractionProgramInstruction"
     
+    ExecuteProgramRequest:
+      type: object
+      properties:
+        imageId:
+          type: string
+    
+    ExecuteProgramResponse:
+      type: object
+      properties:
+        recordingId:
+          type: string
+    
     InteractionProgramInstruction:
       oneOf:
         - $ref: "#/components/schemas/RunCommandInstruction"
@@ -576,7 +611,7 @@ components:
         sock_type:
           type: string
         port:
-          type: int
+          type: integer
         packet_type:
           type: string
         packet_data:

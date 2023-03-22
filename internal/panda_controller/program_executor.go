@@ -12,6 +12,7 @@ import (
 
 type PandaProgramExecutor struct {
 	imageRepo repos.ImageRepository
+	programRepo repos.ProgramRepository
 }
 
 type PandaProgramExecutorJob struct {
@@ -24,10 +25,28 @@ type PandaProgramExecutorOptions struct {
 	Image *models.Image
 	Program *models.InteractionProgram
 	Instructions models.InteractionProgramInstructionList
-	ImageFileReader io.ReadSeeker
+	ImageFileReader io.Reader
+	ImageFileSize int64
 }
 
-func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions) (*PandaProgramExecutorJob, error) {
+func NewPandaProgramExecutor(ctx context.Context) (*PandaProgramExecutor, error) {
+	imageRepo, err := repos.GetImageRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	programRepo, err := repos.GetProgramRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PandaProgramExecutor{
+		imageRepo: imageRepo,
+		programRepo: programRepo,
+	}, nil
+}
+
+func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaProgramExecutorOptions) (*PandaProgramExecutorJob, error) {
 	// Basic rundown of what will happen:
 	// 1. pull information from the database
 	//    - making this the caller's responsibility
@@ -41,24 +60,6 @@ func (p *PandaProgramExecutor) NewExecutorJob(opts *PandaProgramExecutorOptions)
 		recordings: []*PandaAgentRecording{},
 	}
 	return job, nil
-}
-
-func getReaderSize(reader io.ReadSeeker) (size int64, err error) {
-	// Get the size of the file
-	// https://stackoverflow.com/a/24563853
-	currentPos, err := reader.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return 0, err
-	}
-	defer reader.Seek(currentPos, io.SeekStart)
-
-	endPos, err := reader.Seek(0, io.SeekEnd)
-	if err != nil {
-		return 0, err
-	}
-	defer reader.Seek(currentPos, io.SeekStart)
-
-	return endPos, nil
 }
 
 func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
@@ -77,11 +78,7 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 
 	// Copy the image to the agent
 	fmt.Println("Copying image to agent...")
-	fileSize, err := getReaderSize(p.opts.ImageFileReader)
-	if err != nil {
-		panic(err)
-	}
-	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, fileSize, "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	err = p.agent.CopyFileToContainer(ctx, p.opts.ImageFileReader, p.opts.ImageFileSize, "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
