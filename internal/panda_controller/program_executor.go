@@ -63,6 +63,7 @@ func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaPr
 
 	job := &PandaProgramExecutorJob{
 		imageRepo: p.imageRepo,
+		recRepo: p.recRepo,
 		opts: opts,
 		Recordings: []PandaAgentRecording{},
 	}
@@ -203,9 +204,9 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 		newRecording := &models.Recording{
 			ID: nil,
 			ImageID: p.opts.Image.ID,
+			ProgramID: p.opts.Program.ID,
 			Name: rec.Name(),
 			Description: "",
-			Size: -1, // field is unneeded as size is stored in the files
 			Date: time.Now().String(),
 		}
 

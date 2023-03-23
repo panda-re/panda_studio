@@ -280,8 +280,8 @@ func (pa *DockerGrpcPandaAgent2) startContainer(ctx context.Context) error {
 			},
 		},
 		// make sure the container is removed on exit
-		// AutoRemove: true,
-		AutoRemove: false,
+		AutoRemove: true,
+		// AutoRemove: false,
 	}, &network.NetworkingConfig{}, nil, "")
 	if err != nil {
 		return err
