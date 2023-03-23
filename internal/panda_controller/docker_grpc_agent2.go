@@ -205,18 +205,18 @@ func (pa *DockerGrpcPandaAgent2) StopAgent(ctx context.Context) error {
 }
 
 // StopRecording implements PandaAgent
-func (pa *DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
-	recording, err := pa.grpcAgent.StopRecording(ctx)
+func (pa *DockerGrpcPandaAgent2) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
+	innerRec, err := pa.grpcAgent.StopRecording(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newRecording := PandaAgentRecording{
-		RecordingName: recording.RecordingName,
-		Location:      "not applicable - use CopyFileFromContainer",
-	}
+	recording := innerRec.(*GenericPandaAgentRecordingConcrete)
 
-	fmt.Println("Warning: not the correct location")
+	newRecording := DockerPandaAgentRecording{
+		GenericPandaAgentRecordingConcrete: *recording,
+		agent: pa,
+	}
 
 	return &newRecording, nil
 }

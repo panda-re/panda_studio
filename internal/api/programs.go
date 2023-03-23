@@ -109,5 +109,5 @@ func (s *PandaStudioServer) ExecuteProgramById(ctx *gin.Context, programId strin
 		return
 	}
 
-	job.StartJob(ctx)
+	job.Run(ctx)
 }

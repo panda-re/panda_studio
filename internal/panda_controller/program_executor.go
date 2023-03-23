@@ -20,7 +20,7 @@ type PandaProgramExecutorJob struct {
 	imageRepo repos.ImageRepository
 	opts *PandaProgramExecutorOptions
 	agent *DockerGrpcPandaAgent2
-	recordings []*PandaAgentRecording
+	recordings []PandaAgentRecording
 }
 
 type PandaProgramExecutorOptions struct {
@@ -57,7 +57,7 @@ func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaPr
 	job := &PandaProgramExecutorJob{
 		imageRepo: p.imageRepo,
 		opts: opts,
-		recordings: []*PandaAgentRecording{},
+		recordings: []PandaAgentRecording{},
 	}
 	return job, nil
 }
@@ -112,7 +112,7 @@ func (p *PandaProgramExecutorJob) copyImageFiles(ctx context.Context) error {
 	return nil
 }
 
-func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
+func (p *PandaProgramExecutorJob) Run(ctx context.Context) {
 	// Initialize the container
 	err := p.setupContainer(ctx)
 	if err != nil {
@@ -133,13 +133,13 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 
 	// 7. upload the recording files to blob storage
 	for _, recording := range p.recordings {
-		fmt.Printf("Copying recording %s to local disk\n", recording.RecordingName)
-		ndlogStream, err := p.agent.CopyFileFromContainer(ctx, recording.GetNdlogFileName())
+		fmt.Printf("Copying recording %s to local disk\n", recording.Name())
+		ndlogStream, err := recording.OpenNdlog(ctx)
 		if err != nil {
 			panic(err)
 		}
 		defer ndlogStream.Close()
-		ndlogFile, err := os.OpenFile(recording.GetNdlogFileName(), os.O_CREATE|os.O_WRONLY, 0644)
+		ndlogFile, err := os.OpenFile(recording.NdlogFilename(), os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -148,12 +148,12 @@ func (p *PandaProgramExecutorJob) StartJob(ctx context.Context) {
 		if err != nil {
 			panic(err)
 		}
-		snpStream, err := p.agent.CopyFileFromContainer(ctx, recording.GetSnapshotFileName())
+		snpStream, err := recording.OpenNdlog(ctx)
 		if err != nil {
 			panic(err)
 		}
 		defer snpStream.Close()
-		snpFile, err := os.OpenFile(recording.GetSnapshotFileName(), os.O_CREATE|os.O_WRONLY, 0644)
+		snpFile, err := os.OpenFile(recording.SnapshotFilename(), os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}

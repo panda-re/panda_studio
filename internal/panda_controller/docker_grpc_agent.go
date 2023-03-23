@@ -15,7 +15,6 @@ import (
 	docker "github.com/docker/docker/client"
 	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/panda-re/panda_studio/panda_agent/pb"
-	"github.com/pkg/errors"
 )
 
 type dockerGrpcPandaAgent struct {
@@ -134,22 +133,23 @@ func (pa *dockerGrpcPandaAgent) StartRecording(ctx context.Context, recordingNam
 }
 
 // StopRecording implements PandaAgent
-func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
+func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
 	recording, err := pa.grpcAgent.StopRecording(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Strip off the shared folder prefix so that paths are correct on this system
-	recordingName := strings.Replace(recording.RecordingName, "./shared/", "", 1)
+	recordingName := strings.Replace(recording.Name(), "./shared/", "", 1)
 
-	new_recording := PandaAgentRecording{
+	new_recording := GenericPandaAgentRecordingConcrete{
 		RecordingName: recordingName,
-		Location:      *pa.sharedDir,
 	}
 
 	// Copy given image into shared directory
 	//TODO: Replace destination with filesystem target
+	// code is broken but I will not fix it as we have a better solution
+	/*
 	nBytes, err := copyFileHelper(new_recording.GetSnapshotFileLocation(), "/tmp/panda-studio/", fmt.Sprintf("%s-rr-snp", new_recording.RecordingName))
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying snapshot")
@@ -159,6 +159,7 @@ func (pa *dockerGrpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentR
 	if (err != nil && err != io.EOF) || nBytes == 0 {
 		return nil, errors.Wrap(err, "Error in copying nondeterministic log")
 	}
+	*/
 	return &new_recording, nil
 }
 

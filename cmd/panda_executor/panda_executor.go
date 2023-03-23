@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	config "github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db/models"
@@ -44,19 +43,6 @@ func main() {
 
 	progExec := controller.PandaProgramExecutor{}
 
-	// open a stream to the file in blob storage
-	IMAGE_FILE := "images/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
-	// IMAGE_FILE := "images/ubuntu-2204.qcow2"
-	file, err := os.Open(IMAGE_FILE)
-	if err != nil {
-		panic(err)
-	}
-
-	fileSize, err := getReaderSize(file)
-	if err != nil {
-		panic(err)
-	}
-
 	var image models.Image
 	if err := json.Unmarshal([]byte(testImageSpec), &image); err != nil {
 		panic(err)
@@ -72,9 +58,6 @@ func main() {
 			Name: "test_program",
 			Instructions: testProgram,
 		},
-		Instructions: prog,
-		ImageFileReader: file,
-		ImageFileSize: fileSize,
 	}
 
 	job, err := progExec.NewExecutorJob(ctx, &jobOpts)
@@ -84,7 +67,7 @@ func main() {
 
 	fmt.Printf("job: %v\n", job)
 
-	job.StartJob(ctx)
+	job.Run(ctx)
 }
 
 func getReaderSize(reader io.ReadSeeker) (size int64, err error) {

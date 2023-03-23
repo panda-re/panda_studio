@@ -89,16 +89,14 @@ func (pa *grpcPandaAgent) StartRecording(ctx context.Context, recordingName stri
 }
 
 // StopRecording implements PandaAgent
-func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (*PandaAgentRecording, error) {
+func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
 	resp, err := pa.cli.StopRecording(ctx, &pb.StopRecordingRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &PandaAgentRecording{
+	return &GenericPandaAgentRecordingConcrete{
 		RecordingName: resp.RecordingName,
-		// We cannot know the location with the information we have
-		Location: "??",
 	}, nil
 }
 
