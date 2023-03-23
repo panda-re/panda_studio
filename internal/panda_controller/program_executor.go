@@ -3,8 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
+	"time"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/panda-re/panda_studio/internal/db/repos"
@@ -14,13 +13,15 @@ import (
 type PandaProgramExecutor struct {
 	imageRepo repos.ImageRepository
 	programRepo repos.ProgramRepository
+	recRepo repos.RecordingRepository
 }
 
 type PandaProgramExecutorJob struct {
 	imageRepo repos.ImageRepository
+	recRepo   repos.RecordingRepository
 	opts *PandaProgramExecutorOptions
 	agent *DockerGrpcPandaAgent2
-	recordings []PandaAgentRecording
+	Recordings []PandaAgentRecording
 }
 
 type PandaProgramExecutorOptions struct {
@@ -39,9 +40,15 @@ func NewPandaProgramExecutor(ctx context.Context) (*PandaProgramExecutor, error)
 		return nil, err
 	}
 
+	recRepo, err := repos.GetRecordingRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PandaProgramExecutor{
 		imageRepo: imageRepo,
 		programRepo: programRepo,
+		recRepo: recRepo,
 	}, nil
 }
 
@@ -57,7 +64,7 @@ func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaPr
 	job := &PandaProgramExecutorJob{
 		imageRepo: p.imageRepo,
 		opts: opts,
-		recordings: []PandaAgentRecording{},
+		Recordings: []PandaAgentRecording{},
 	}
 	return job, nil
 }
@@ -125,44 +132,18 @@ func (p *PandaProgramExecutorJob) Run(ctx context.Context) {
 		panic(err)
 	}
 
+	// Upload recordings
+	err = p.uploadRecordings(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	// stop the agent
 	err = p.agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	// 7. upload the recording files to blob storage
-	for _, recording := range p.recordings {
-		fmt.Printf("Copying recording %s to local disk\n", recording.Name())
-		ndlogStream, err := recording.OpenNdlog(ctx)
-		if err != nil {
-			panic(err)
-		}
-		defer ndlogStream.Close()
-		ndlogFile, err := os.OpenFile(recording.NdlogFilename(), os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer ndlogFile.Close()
-		_, err = io.Copy(ndlogFile, ndlogStream)
-		if err != nil {
-			panic(err)
-		}
-		snpStream, err := recording.OpenNdlog(ctx)
-		if err != nil {
-			panic(err)
-		}
-		defer snpStream.Close()
-		snpFile, err := os.OpenFile(recording.SnapshotFilename(), os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer snpFile.Close()
-		_, err = io.Copy(snpFile, snpStream)
-		if err != nil {
-			panic(err)
-		}
-	}
 }
 
 func (p *PandaProgramExecutorJob) runProgram(ctx context.Context, prog *models.InteractionProgram) error {
@@ -191,15 +172,13 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 			if err != nil {
 				panic(err)
 			}
-			break
 		case "stop_recording":
 			recording, err := p.agent.StopRecording(ctx)
 			// push the recording to the recordings array
-			p.recordings = append(p.recordings, recording)
+			p.Recordings = append(p.Recordings, recording)
 			if err != nil {
 				panic(err)
 			}
-			break
 		case "command":
 			cmdResult, err := p.agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
 			if err != nil {
@@ -207,14 +186,80 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 			}
 			fmt.Printf(" %s\n", cmdResult.Logs)
 			// result = append(result, cmdResult.Logs+"\n")
-			break
 		case "filesystem":
 			// for the future
 		case "network":
 			// for the future
 		default:
 			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
-			break
+		}
+	}
+	return nil
+}
+
+func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
+	for _, rec := range p.Recordings {
+		fmt.Println("Uploading recording: " + rec.Name())
+		newRecording := &models.Recording{
+			ID: nil,
+			ImageID: p.opts.Image.ID,
+			Name: rec.Name(),
+			Description: "",
+			Size: -1, // field is unneeded as size is stored in the files
+			Date: time.Now().String(),
+		}
+
+		newRecording, err := p.recRepo.CreateRecording(ctx, newRecording)
+		if err != nil {
+			return errors.Wrap(err, "failed to create recording")
+		}
+
+		ndlogRecordingFile, err := p.recRepo.CreateRecordingFile(ctx, &models.CreateRecordingFileRequest{
+			RecordingID: newRecording.ID,
+			Name: rec.NdlogFilename(),
+			FileType: "ndlog",
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to create ndlog object")
+		}
+
+		// Upload the ndlog file
+		ndlogStream, err := rec.OpenNdlog(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to open ndlog file")
+		}
+		defer ndlogStream.Close()
+
+		_, err = p.recRepo.UploadRecordingFile(ctx, &models.UploadRecordingFileRequest{
+			RecordingID: newRecording.ID,
+			FileID: ndlogRecordingFile.ID,
+		}, ndlogStream)
+		if err != nil {
+			return errors.Wrap(err, "failed to upload ndlog object")
+		}
+
+		snapshotRecordingFile, err := p.recRepo.CreateRecordingFile(ctx, &models.CreateRecordingFileRequest{
+			RecordingID: newRecording.ID,
+			Name: rec.SnapshotFilename(),
+			FileType: "snapshot",
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to create snapshot object")
+		}
+
+		// Upload the snapshot file
+		snapshotStream, err := rec.OpenSnapshot(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to open snapshot file")
+		}
+		defer snapshotStream.Close()
+
+		_, err = p.recRepo.UploadRecordingFile(ctx, &models.UploadRecordingFileRequest{
+			RecordingID: newRecording.ID,
+			FileID: snapshotRecordingFile.ID,
+		}, snapshotStream)
+		if err != nil {
+			return errors.Wrap(err, "failed to upload snapshot object")
 		}
 	}
 	return nil
