@@ -47,6 +47,7 @@ function RecordingDetailsPage() {
             {location.state.item.imageName}
           </EuiText>
         </EuiPageTemplate.Section>
+        {/*
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
             <strong>Size:</strong>
@@ -55,6 +56,7 @@ function RecordingDetailsPage() {
             {prettyBytes(location.state.item.size, { maximumFractionDigits: 2 })}
           </EuiText>
         </EuiPageTemplate.Section>
+        */}
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
             <strong>Date Created:</strong>
