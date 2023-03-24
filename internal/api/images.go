@@ -219,7 +219,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 
 	//retrieve derived image
-	contents, err := os.ReadFile(sharedDir + "/" + newImageName)
+	contents, err := os.ReadFile(sharedDir + "/" + newName)
 	if err != nil {
 		fmt.Println("File reading error", err)
 		return err
