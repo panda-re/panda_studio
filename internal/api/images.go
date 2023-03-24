@@ -2,12 +2,14 @@ package api
 
 import (
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
@@ -204,12 +206,12 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "alpine",
-		Cmd:   []string{"docker build", "Dockerfile.derive-image", 
-						"--build-arg new_image="+newName+" ", 
-						"--build-arg base_image="+oldName+" ", 
-						"--build-arg docker_image="+dockerHubImageName+" ",
-						"--build-arg size="+size},
-		Tty:   false,
+		Cmd: []string{"docker build", "Dockerfile.derive-image",
+			"--build-arg new_image=" + newName + " ",
+			"--build-arg base_image=" + oldName + " ",
+			"--build-arg docker_image=" + dockerHubImageName + " ",
+			"--build-arg size=" + strconv.Itoa(size)},
+		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
 		panic(err)
@@ -223,10 +225,10 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	newImageFile, err := os.Open(sharedDir + "/" + newName)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return
+		return err
 	}
 	defer fileReader.Close()
-	
+
 	//upload image to repo
 	created, err := s.imageRepo.Create(ctx, &models.Image{
 		Name:        newName,
@@ -234,7 +236,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	})
 	if err != nil {
 		ctx.Error(err)
-		return
+		return err
 	}
 
 	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
@@ -251,7 +253,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 		ImageId: created.ID,
 		FileId:  imageFile.ID,
 	}, newImageFile)
-	if err != nil || fileObj == nil{
+	if err != nil || fileObj == nil {
 		ctx.Error(errors.WithStack(err))
 		return err
 	}
