@@ -163,13 +163,6 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 }
 
 func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newName string, oldName string, dockerHubImageName string, size int) error {
-	//get the image from the repo
-	// image, err := s.imageRepo.FindOneImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
-	// if err != nil {
-	// 	ctx.Error(errors.WithStack(err))
-	// 	return err
-	// }
-
 	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
@@ -177,19 +170,23 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 	defer fileReader.Close()
 
-	//create temp shared directory
 	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "derive-image-tmp")
 	if err != nil {
 		return err
 	}
 
-	//save image to temp shared directory
-	nBytes, err := io.Copy(sharedDir, fileReader)
+	//create new file in shared dir to copy to
+	destImageInSharedDir, err := os.Create(sharedDir + "/" + oldName)
 	if err != nil {
 		return err
 	}
 
-	//run docker container for derive image job
+	//TODO: fix this, first arg needs to be a Write object
+	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
+	if err != nil || nBytes == 0 {
+		return err
+	}
+
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
@@ -221,21 +218,25 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 		panic(err)
 	}
 
-	//once the job is finished, the new derived image will be in the shared directory
-
-	//retrieve derived image from temp shared directory
-	//sharedDir + newImageName
+	//retrieve derived image
 	contents, err := os.ReadFile(sharedDir + "/" + newImageName)
 	if err != nil {
 		fmt.Println("File reading error", err)
 		return err
 	}
 
-	//upload derived image to object storage
+	newImageID = db.newObjectID()
+	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
+		ImageID:  newImageID,
+		FileName: newName,
+		FileType: ".qcow2", // ***
+	})
+
+	//upload derived image
 	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
-		ImageId: db.ParseObjectID(newImageId),
+		ImageId: db.ParseObjectID(newImageID),
 		FileId:  fileObj,
-	}, contents) //TODO: make sure this is right
+	}, contents)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
 		return err
