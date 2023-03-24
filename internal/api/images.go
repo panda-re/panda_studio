@@ -180,6 +180,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	if err != nil {
 		return err
 	}
+	defer destImageInSharedDir.Close()
 
 	//TODO: fix this, first arg needs to be a Write object
 	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
@@ -219,25 +220,38 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 
 	//retrieve derived image
-	contents, err := os.ReadFile(sharedDir + "/" + newName)
+	newImageFile, err := os.Open(sharedDir + "/" + newName)
 	if err != nil {
-		fmt.Println("File reading error", err)
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+	defer fileReader.Close()
+	
+	//upload image to repo
+	created, err := s.imageRepo.Create(ctx, &models.Image{
+		Name:        newName,
+		Description: "Derived from " + oldName,
+	})
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
+		ImageID:  created.ID,
+		FileName: created.Name,
+		FileType: "qcow2",
+	})
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
 		return err
 	}
 
-	newImageID = db.newObjectID()
-	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
-		ImageID:  newImageID,
-		FileName: newName,
-		FileType: ".qcow2", // ***
-	})
-
-	//upload derived image
 	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
-		ImageId: db.ParseObjectID(newImageID),
-		FileId:  fileObj,
-	}, contents)
-	if err != nil {
+		ImageId: created.ID,
+		FileId:  imageFile.ID,
+	}, newImageFile)
+	if err != nil || fileObj == nil{
 		ctx.Error(errors.WithStack(err))
 		return err
 	}
