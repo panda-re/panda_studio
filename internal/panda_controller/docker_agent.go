@@ -197,7 +197,7 @@ func (pa *dockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.Sta
 
 // StartRecording implements PandaAgent
 func (pa *dockerPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
-	return pa.grpcAgent.StartRecording(ctx, recordingName)
+	panic("unimplemented")
 }
 
 // StopAgent implements PandaAgent

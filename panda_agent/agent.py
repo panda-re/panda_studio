@@ -193,10 +193,6 @@ class PandaAgent:
         else:
             message = bytes(request.customPacket, encoding='utf-8')
 
-
-
-
-
         with socket.socket(socket.AF_INET, request.socketType) as con:
             con.connect((PANDA_IP, request.port))
             con.send(message)

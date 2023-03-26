@@ -62,9 +62,9 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         )
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
-        raise RuntimeError("Needs to be fixed")
-        if self.agent.panda.started.is_set(): 
+        if self.agent is not None:
             raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
+        
         serial = self.agent.start_replay(request.recording_name)
         with (open("./shared/execution.log")) as file:
             replay = file.read()

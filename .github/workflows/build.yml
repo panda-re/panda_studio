@@ -17,18 +17,6 @@ jobs:
            -t pandare/panda_agent
            ./panda_agent
 
-  build_executor:
-    runs-on: ubuntu-20.04
-    name: Build PANDA Executor Container
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build PANDA Executor Container
-      run: DOCKER_BUILDKIT=1 docker build
-           --progress=plain
-           -f ./docker/Dockerfile.panda-executor
-           -t pandare/panda_executor
-           .
-
   build_api:
     runs-on: ubuntu-20.04
     name: Build PANDA API Container
