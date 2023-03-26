@@ -20,7 +20,7 @@ type PandaProgramExecutorJob struct {
 	imageRepo repos.ImageRepository
 	recRepo   repos.RecordingRepository
 	opts *PandaProgramExecutorOptions
-	agent *DockerGrpcPandaAgent2
+	agent *dockerPandaAgent
 	Recordings []PandaAgentRecording
 }
 

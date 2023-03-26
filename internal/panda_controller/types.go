@@ -90,7 +90,7 @@ func (r *GenericPandaAgentRecordingConcrete) OpenNdlog(ctx context.Context) (io.
 
 type DockerPandaAgentRecording struct {
 	GenericPandaAgentRecordingConcrete
-	agent *DockerGrpcPandaAgent2
+	agent *dockerPandaAgent
 }
 
 var _ PandaAgentRecording = &DockerPandaAgentRecording{}
