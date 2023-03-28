@@ -1,6 +1,7 @@
 FROM pandare/panda
 
 RUN mkdir /panda
+RUN mkdir /panda/shared /panda/data
 WORKDIR /panda
 
 # Uncomment the following lines if any system packages need to be installed
@@ -21,6 +22,7 @@ RUN python -m grpc_tools.protoc --python_out=pb --grpc_python_out=pb -I./proto .
 COPY *.py ./
 
 EXPOSE 50051
-# ENTRYPOINT ["python3", "/panda/server.py"]
 # This will pipe PANDA's output to a file to later be read. Useful for replays
-ENTRYPOINT ["sh", "-c", "python3 /panda/server.py > ./shared/execution.log"]
+# Disabling for now because I can't see the logs in the docker container
+# ENTRYPOINT ["sh", "-c", "python3 /panda/server.py | tee ./shared/execution.log"]
+ENTRYPOINT ["python3", "/panda/server.py"]

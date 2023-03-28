@@ -19,11 +19,23 @@ class ErrorCode(Enum):
 class PandaAgent:
     # sentinel object to signal end of queue
     STOP_PANDA = object()
+    FILE_PREFIX="data"
 
-    def __init__(self, panda: Panda):
-        self.panda = panda
+    def __init__(self, config: pb.PandaConfig):
+        self.config = config
+        self.panda = self.init_panda(config)
         self.current_recording = None
         self.serial_out = ""
+    
+    def init_panda(self, config: pb.PandaConfig):
+        # Construct PANDA instance based on config
+        return Panda(
+            arch=config.arch,
+            qcow=f"{self.FILE_PREFIX}/{config.qcow_file_name}",
+            mem=config.memory,
+            os=config.os,
+            expect_prompt=config.prompt,
+            extra_args=config.extra_args)
     
     # This function is meant to run in a different thread
     def start(self):
@@ -33,10 +45,12 @@ class PandaAgent:
 
         @panda.queue_blocking
         def panda_start():
-            print("panda agent started")
+            print("panda agent started with config:")
+            # print config as struct
+            print(self.config)
             
             # revert to the qcow's root snapshot
-            message = panda.revert_sync("root")
+            message = panda.revert_sync(self.config.snapshot)
             if message != "":
                 raise RuntimeError(ErrorCode.RUNNING, message)
         
@@ -90,7 +104,7 @@ class PandaAgent:
         def panda_start_recording(panda: Panda):
             print(f'starting recording {recording_name}')
             try:
-                return panda.record(recording_name)
+                return panda.record(f"{self.FILE_PREFIX}/{recording_name}")
             except Exception as err:
                 raise RuntimeError(ErrorCode.RECORDING.value, f"Unexpected {err=}, {type(err)=}")
         
@@ -178,10 +192,6 @@ class PandaAgent:
 
         else:
             message = bytes(request.customPacket, encoding='utf-8')
-
-
-
-
 
         with socket.socket(socket.AF_INET, request.socketType) as con:
             con.connect((PANDA_IP, request.port))

@@ -19,11 +19,13 @@ const tableColumns: EuiBasicTableColumn<Recording>[] = [
     field: 'recordingImage',
     name: 'Image Name',
   },
+  /*
   {
     field: 'size',
     name: 'Size',
     render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
   },
+  */
   {
     field: 'date',
     name: 'Timestamp',
