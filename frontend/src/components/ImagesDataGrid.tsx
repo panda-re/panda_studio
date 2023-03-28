@@ -16,7 +16,10 @@ function ImagesDataGrid() {
   const updateFn = useUpdateImage({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
    // File picker constants
-   const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {setIsLoadingVisible(false)}}})
+   const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
+    setIsLoadingVisible(false);
+    queryClient.invalidateQueries();
+  }}})
    const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
    const [files, setFiles] = useState(new Array<File>);
  
@@ -65,7 +68,7 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      file_name: image.config?.file_name,
+      qcow_file_name: image.config?.qcow_file_name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
@@ -134,7 +137,7 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      file_name: files[0].name,
+      qcow_file_name: files[0].name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,

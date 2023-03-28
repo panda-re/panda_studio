@@ -430,7 +430,7 @@ components:
     PandaConfig:
       type: object
       properties:
-        file_name:
+        qcow_file_name:
           type: string
         arch:
           type: string

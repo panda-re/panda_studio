@@ -51,7 +51,7 @@ function CreateImageDetailsPage() {
 
   function createUpdateImageAndReturn(){
     const conf: PandaConfig = {
-      file_name: location.state.item.file_name,
+      qcow_file_name: location.state.item.qcow_file_name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
@@ -72,7 +72,7 @@ function CreateImageDetailsPage() {
   function CreateConfigDisplay(){ 
     return <>
         <EuiText textAlign={"center"}>
-          <strong>Qcow File Name:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.file_name}
+          <strong>Qcow File Name:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.qcow_file_name}
         </EuiText>
         <EuiSpacer size='s'></EuiSpacer>
         <EuiText textAlign={"center"}>
