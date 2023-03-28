@@ -164,7 +164,6 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	ctx.JSON(http.StatusOK, imgFile)
 }
 
-//newName string, oldName string, dockerHubImageName string, size int
 func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string) {
 	var deriveReq DeriveImageFileRequest
 	err := ctx.BindJSON(&deriveReq)
@@ -194,7 +193,6 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 	defer destImageInSharedDir.Close()
 
-	//TODO: fix this, first arg needs to be a Write object
 	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
 	if err != nil || nBytes == 0 {
 		ctx.Error(errors.WithStack(err))
