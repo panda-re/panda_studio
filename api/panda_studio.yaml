@@ -146,9 +146,6 @@ paths:
         - file
       summary: Derive new image
       operationId: createDerivedImage
-      parameters:
-        - $ref: "#/components/parameters/ImageId"
-        - $ref: "#/components/parameters/FileId"
       requestBody:
         content:
           multipart/form-data:
@@ -157,9 +154,6 @@ paths:
       responses:
         "200":
           description: OK
-          content:
-            application/json:
-              schema:
         "404":
           $ref: "#/components/responses/NotFoundResponse"
         "409":
