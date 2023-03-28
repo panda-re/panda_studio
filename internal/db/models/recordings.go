@@ -8,11 +8,10 @@ type Recording struct {
 	ID          db.ObjectID      `bson:"_id" json:"id"`
 	Name        string           `bson:"name" json:"name"`
 	Description string           `bson:"description" json:"description"`
-	ImageID     db.ObjectID      `bson:"recordingImage" json:"recordingImage"`
-	Size        int64            `bson:"size" json:"size"`
+	ImageID     db.ObjectID      `bson:"image_id" json:"image_id"`
+	ProgramID   db.ObjectID      `bson:"program_id" json:"program_id"`
 	Date        string           `bson:"date" json:"date"`
-	Files       []*RecordingFile `bson:"recordingSnapshot" json:"recordingSnapshot"`
-	// Interaction list
+	Files       []*RecordingFile `bson:"files" json:"files"`
 }
 
 type RecordingFile struct {

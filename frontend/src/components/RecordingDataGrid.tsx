@@ -40,11 +40,13 @@ function RecordingDataGrid() {
       field: 'recordingImage',
       name: 'Image Id',
     },
+    /*
     {
       field: 'size',
       name: 'Size',
       render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
     },
+    */
     {
       align: RIGHT_ALIGNMENT,
       name: 'Delete',

@@ -5,6 +5,8 @@ import React from 'react'
 import EntitySearchBar from '../components/EntitySearchBar';
 
 import prettyBytes from 'pretty-bytes';
+import { ExecuteProgramRequest, useExecuteProgramById, useFindAllImages, useFindAllPrograms } from '../api';
+import { useNavigate } from 'react-router';
 import { useFindAllImages, useFindAllPrograms } from '../api';
 
 function CreateRecordingPage() {
@@ -15,6 +17,7 @@ function CreateRecordingPage() {
 
   const {isLoading: imagesLoading, data: images} = useFindAllImages();
   const {isLoading: programsLoading, data: programs} = useFindAllPrograms();
+  const executeFn = useExecuteProgramById({mutation: {onSuccess: () => navigate('/recordings')}});
 
   if(images != null){
     images.map((r) =>{
@@ -94,8 +97,15 @@ function CreateRecordingPage() {
           <div>
             {/* <EuiButton onClick={sendAPICall}>Create Recording</EuiButton> */}
             <EuiButton onClick={() => {
-              alert(`Creating recording with name: ${name}, image: ${selectedImage?.data?.name}, program: ${selectedProgram}`); 
-              // navigate('/recordings');
+              if(selectedImage==null || selectedProgram==null){
+                alert("Please select an image and program");
+                return;
+              }
+              const req: ExecuteProgramRequest = {
+                imageId: selectedImage.data!.id,
+              }
+              alert(`Creating recording with name: ${name}, image: ${selectedImage.data!.id}, program: ${selectedProgram.data?.id}`);
+              executeFn.mutate({programId: selectedProgram.data!.id, data: req})
             }}>Create Recording</EuiButton>
           </div>
         </EuiFlexItem>

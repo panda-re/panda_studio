@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/panda-re/panda_studio/internal/db/repos"
+	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
 //go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=types.cfg.yaml ../../api/panda_studio.yaml
@@ -13,6 +14,7 @@ type PandaStudioServer struct {
 	imageRepo     repos.ImageRepository
 	recordingRepo repos.RecordingRepository
 	programRepo  repos.ProgramRepository
+	programExecutor *controller.PandaProgramExecutor
 }
 
 // Ensures our implementation conforms to the correct interface
@@ -35,9 +37,15 @@ func NewPandaStudioServer() (*PandaStudioServer, error) {
 		return nil, err
 	}
 
+	programExecutor, err := controller.NewPandaProgramExecutor(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PandaStudioServer{
 		imageRepo:     imageRepo,
 		recordingRepo: recordingRepo,
 		programRepo:  programRepo,
+		programExecutor: programExecutor,
 	}, nil
 }

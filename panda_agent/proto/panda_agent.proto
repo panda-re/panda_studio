@@ -14,7 +14,9 @@ service PandaAgent {
     rpc SendNetworkCommand (NetworkRequest) returns (NetworkResponse) {}
 }
 
-message StartAgentRequest {}
+message StartAgentRequest {
+    PandaConfig config = 1;
+}
 
 message PandaConfig {
     string qcow_file_name = 1;
