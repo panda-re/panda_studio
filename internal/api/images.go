@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -164,41 +163,54 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	ctx.JSON(http.StatusOK, imgFile)
 }
 
-func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newName string, oldName string, dockerHubImageName string, size int) (string, error) {
+//newName string, oldName string, dockerHubImageName string, size int
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string) {
+	var deriveReq DeriveImageFileRequest
+	err := ctx.BindJSON(&deriveReq)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "invalid request"))
+		return
+	}
+
 	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return "", err
+		return
 	}
 	defer fileReader.Close()
 
 	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "derive-image-tmp")
 	if err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 
 	//create new file in shared dir to copy to
-	destImageInSharedDir, err := os.Create(sharedDir + "/" + oldName)
+	destImageInSharedDir, err := os.Create(sharedDir + "/" + deriveReq.OldName)
 	if err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 	defer destImageInSharedDir.Close()
 
 	//TODO: fix this, first arg needs to be a Write object
 	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
 	if err != nil || nBytes == 0 {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 	defer cli.Close()
 
 	reader, err := cli.ImagePull(ctx, "docker.io/library/alpine", types.ImagePullOptions{})
 	if err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 
 	defer reader.Close()
@@ -207,36 +219,38 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "alpine",
 		Cmd: []string{"docker build", "Dockerfile.derive-image",
-			"--build-arg new_image=" + newName + " ",
-			"--build-arg base_image=" + oldName + " ",
-			"--build-arg docker_image=" + dockerHubImageName + " ",
-			"--build-arg size=" + strconv.Itoa(size)},
+			"--build-arg new_image=" + deriveReq.NewName + " ",
+			"--build-arg base_image=" + deriveReq.OldName + " ",
+			"--build-arg docker_image=" + deriveReq.DockerHubImageName + " ",
+			"--build-arg size=" + deriveReq.Size},
 		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return "", err
+		ctx.Error(errors.WithStack(err))
+		return
 	}
 
 	//retrieve derived image
-	newImageFile, err := os.Open(sharedDir + "/" + newName)
+	newImageFile, err := os.Open(sharedDir + "/" + deriveReq.newName)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return "", err
+		return
 	}
 	defer fileReader.Close()
 
 	//upload image to repo
 	created, err := s.imageRepo.Create(ctx, &models.Image{
-		Name:        newName,
-		Description: "Derived from " + oldName,
+		Name:        deriveReq.NewName,
+		Description: "Derived from " + deriveReq.OldName,
 	})
 	if err != nil {
 		ctx.Error(err)
-		return "", err
+		return
 	}
 
 	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
@@ -246,7 +260,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	})
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return "", err
+		return
 	}
 
 	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
@@ -255,8 +269,8 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}, newImageFile)
 	if err != nil || fileObj == nil {
 		ctx.Error(errors.WithStack(err))
-		return "", err
+		return
 	}
 
-	return "success", nil
+	return
 }
