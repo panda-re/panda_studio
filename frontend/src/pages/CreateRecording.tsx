@@ -7,10 +7,10 @@ import EntitySearchBar from '../components/EntitySearchBar';
 import prettyBytes from 'pretty-bytes';
 import { ExecuteProgramRequest, useExecuteProgramById, useFindAllImages, useFindAllPrograms } from '../api';
 import { useNavigate } from 'react-router';
-import { useFindAllImages, useFindAllPrograms } from '../api';
 
 function CreateRecordingPage() {
   const [name, setName] = useState('');
+  const navigate = useNavigate();
 
   var programEntities: EuiSelectableOption[] = [];
   var imageEntities: EuiSelectableOption[] = [];
