@@ -164,41 +164,41 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	ctx.JSON(http.StatusOK, imgFile)
 }
 
-func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newName string, oldName string, dockerHubImageName string, size int) error {
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string, newName string, oldName string, dockerHubImageName string, size int) (string, error) {
 	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return err
+		return "", err
 	}
 	defer fileReader.Close()
 
 	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "derive-image-tmp")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	//create new file in shared dir to copy to
 	destImageInSharedDir, err := os.Create(sharedDir + "/" + oldName)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer destImageInSharedDir.Close()
 
 	//TODO: fix this, first arg needs to be a Write object
 	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
 	if err != nil || nBytes == 0 {
-		return err
+		return "", err
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	defer cli.Close()
 
 	reader, err := cli.ImagePull(ctx, "docker.io/library/alpine", types.ImagePullOptions{})
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	defer reader.Close()
@@ -214,18 +214,18 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+		return "", err
 	}
 
 	//retrieve derived image
 	newImageFile, err := os.Open(sharedDir + "/" + newName)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return err
+		return "", err
 	}
 	defer fileReader.Close()
 
@@ -236,7 +236,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	})
 	if err != nil {
 		ctx.Error(err)
-		return err
+		return "", err
 	}
 
 	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
@@ -246,7 +246,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	})
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
-		return err
+		return "", err
 	}
 
 	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
@@ -255,8 +255,8 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}, newImageFile)
 	if err != nil || fileObj == nil {
 		ctx.Error(errors.WithStack(err))
-		return err
+		return "", err
 	}
 
-	return nil
+	return "success", nil
 }
