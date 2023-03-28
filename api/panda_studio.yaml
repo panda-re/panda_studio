@@ -146,6 +146,9 @@ paths:
         - file
       summary: Derive new image
       operationId: createDerivedImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+        - $ref: "#/components/parameters/FileId"
       requestBody:
         content:
           multipart/form-data:
