@@ -154,6 +154,10 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: integer
         "404":
           $ref: "#/components/responses/NotFoundResponse"
         "409":
