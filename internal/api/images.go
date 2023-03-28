@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -186,7 +187,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 
 	//create new file in shared dir to copy to
-	destImageInSharedDir, err := os.Create(sharedDir + "/" + deriveReq.OldName)
+	destImageInSharedDir, err := os.Create(sharedDir + "/" + *deriveReq.Oldname)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
 		return
@@ -219,10 +220,10 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "alpine",
 		Cmd: []string{"docker build", "Dockerfile.derive-image",
-			"--build-arg new_image=" + deriveReq.NewName + " ",
-			"--build-arg base_image=" + deriveReq.OldName + " ",
-			"--build-arg docker_image=" + deriveReq.DockerHubImageName + " ",
-			"--build-arg size=" + deriveReq.Size},
+			" --build-arg new_image=", *deriveReq.Newname,
+			" --build-arg base_image=", *deriveReq.Oldname,
+			" --build-arg docker_image=", *deriveReq.Dockerhubimagename,
+			" --build-arg size=", strconv.Itoa(*deriveReq.Size)},
 		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
@@ -236,7 +237,7 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 	}
 
 	//retrieve derived image
-	newImageFile, err := os.Open(sharedDir + "/" + deriveReq.newName)
+	newImageFile, err := os.Open(sharedDir + "/" + *deriveReq.Newname)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
 		return
@@ -245,8 +246,8 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 
 	//upload image to repo
 	created, err := s.imageRepo.Create(ctx, &models.Image{
-		Name:        deriveReq.NewName,
-		Description: "Derived from " + deriveReq.OldName,
+		Name:        *deriveReq.Newname,
+		Description: "Derived from " + *deriveReq.Oldname,
 	})
 	if err != nil {
 		ctx.Error(err)
