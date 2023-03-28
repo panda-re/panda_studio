@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/panda-re/panda_studio/internal/configuration"
 	"github.com/panda-re/panda_studio/internal/db"
@@ -15,7 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"io"
 )
 
 const RECORDINGS_TABLE string = "recordings"
@@ -29,6 +30,7 @@ type RecordingRepository interface {
 	FindRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error)
 	DeleteRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error)
 	CreateRecordingFile(ctx context.Context, req *models.CreateRecordingFileRequest) (*models.RecordingFile, error)
+	UploadRecordingFile(ctx context.Context, req *models.UploadRecordingFileRequest, reader io.Reader) (*models.RecordingFile, error)
 }
 
 type mongoS3RecordingRepository struct {
@@ -36,6 +38,8 @@ type mongoS3RecordingRepository struct {
 	s3Client         *minio.Client
 	recordingsBucket string
 }
+
+var _ RecordingRepository = &mongoS3RecordingRepository{}
 
 func GetRecordingRepository(ctx context.Context) (RecordingRepository, error) {
 	mongoClient, err := db.GetMongoDatabase(ctx)
@@ -55,8 +59,9 @@ func GetRecordingRepository(ctx context.Context) (RecordingRepository, error) {
 	}, nil
 }
 
-func (m mongoS3RecordingRepository) CreateRecording(ctx context.Context, obj *models.Recording) (*models.Recording, error) {
+func (m *mongoS3RecordingRepository) CreateRecording(ctx context.Context, obj *models.Recording) (*models.Recording, error) {
 	obj.ID = db.NewObjectID()
+	obj.Files = []*models.RecordingFile{}
 
 	// insert into mongo
 	result, err := m.coll.InsertOne(ctx, obj)
@@ -70,7 +75,7 @@ func (m mongoS3RecordingRepository) CreateRecording(ctx context.Context, obj *mo
 	return obj, nil
 }
 
-func (m mongoS3RecordingRepository) FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error) {
+func (m *mongoS3RecordingRepository) FindRecording(ctx context.Context, id db.ObjectID) (*models.Recording, error) {
 	var result models.Recording
 
 	err := m.coll.FindOne(ctx, bson.D{{"_id", id}}).Decode(&result)
@@ -95,7 +100,7 @@ func (m *mongoS3RecordingRepository) FindAllRecordings(ctx context.Context) ([]m
 	return recordings, nil
 }
 
-func (m mongoS3RecordingRepository) ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
+func (m *mongoS3RecordingRepository) ReadRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
 	recording, err := m.FindRecording(ctx, recordingId)
 	if err != nil {
 		return nil, err
@@ -104,7 +109,7 @@ func (m mongoS3RecordingRepository) ReadRecording(ctx context.Context, recording
 	return recording, nil
 }
 
-func (m mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
+func (m *mongoS3RecordingRepository) DeleteRecording(ctx context.Context, recordingId db.ObjectID) (*models.Recording, error) {
 	recording, err := m.FindRecording(ctx, recordingId)
 	if err != nil {
 		return nil, err

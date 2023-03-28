@@ -1,17 +1,20 @@
-import {EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation} from "react-router";
+import {useNavigate} from "react-router-dom";
 
 function InteractionDetails() {
-  const location = useLocation()
-  const interactions = [
-    "uname -a\n",
-    "ls /\n",
-    "touch NEWFILE.txt\n",
-    "ls /\n",
-    "cd /\n",
-    "sudo rm -rf bin\n"
-  ]
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const buttonStyle = {
+    marginRight: "25px",
+    marginTop: "25px"
+  }
+
+  const deleteCurrentInteractionProgram = () => {
+    navigate('/interactions', {state: {programId: location.state.item.id}});
+  }
 
   return(<>
     <EuiPageTemplate.Header pageTitle="Interaction Details" />
@@ -38,37 +41,31 @@ function InteractionDetails() {
 
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>Date Created:</strong>
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {location.state.item.date.toString()}
-          </EuiText>
-        </EuiPageTemplate.Section>
-
-        <EuiPageTemplate.Section>
-          <EuiText textAlign={"center"}>
             <strong>Interactions:</strong>
           </EuiText>
           <EuiText textAlign={"center"}>
-            {interactions[0]}
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {interactions[1]}
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {interactions[2]}
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {interactions[3]}
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {interactions[4]}
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {interactions[5]}
+            <div style={{ whiteSpace: "pre-line" }}>{location.state.item.instructions}</div>
           </EuiText>
         </EuiPageTemplate.Section>
 
+      </EuiFlexItem>
+
+      <EuiFlexItem>
+        <EuiFlexGroup direction={"column"}>
+          <EuiFlexItem grow={false}>
+            <EuiButton
+              style={buttonStyle}
+              onClick={() => {
+                navigate('/interactions')
+              }}
+            >
+              Interactions Dashboard
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButton style={buttonStyle} onClick={deleteCurrentInteractionProgram}>Delete Interaction</EuiButton>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiFlexItem>
 
 

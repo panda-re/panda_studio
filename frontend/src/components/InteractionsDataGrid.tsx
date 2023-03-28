@@ -1,11 +1,11 @@
 import { EuiBasicTable, EuiBasicTableColumn } from '@elastic/eui';
 import { useNavigate } from 'react-router-dom';
+import {InteractionProgram, Recording, useDeleteProgramById, useDeleteRecordingById, useFindAllPrograms} from "../api";
+import {useQueryClient} from "@tanstack/react-query";
+import {useEffect} from "react";
+import {useLocation} from "react-router";
+import ContextMenu from "./ContextMenu";
 
-interface InteractionProgram {
-  id: string;
-  name: string;
-  date: Date;
-};
 
 const tableColumns: EuiBasicTableColumn<InteractionProgram>[] = [
   {
@@ -16,22 +16,26 @@ const tableColumns: EuiBasicTableColumn<InteractionProgram>[] = [
     field: 'name',
     name: 'File Name',
   },
-  {
-    field: 'date',
-    name: 'Timestamp',
-  },
 ]
 
-const data: InteractionProgram[] = [
-  {
-    id: 'INT001',
-    name: 'list-one',
-    date: new Date()
-  }
-];
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
+  const {isLoading, error, data} = useFindAllPrograms();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const deleteFunction = useDeleteProgramById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
+
+  const deleteProgram = ({programId}: {programId: string}) => {
+    deleteFunction.mutate({programId: programId});
+  }
+
+  useEffect(() => {
+    if(location.state) {
+      deleteProgram({programId: location.state.programId});
+    }
+  }, []);
+
   const getRowProps = (item: InteractionProgram) => {
     const { id } = item;
     return {
@@ -43,13 +47,15 @@ function ImagesDataGrid() {
   }
 
   return (<>
+    {isLoading && <div>Loading...</div> ||
     <EuiBasicTable
       tableCaption="Interaction Programs"
-      items={data}
+      items={data ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
     />
+    }
   </>)
 }
 

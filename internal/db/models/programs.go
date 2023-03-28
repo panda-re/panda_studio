@@ -7,9 +7,9 @@ import (
 type InteractionProgramInstructionList []InteractionProgramInstruction
 
 type InteractionProgram struct {
-	ID           db.ObjectID                       `bson:"_id" json:"id"`
-	Name         string                            `bson:"name" json:"name"`
-	Instructions InteractionProgramInstructionList `bson:"instructions" json:"instructions"`
+	ID           db.ObjectID `bson:"_id" json:"id"`
+	Name         string      `bson:"name" json:"name"`
+	Instructions string      `bson:"instructions" json:"instructions"`
 }
 
 type InteractionProgramInstruction interface {

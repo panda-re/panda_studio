@@ -14,7 +14,21 @@ service PandaAgent {
     rpc SendNetworkCommand (NetworkRequest) returns (NetworkResponse) {}
 }
 
-message StartAgentRequest {}
+message StartAgentRequest {
+    PandaConfig config = 1;
+}
+
+message PandaConfig {
+    string qcow_file_name = 1;
+    string arch = 2;
+    string os = 3;
+    string prompt = 4;
+    string cdrom = 5;
+    string snapshot = 6;
+    string memory = 7;
+    string extra_args = 8;
+}
+
 message StartAgentResponse {}
 message StopAgentRequest {}
 message StopAgentResponse {}
