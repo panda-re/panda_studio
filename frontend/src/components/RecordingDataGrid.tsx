@@ -34,11 +34,22 @@ function RecordingDataGrid() {
     },
     {
       field: 'name',
-      name: 'File Name',
+      name: 'Recording Name',
     },
     {
-      field: 'recordingImage',
+      field: 'image_id',
       name: 'Image Id',
+    },
+    {
+      field: 'program_id',
+      name: 'Program Id',
+    },
+    {
+      field: 'date',
+      name: 'Date',
+      render: (value: String) => {
+        return value.split(" ")[0];
+      }
     },
     /*
     {
