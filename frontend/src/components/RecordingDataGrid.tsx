@@ -51,13 +51,6 @@ function RecordingDataGrid() {
         return value.split(" ")[0];
       }
     },
-    /*
-    {
-      field: 'size',
-      name: 'Size',
-      render: (value: number) => prettyBytes(value, {maximumFractionDigits: 2}),
-    },
-    */
     {
       align: RIGHT_ALIGNMENT,
       name: 'Delete',
