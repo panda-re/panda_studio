@@ -1,14 +1,15 @@
-import {EuiButton, EuiButtonEmpty, EuiFieldText, EuiFilePicker, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiPopover, EuiSpacer, EuiText} from '@elastic/eui';
+import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSpacer, EuiText, EuiToolTip} from '@elastic/eui';
 import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { CreateImageRequest, ImageFile, PandaConfig, useDeleteImageById, useUpdateImage } from '../api';
-import { border } from '@elastic/eui/src/themes/amsterdam/global_styling/variables/_borders';
+import { ImageFile, PandaConfig } from '../api';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  const [isTextCopied, setTextCopied] = useState(false);
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -269,23 +270,23 @@ function CreateImageDetailsPage() {
                   <strong>Hash:</strong>
                 </EuiText>
                 <EuiText textAlign='center'>
-                <EuiPopover
-                  isOpen={isPopoverOpen}
-                  button=
-                  {<EuiButtonEmpty
-                    
-                    color='text'                   
-                    onClick={() => {
-                      setIsPopoverOpen((isPopoverOpen) => !isPopoverOpen);
-                    }}>
-                      {file.sha256?.substring(0, 5)}...
-                  </EuiButtonEmpty>}>
-                      Hash: {file.sha256}
-                </EuiPopover>
+                  <EuiToolTip
+                    content={isTextCopied ? 'Hash copied to clipboard' : 'Copy hash'}>
+                    <EuiButtonEmpty 
+                      color='text'
+                      onBlur={() => {
+                        setTextCopied(false);
+                      }}             
+                      onClick={() => {
+                        copyToClipboard(file.sha256 ?? "");
+                        setTextCopied(true);
+                      }}>
+                        {file.sha256?.substring(0, 5)}...
+                    </EuiButtonEmpty>
+                  </EuiToolTip>
                 </EuiText>
               </EuiFlexItem>
-            </EuiFlexGroup>)
-    }
+            </EuiFlexGroup>)}
     return items;
   }
 

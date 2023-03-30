@@ -1,4 +1,5 @@
-import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
+import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
+import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import { ReactElement } from 'react';
 import {useLocation, useNavigate} from 'react-router';
@@ -68,7 +69,7 @@ function RecordingDetailsPage() {
           </EuiText>
           <EuiSpacer size='l'></EuiSpacer>
           <EuiText textAlign={"center"}>
-            <strong>Date Created:</strong> {(location.state.item.date as String).substring(0, 19)}
+            <strong>Date Created:</strong> {formatDate(moment((location.state.item.date as String).slice(0, 19)), 'dateTime')}
           </EuiText>
         <EuiSpacer size='xxl'></EuiSpacer>
         <EuiText textAlign='center'><strong><u>Recording Files</u></strong></EuiText>

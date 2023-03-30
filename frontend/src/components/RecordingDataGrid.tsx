@@ -1,9 +1,10 @@
-import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButton, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT} from '@elastic/eui';
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButton, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, formatDate, RIGHT_ALIGNMENT} from '@elastic/eui';
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useDeleteRecordingById, useFindAllRecordings, useFindImageById} from '../api';
 import prettyBytes from 'pretty-bytes';
 import {useEffect, useState} from "react";
 import {useQueryClient} from "@tanstack/react-query";
+import moment from 'moment';
 
 function RecordingDataGrid() {
   const navigate = useNavigate();
@@ -47,8 +48,8 @@ function RecordingDataGrid() {
     {
       field: 'date',
       name: 'Date',
-      render: (value: String) => {
-        return value.split(" ")[0];
+      render: (value: string) => {
+        return formatDate(moment(value.slice(0, 19)), 'dateTime')
       }
     },
     {
