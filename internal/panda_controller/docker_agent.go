@@ -82,7 +82,6 @@ func (pa *dockerPandaAgent) connectGrpc(ctx context.Context) error {
 	return nil
 }
 
-
 // See documentation for docker CopyToContainer
 func (pa *dockerPandaAgent) CopyFileToContainer(ctx context.Context, data io.Reader, size int64, file string) error {
 	r, w := io.Pipe()
@@ -134,7 +133,6 @@ func (pa *dockerPandaAgent) CopyFileFromContainer(ctx context.Context, file stri
 			return
 		}
 	}()
-
 
 	return r, nil
 }
@@ -197,7 +195,7 @@ func (pa *dockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.Sta
 
 // StartRecording implements PandaAgent
 func (pa *dockerPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
-	panic("unimplemented")
+	return pa.grpcAgent.StartRecording(ctx, recordingName)
 }
 
 // StopAgent implements PandaAgent
@@ -216,12 +214,11 @@ func (pa *dockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecord
 
 	newRecording := DockerPandaAgentRecording{
 		GenericPandaAgentRecordingConcrete: *recording,
-		agent: pa,
+		agent:                              pa,
 	}
 
 	return &newRecording, nil
 }
-
 
 func (pa *dockerPandaAgent) createTempDir() error {
 	if pa.sharedDir != nil {
@@ -252,7 +249,6 @@ func (pa *dockerPandaAgent) removeTempDir() error {
 	pa.sharedDir = nil
 	return nil
 }
-
 
 func (pa *dockerPandaAgent) startContainer(ctx context.Context) error {
 	if pa.containerId != nil {

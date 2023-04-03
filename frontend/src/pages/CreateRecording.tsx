@@ -9,8 +9,8 @@ import { ExecuteProgramRequest, useExecuteProgramById, useFindAllImages, useFind
 import { useNavigate } from 'react-router';
 
 function CreateRecordingPage() {
-  const navigate = useNavigate();
   const [name, setName] = useState('');
+  const navigate = useNavigate();
 
   var programEntities: EuiSelectableOption[] = [];
   var imageEntities: EuiSelectableOption[] = [];
@@ -104,7 +104,6 @@ function CreateRecordingPage() {
               const req: ExecuteProgramRequest = {
                 imageId: selectedImage.data!.id,
               }
-              alert(`Creating recording with name: ${name}, image: ${selectedImage.data!.id}, program: ${selectedProgram.data?.id}`);
               executeFn.mutate({programId: selectedProgram.data!.id, data: req})
             }}>Create Recording</EuiButton>
           </div>
