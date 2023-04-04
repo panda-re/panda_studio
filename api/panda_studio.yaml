@@ -503,9 +503,6 @@ components:
           $ref: "#/components/schemas/ImageFileType"
         url:
           type: string
-        file:
-          type: string
-          format: binary
     
     Recording:
       type: object
