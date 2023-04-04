@@ -2,12 +2,11 @@ package api
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
 	"github.com/pkg/errors"
+	"net/http"
 )
 
 func (s *PandaStudioServer) FindAllImages(ctx *gin.Context) {
@@ -118,6 +117,47 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 		ImageId: db.ParseObjectID(imageId),
 		FileId:  fileObj.ID,
 	}, fileReader)
+
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	// todo: convert to dto
+	ctx.JSON(http.StatusOK, fileObj)
+}
+
+func (s *PandaStudioServer) CreateImageFileFromUrl(ctx *gin.Context, imageId string) {
+	form, err := ctx.MultipartForm()
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	fmt.Println(imageId)
+	fmt.Println(form.Value["url"][0])
+
+	fileObj, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
+		ImageID:  db.ParseObjectID(imageId),
+		FileName: form.Value["file_name"][0],
+		FileType: form.Value["file_type"][0],
+	})
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	resp, err := http.Get(form.Value["url"][0])
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+	defer resp.Body.Close()
+
+	fileObj, err = s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
+		ImageId: db.ParseObjectID(imageId),
+		FileId:  fileObj.ID,
+	}, resp.Body)
 
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
