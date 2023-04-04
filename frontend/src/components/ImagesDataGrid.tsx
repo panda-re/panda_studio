@@ -169,7 +169,7 @@ function ImagesDataGrid() {
 
   function LoadingModal(){
     return <EuiOverlayMask>
-              <EuiModal onClose={closeModal}>
+              <EuiModal onClose={()=>{}}>
                 <EuiModalHeader>
                   <EuiModalHeaderTitle>Uploading Image</EuiModalHeaderTitle>
                 </EuiModalHeader>

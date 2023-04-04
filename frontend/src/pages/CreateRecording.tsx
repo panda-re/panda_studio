@@ -1,4 +1,4 @@
-import {EuiButton, EuiPageTemplate, EuiSelectableOption, EuiText} from '@elastic/eui';
+import {EuiButton, EuiModal, EuiModalBody, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelectableOption, EuiText} from '@elastic/eui';
 import {useState} from "react";
 import {EuiFieldText, EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import React from 'react'
@@ -11,13 +11,16 @@ import { useNavigate } from 'react-router';
 function CreateRecordingPage() {
   const [name, setName] = useState('');
   const navigate = useNavigate();
+  const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
   var programEntities: EuiSelectableOption[] = [];
   var imageEntities: EuiSelectableOption[] = [];
 
   const {isLoading: imagesLoading, data: images} = useFindAllImages();
   const {isLoading: programsLoading, data: programs} = useFindAllPrograms();
-  const executeFn = useExecuteProgramById({mutation: {onSuccess: () => navigate('/recordings')}});
+  const executeFn = useExecuteProgramById({mutation: {onSuccess: () => {
+    setIsLoadingVisible(false);
+    navigate('/recordings')}}});
 
   if(images != null){
     images.map((r) =>{
@@ -49,9 +52,24 @@ function CreateRecordingPage() {
     setSelectedProgram(message);
   }
 
+  function LoadingModal(){
+    return <EuiOverlayMask>
+              <EuiModal onClose={()=>{}}>
+                <EuiModalHeader>
+                  <EuiModalHeaderTitle>Creating Recording</EuiModalHeaderTitle>
+                </EuiModalHeader>
+                <EuiModalBody>
+                    <EuiText>
+                      Running...
+                    </EuiText>
+                </EuiModalBody>
+              </EuiModal>
+            </EuiOverlayMask>
+  }
+
   return (<>
     <EuiPageTemplate.Header pageTitle="Create Recording"/>
-
+    {(isLoadingVisible) ? (LoadingModal()) : null}
     <EuiPageTemplate.Section>
       <EuiFlexGroup>
         <EuiFlexItem grow={2}>
@@ -104,6 +122,7 @@ function CreateRecordingPage() {
               const req: ExecuteProgramRequest = {
                 imageId: selectedImage.data!.id,
               }
+              setIsLoadingVisible(true);
               executeFn.mutate({programId: selectedProgram.data!.id, data: req})
             }}>Create Recording</EuiButton>
           </div>
