@@ -224,6 +224,26 @@ paths:
                 $ref: "#/components/schemas/Recording"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+  /recordings/{recordingId}/files/{fileId}:
+    get:
+      tags:
+        - recording
+        - file
+      summary: Download recording file
+      operationId: downloadRecordingFile
+      parameters:
+        - $ref: "#/components/parameters/RecordingId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
   /programs:
     get:
       tags:
