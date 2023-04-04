@@ -95,6 +95,31 @@ paths:
                 $ref: "#/components/schemas/Image"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+    post:
+      tags:
+        - image
+        - file
+      summary: Derive new image
+      operationId: createDerivedImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DeriveImageFileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: success
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
   /images/{imageId}/files:
     post:
       tags:
@@ -140,32 +165,6 @@ paths:
                 format: binary
         "404":
           $ref: "#/components/responses/NotFoundResponse"
-    post:
-      tags:
-        - image
-        - file
-      summary: Derive new image
-      operationId: createDerivedImage
-      parameters:
-        - $ref: "#/components/parameters/ImageId"
-        - $ref: "#/components/parameters/FileId"
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: "#/components/schemas/DeriveImageFileRequest"
-      responses:
-        "200":
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: success
-        "404":
-          $ref: "#/components/responses/NotFoundResponse"
-        "409":
-          $ref: "#/components/responses/ConflictResponse"
     delete:
       tags:
         - image
@@ -482,8 +481,6 @@ components:
       type: object
       properties:
         imageid:
-          type: string
-        fileid:
           type: string
         oldname:
           type: string

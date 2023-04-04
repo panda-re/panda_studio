@@ -1,19 +1,32 @@
 import {EuiButton, EuiPageTemplate, EuiText, EuiFlexGroup, EuiFlexItem, EuiFieldText, EuiSuperSelect, EuiHealth, EuiSelect, EuiFilePicker, EuiFieldNumber} from '@elastic/eui';
 import React, {ChangeEvent, SetStateAction, useState} from 'react';
 import { useLocation } from 'react-router';
+import {DeriveImageFileRequest, useCreateDerivedImage} from '../api';
 
 function CreateImagePage() {
     const location = useLocation()
+    const [newImageName, setNewImageName] = useState("");
+    const [newSize, setNewSize] = useState("");
+    const [dockerImageName, setDockerImageName] = useState("");
 
-    //hook for getting size option for image size
-    const sizeOptions = [
-        { value: 'kb', text: 'KB' },
-        { value: 'mb', text: 'MB' },
-        { value: 'gb', text: 'GB' },
-    ];
-    const [value, setValue] = useState(sizeOptions[2].value);
-    function onSizeChange(newSizeValue: ChangeEvent<HTMLSelectElement>){
-        setValue(newSizeValue.target.value)
+    //console.log(location.state.item);
+
+    const deriveImageFileFn = useCreateDerivedImage({mutation: {onSuccess(data, variables, context) {console.log("derivation complete")}}})
+
+    function sendDeriveImageRequest(){
+        const req: DeriveImageFileRequest = {
+            imageid: location.state.item.id,
+            oldname: location.state.item.name,
+            newname: newImageName,
+            dockerhubimagename: dockerImageName,
+            size: +newSize
+        };
+        const fullReq = {
+            data: req,
+            imageId: location.state.item.id,
+        };
+        deriveImageFileFn.mutate(fullReq);
+        console.log(fullReq);
     }
 
     return (<>
@@ -22,11 +35,15 @@ function CreateImagePage() {
         <EuiPageTemplate.Section>
             <EuiFlexGroup>
                 <EuiFlexItem grow={2}>
-                    <EuiText>New Image Name: </EuiText>
+                    <EuiText>New Image name: </EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem grow={8}>
                     <EuiFieldText
                         placeholder="eg, image1"
+                        name="newname"
+                        onChange={(e) => {
+                            setNewImageName(e.target.value);
+                        }}
                     />
                 </EuiFlexItem>
             </EuiFlexGroup>
@@ -35,19 +52,17 @@ function CreateImagePage() {
         <EuiPageTemplate.Section>
             <EuiFlexGroup>
                 <EuiFlexItem grow={2}>
-                    <EuiText>Size: </EuiText>
+                    <EuiText>Expand to Size: (GB)</EuiText>
                 </EuiFlexItem>
 
                 <EuiFlexItem grow={8}>
                     <EuiFlexGroup>
                         <EuiFlexItem >
-                            <EuiFieldText/>
-                        </EuiFlexItem>
-                        <EuiFlexItem>
-                            <EuiSelect
-                                options={sizeOptions}
-                                value={value}
-                                onChange={value => onSizeChange(value) }
+                            <EuiFieldNumber
+                            name="size"
+                            onChange={(e) => {
+                                setNewSize(e.target.value);
+                            }}
                             />
                         </EuiFlexItem>
                     </EuiFlexGroup>
@@ -58,11 +73,15 @@ function CreateImagePage() {
         <EuiPageTemplate.Section>
             <EuiFlexGroup>
                 <EuiFlexItem grow={2}>
-                    <EuiText>Docker Image Name from Docker Hub:</EuiText>
+                    <EuiText>Docker Hub image name:</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem grow={8}>
                     <EuiFieldText
                         placeholder="Exact reference from Docker Hub"
+                        name="dockerhubimagename"
+                        onChange={(e) => {
+                            setDockerImageName(e.target.value);
+                        }}
                     >
                     </EuiFieldText>
                 </EuiFlexItem>
@@ -70,22 +89,15 @@ function CreateImagePage() {
         </EuiPageTemplate.Section>
 
         <EuiPageTemplate.Section>
-            <EuiFlexGroup>
-                <EuiFlexItem grow={2}>
-                    <EuiText>Extra Args: </EuiText>
-                </EuiFlexItem>
-                <EuiFlexItem grow={8}>
-                    <EuiFieldText
-                        placeholder="Placeholder for now"
-                    />
-                </EuiFlexItem>
-            </EuiFlexGroup>
-        </EuiPageTemplate.Section>
-
-        <EuiPageTemplate.Section>
-            <EuiButton>Create</EuiButton>
+            <EuiButton
+            onClick={sendDeriveImageRequest}
+            >Begin Derive Job</EuiButton>
         </EuiPageTemplate.Section>
     </>)
+
+    
 }
+
+
 
 export default CreateImagePage;

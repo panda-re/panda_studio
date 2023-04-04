@@ -164,7 +164,7 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	ctx.JSON(http.StatusOK, imgFile)
 }
 
-func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string, fileId string) {
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string) {
 	var deriveReq DeriveImageFileRequest
 	err := ctx.BindJSON(&deriveReq)
 	if err != nil {
@@ -172,7 +172,16 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string,
 		return
 	}
 
-	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), db.ParseObjectID(fileId))
+	oldImageFile, err := s.imageRepo.FindOne(ctx, db.ParseObjectID(imageId))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	//assuming there is one file that makes up the image
+	var oldFileId = oldImageFile.Files[0].ID
+
+	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), oldFileId)
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
 		return

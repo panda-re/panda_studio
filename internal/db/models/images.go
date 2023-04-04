@@ -50,16 +50,9 @@ type ImageFileUploadRequest struct {
 }
 
 type DeriveImageFileRequest struct {
-	//imageID
-	ImageId db.ObjectID
-	//fileID
-	FileId db.ObjectID
-	//oldName
-	OldName string
-	//newName
-	NewName string
-	//DockerHubImageName
+	ImageId            db.ObjectID
+	OldName            string
+	NewName            string
 	DockerHubImageName string
-	//size
-	Size string
+	Size               int64
 }
