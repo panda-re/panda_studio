@@ -136,44 +136,40 @@ function ImagesDataGrid() {
     event.stopPropagation();
   }
 
+  function getFileTypeFromString(fileTypeAsString: string, imageId: string): ImageFileType | undefined {
+    switch (fileTypeAsString) {
+      case "qcow2": {
+        return ImageFileType.qcow2;
+      }
+      case "dtb": {
+        return ImageFileType.dtb;
+      }
+      case "kernel": {
+        return ImageFileType.kernel;
+      }
+      default: {
+        alert("Invalid File Type");
+        deleteImage({itemId: imageId ?? ""})
+        return;
+      }
+    }
+  }
+
 
   function createImageFileFromUrl(image: Image) {
     const urlAsArray = url.split("/")
     const fileName = urlAsArray[urlAsArray.length - 1]
     const fileTypeAsArray = fileName.split(".")
     const fileTypeAsString = fileTypeAsArray[fileTypeAsArray.length - 1]
-
-    var fileType
-    switch (fileTypeAsString) {
-      case "qcow2": {
-        fileType = ImageFileType.qcow2;
-        break;
-      }
-      case "dtb": {
-        fileType = ImageFileType.dtb;
-        break;
-      }
-      case "kernel": {
-        fileType = ImageFileType.kernel;
-        break;
-      }
-      default: {
-        fileType = undefined;
-        break;
-      }
-    }
+    const fileType = getFileTypeFromString(fileTypeAsString, image.id!)
 
     if (fileType == undefined) {
-      // closeModal();
-      alert("Invalid File Type");
-      deleteImage({itemId: image.id ?? ""})
       return;
     }
 
     const fileFromUrlReq: CreateImageFileFromUrlRequest = {
       file_name: fileName,
       file_type: fileType,
-      file: undefined, //can probably be removed
       url: url
     }
 
@@ -187,32 +183,12 @@ function ImagesDataGrid() {
   function createFiles(image: Image) {
     var splitArray = files[0].name.split(".");
     var fileTypeString = splitArray[splitArray.length - 1];
-    var fileType;
-    switch (fileTypeString) {
-      case "qcow2": {
-        fileType = ImageFileType.qcow2;
-        break;
-      }
-      case "dtb": {
-        fileType = ImageFileType.dtb;
-        break;
-      }
-      case "kernel": {
-        fileType = ImageFileType.kernel;
-        break;
-      }
-      default: {
-        fileType = undefined;
-        break;
-      }
-    }
+    var fileType = getFileTypeFromString(fileTypeString, image.id!)
 
     if (fileType == undefined) {
-      // closeModal();
-      alert("Invalid File Type");
-      deleteImage({itemId: image.id ?? ""})
       return;
     }
+
     const fileReq: CreateImageFileRequest = {
       file_name: files[0].name,
       file_type: fileType,
@@ -368,6 +344,7 @@ function ImagesDataGrid() {
             onChange={onFileChange}
             aria-label="Use aria labels when no actual label is in use"
           />
+          <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
           <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
             setModalUrl(e.target.value);
           }}/>

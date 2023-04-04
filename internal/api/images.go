@@ -148,9 +148,6 @@ func (s *PandaStudioServer) CreateImageFileFromUrl(ctx *gin.Context, imageId str
 		return
 	}
 
-	fmt.Println(imageId)
-	fmt.Println(form.Value["url"][0])
-
 	fileObj, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
 		ImageID:  db.ParseObjectID(imageId),
 		FileName: form.Value["file_name"][0],
