@@ -121,6 +121,7 @@ function CreateRecordingPage() {
               }
               const req: ExecuteProgramRequest = {
                 imageId: selectedImage.data!.id,
+                name: name,
               }
               setIsLoadingVisible(true);
               executeFn.mutate({programId: selectedProgram.data!.id, data: req})
