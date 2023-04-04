@@ -18,57 +18,34 @@ function InteractionDetails() {
 
   return(<>
     <EuiPageTemplate.Header pageTitle="Interaction Details" />
-
     <EuiFlexGroup>
       <EuiFlexItem grow={6}>
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>ID:</strong>
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {location.state.item.id}
+            <strong>ID:</strong> {location.state.item.id}
           </EuiText>
         </EuiPageTemplate.Section>
-
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>Name:</strong>
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {location.state.item.name}
+            <strong>Name:</strong> {location.state.item.name}
           </EuiText>
         </EuiPageTemplate.Section>
-
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>Interactions:</strong>
+            <strong><u>Interactions:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             <div style={{ whiteSpace: "pre-line" }}>{location.state.item.instructions}</div>
           </EuiText>
         </EuiPageTemplate.Section>
-
       </EuiFlexItem>
-
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
-          <EuiFlexItem grow={false}>
-            <EuiButton
-              style={buttonStyle}
-              onClick={() => {
-                navigate('/interactions')
-              }}
-            >
-              Interactions Dashboard
-            </EuiButton>
-          </EuiFlexItem>
           <EuiFlexItem grow={false}>
             <EuiButton style={buttonStyle} onClick={deleteCurrentInteractionProgram}>Delete Interaction</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
-
-
     </EuiFlexGroup>
 
   </>)

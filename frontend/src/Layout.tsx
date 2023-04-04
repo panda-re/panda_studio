@@ -1,6 +1,5 @@
-import { EuiAvatar, EuiBadge, EuiButton, EuiCode, EuiCollapsibleNav, EuiCollapsibleNavGroup, EuiEmptyPrompt, EuiHeader, EuiHeaderLink, EuiHeaderLinks, EuiHeaderLogo, EuiHeaderSectionItemButton, EuiIcon, EuiListGroup, EuiPage, EuiPageHeader, EuiPageSection, EuiPageSidebar, EuiPageTemplate, EuiPinnableListGroup, EuiPinnableListGroupItemProps, EuiProvider, EuiSideNav, EuiSpacer, EuiText, EuiTitle, useEuiTheme } from '@elastic/eui'
+import { EuiAvatar, EuiBadge, EuiCollapsibleNavGroup, EuiHeader, EuiHeaderLink, EuiHeaderLinks, EuiHeaderLogo, EuiHeaderSectionItemButton, EuiIcon, EuiListGroup, EuiPageTemplate, EuiPinnableListGroupItemProps, useEuiTheme } from '@elastic/eui'
 import { Navigate, Route, Routes, useNavigate } from 'react-router';
-import DashboardPage from './pages/DashboardPage';
 import NotFoundErrorPage from './pages/NotFoundErrorPage';
 
 import pandaLogo from './assets/panda.svg';
@@ -20,20 +19,14 @@ function Layout() {
 
   const topNavLinks: EuiPinnableListGroupItemProps[] = [
     {
-      label: 'Dashboard',
-      iconType: 'home',
-      isActive: true,
-      onClick: () => navigate('/dashboard'),
+      label: 'Recordings',
+      iconType: 'layers',
+      onClick: () => navigate('/recordings'),
     },
     {
       label: 'Images',
       iconType: 'storage',
       onClick: () => navigate('/images'),
-    },
-    {
-      label: 'Recordings',
-      iconType: 'layers',
-      onClick: () => navigate('/recordings'),
     },
     {
       label:'Interactions',
@@ -51,53 +44,13 @@ function Layout() {
               <EuiHeaderLogo iconType={pandaLogo}>PANDA Studio</EuiHeaderLogo>,
               <EuiHeaderLinks aria-label="App navigation dark theme example">
                 <EuiHeaderLink isActive>Docs</EuiHeaderLink>
-                <EuiHeaderLink>Code</EuiHeaderLink>
-                <EuiHeaderLink iconType="help"> Help</EuiHeaderLink>
+                <EuiHeaderLink isActive href='https://github.com/panda-re/panda_studio'>Code</EuiHeaderLink>
               </EuiHeaderLinks>,
             ],
             borders: 'right',
           },
-          {
-            items: [
-              <EuiBadge
-                color={euiTheme.colors.darkestShade}
-                iconType="arrowDown"
-                iconSide="right"
-              >
-                Production logs
-              </EuiBadge>,
-              <EuiHeaderSectionItemButton
-                aria-label="2 Notifications"
-                notification={'2'}
-              >
-                <EuiIcon type="cheer" size="m" />
-              </EuiHeaderSectionItemButton>,
-              <EuiHeaderSectionItemButton aria-label="Account menu">
-                <EuiAvatar name="John Username" size="s" />
-              </EuiHeaderSectionItemButton>,
-            ],
-            borders: 'none',
-          },
         ]}
       />
-      {/* Breadcrumb example
-      <EuiHeader
-        sections={[{
-          breadcrumbs: [
-            {
-              text: 'Management',
-              href: '#',
-              onClick: (e) => {
-                e.preventDefault();
-              },
-            },
-            {
-              text: 'Users',
-            },
-          ]
-        }]}
-      />
-      */}
       <EuiPageTemplate.Sidebar>
         <EuiCollapsibleNavGroup background='light'>
           <EuiListGroup
@@ -107,14 +60,13 @@ function Layout() {
       </EuiPageTemplate.Sidebar>
 
       <Routes>
-        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/images" element={<ImagesPage />} />
         <Route path="/createRecording" element={<CreateRecordingPage />} />
         <Route path='/createImage' element={<CreateImagePage />} />
         <Route path="/recordings" element={<RecordingDashboardPage />}/>
         <Route path="/recordingDetails" element={<RecordingDetailsPage />}/>
         <Route path="/createInteractionProgram" element={<CreateInteractionProgramPage />}/>
-        <Route path="/" element={<Navigate to="/dashboard" replace={true} />} />
+        <Route path="/" element={<Navigate to="/recordings" replace={true} />} />
         <Route path="*" element={<NotFoundErrorPage />} />
         <Route path="/imageDetails" element={<ImageDetails />} />
         <Route path="/interactions" element={<InteractionDashboard />} />

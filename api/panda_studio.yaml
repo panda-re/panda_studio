@@ -454,8 +454,24 @@ components:
       enum: [ snp, ndlog ]
 
     PandaConfig:
-      # todo: define this schema
       type: object
+      properties:
+        qcow_file_name:
+          type: string
+        arch:
+          type: string
+        os:
+          type: string
+        prompt:
+          type: string
+        cdrom:
+          type: string
+        snapshot:
+          type: string
+        memory:
+          type: string
+        extra_args:
+          type: string
     
     CreateImageRequest:
       type: object

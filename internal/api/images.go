@@ -1,10 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 	"net/http"
 )
@@ -40,10 +42,22 @@ func (s *PandaStudioServer) CreateImage(ctx *gin.Context) {
 		return
 	}
 
+	var newConfig pb.PandaConfig
+	temporaryVariable, _ := json.Marshal(createReq.Config)
+	err = json.Unmarshal(temporaryVariable, &newConfig)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to recast config"))
+		return
+	}
+
 	created, err := s.imageRepo.Create(ctx, &models.Image{
 		Name:        *createReq.Name,
 		Description: *createReq.Description,
+		Config: &models.ImageConfiguration{
+			PandaConfig: newConfig,
+		},
 	})
+
 	if err != nil {
 		ctx.Error(err)
 		return
