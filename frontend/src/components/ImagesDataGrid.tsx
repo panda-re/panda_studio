@@ -173,7 +173,11 @@ function ImagesDataGrid() {
       url: url
     }
 
-    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!}, {onError() {deleteImage({itemId: image.id!}); console.log("error in upload")}})
+    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!}, {onError() {
+      deleteImage({itemId: image.id!});
+      setIsLoadingVisible(false);
+      alert("Received an invalid URL");
+    }})
 
     setIsLoadingVisible(true);
     closeModal();
