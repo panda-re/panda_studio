@@ -173,7 +173,7 @@ function ImagesDataGrid() {
       url: url
     }
 
-    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!})
+    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!}, {onError() {deleteImage({itemId: image.id!}); console.log("error in upload")}})
 
     setIsLoadingVisible(true);
     closeModal();
@@ -205,7 +205,6 @@ function ImagesDataGrid() {
         if (url == "") {
           createFiles(data)
         } else {
-          console.log("making image from url")
           createImageFileFromUrl(data)
         }
       },
