@@ -10,10 +10,16 @@ import { CreateImageFileRequest, CreateImageRequest, findAllImages, Image, Image
 function ImagesDataGrid() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {isLoading, error, data} = useFindAllImages();
+  const {isLoading, isError, data} = useFindAllImages();
   const queryClient = useQueryClient();
-  const deleteFunction = useDeleteImageById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
-  const updateFn = useUpdateImage({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
+  const deleteFunction = useDeleteImageById({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error deleting Image: " + response.error?.message)}});
+  const updateFn = useUpdateImage({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error updating image: " + response.error?.message)}});
 
    // File picker constants
    const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
@@ -68,14 +74,14 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      qcow_file_name: image.config?.qcow_file_name,
-      arch: modalArch,
-      os: modalOs,
-      prompt: modalPrompt,
-      cdrom: modalCdrom,
-      snapshot: modalSnapshot,
-      memory: modalMemory,
-      extra_args: modalExtraArgs,      
+      qcowfilename: image.config?.qcowfilename,
+      arch: image.config?.arch,
+      os: image.config?.os,
+      prompt: image.config?.prompt,
+      cdrom: image.config?.cdrom,
+      snapshot: image.config?.snapshot,
+      memory: image.config?.memory,
+      extraargs: image.config?.extraargs,      
     }
     const req: CreateImageRequest = {
       name: image.name,
@@ -137,14 +143,14 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      qcow_file_name: files[0].name,
+      qcowfilename: files[0].name,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
       snapshot: modalSnapshot,
       memory: modalMemory,
-      extra_args: modalExtraArgs,   
+      extraargs: modalExtraArgs,   
     }
     const req: CreateImageRequest = {
       name: modalName,
@@ -339,14 +345,15 @@ function ImagesDataGrid() {
         </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
-    {isLoading && <div>Loading...</div> ||
-    <EuiBasicTable
+    {(isError) ? (<div>Error...</div>)
+    : ((isLoading) ? (<div>Loading...</div>) 
+    : <EuiBasicTable
       tableCaption="Images"
       items={queriedItems ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
-    />
+    />)
   }
   {(isModalVisible) ? (CreateModal()) : null}
   {(isLoadingVisible) ? (LoadingModal()) : null}

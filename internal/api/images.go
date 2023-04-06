@@ -85,10 +85,21 @@ func (s *PandaStudioServer) UpdateImage(ctx *gin.Context, imageId string) {
 		return
 	}
 
+	var newConfig pb.PandaConfig
+	temporaryVariable, _ := json.Marshal(updateReq.Config)
+	err = json.Unmarshal(temporaryVariable, &newConfig)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to recast config"))
+		return
+	}
+
 	updated, err := s.imageRepo.Update(ctx, &models.Image{
 		Name:        *updateReq.Name,
 		Description: *updateReq.Description,
 		ID:          db.ParseObjectID(imageId),
+		Config: &models.ImageConfiguration{
+			PandaConfig: newConfig,
+		},
 	})
 	if err != nil {
 		ctx.Error(err)

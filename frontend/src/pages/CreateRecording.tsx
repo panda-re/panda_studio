@@ -18,9 +18,15 @@ function CreateRecordingPage() {
 
   const {isLoading: imagesLoading, data: images} = useFindAllImages();
   const {isLoading: programsLoading, data: programs} = useFindAllPrograms();
-  const executeFn = useExecuteProgramById({mutation: {onSuccess: () => {
-    setIsLoadingVisible(false);
-    navigate('/recordings')}}});
+  const executeFn = useExecuteProgramById({
+    mutation: {
+      onSuccess: () => {
+        setIsLoadingVisible(false);
+        navigate('/recordings')},
+      onError: (response) => {
+        setIsLoadingVisible(false)
+        alert("Error executing program: " + response.toString());
+      }}});
 
   if(images != null){
     images.map((r) =>{
