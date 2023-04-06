@@ -165,6 +165,12 @@ func (s *PandaStudioServer) CreateImageFileFromUrl(ctx *gin.Context, imageId str
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Non-OK HTTP status:", resp.StatusCode)
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
 	fileObj, err = s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
 		ImageId: db.ParseObjectID(imageId),
 		FileId:  fileObj.ID,
