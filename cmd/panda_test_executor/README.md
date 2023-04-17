@@ -5,7 +5,7 @@ The executor will test the PANDA agent to ensure proper operation of the backend
 Build the agent Docker container that will be tested using the makefile in the `panda_studio` directory:
 
 ```
-$ make docker_agent
+make docker_agent
 ```
 
 The test requires super user privileges and having golang installed, so there are two options for execution.
@@ -13,13 +13,13 @@ The test requires super user privileges and having golang installed, so there ar
 1.  Build the test executor with:
 
 ```
-$ make docker_executor_test
+make docker_executor_test
 ```
 
 2.  Run the test executor:
 
 ```
-$ docker run -it --rm \
+docker run -it --rm \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -v /root/.panda:/root/.panda \
      -v /tmp/panda-studio:/tmp/panda-studio \
@@ -29,11 +29,11 @@ $ docker run -it --rm \
 ### In Terminal
 1.  Install golang:
 ```
-$ sudo apt install golang-go
+sudo apt install golang-go
 ```
 2.  Run the test:
 ```
-$ sudo go test -v -run TestMain ./cmd/panda_test_executor/
+sudo go test -v -run TestMain ./cmd/panda_test_executor/
 ```
 ### Output
 The terminal will print whenever a test starts and whether it passes or fails. Also, the number of tests run, the number of tests passed, and the success rate will be printed.
