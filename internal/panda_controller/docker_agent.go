@@ -184,9 +184,18 @@ func (pa *dockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaA
 }
 
 // StartAgent implements PandaAgent
-func (*dockerPandaAgent) StartAgent(ctx context.Context) error {
-	// todo: Starts the agent using the default x86_64 image
-	panic("unimplemented")
+func (pa *dockerPandaAgent) StartAgent(ctx context.Context) error {
+	config := pb.PandaConfig{
+		QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
+		Arch:         "x86_64",
+		Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+		Prompt:       "root@ubuntu:.*# ",
+		Cdrom:        "",
+		Snapshot:     "root",
+		Memory:       "1024",
+		ExtraArgs:    "-display none",
+	}
+	return pa.grpcAgent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &config})
 }
 
 func (pa *dockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {

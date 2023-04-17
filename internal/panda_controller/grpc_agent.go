@@ -39,7 +39,17 @@ func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 
 // StartAgent implements PandaAgent
 func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
-	return pa.StartAgentWithOpts(ctx, &pb.StartAgentRequest{})
+	config := pb.PandaConfig{
+		QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
+		Arch:         "x86_64",
+		Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+		Prompt:       "root@ubuntu:.*# ",
+		Cdrom:        "",
+		Snapshot:     "root",
+		Memory:       "1024",
+		ExtraArgs:    "-display none",
+	}
+	return pa.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &config})
 }
 
 // StartAgentWithOpts implements PandaAgent
