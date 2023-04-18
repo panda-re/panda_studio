@@ -29,7 +29,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
         if self.agent is not None:
-            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
+            raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
 
         print("Starting agent")
         self.agent = PandaAgent(request.config)
