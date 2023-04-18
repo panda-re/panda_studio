@@ -42,24 +42,35 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def StopAgent(self, request: pb.StopAgentRequest, context):
         if self.agent is not None:
             self.agent.stop()
-        self.server.stop(grace=5)
-        return pb.StopAgentResponse()
+            self.server.stop(grace=5)
+            return pb.StopAgentResponse()
+        else:
+            raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a PANDA instance when one is not running")
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
-        output = self.agent.run_command(request.command)
-        return pb.RunCommandResponse(statusCode=0, output=output)
+        if self.agent is not None:
+            output = self.agent.run_command(request.command)
+            return pb.RunCommandResponse(statusCode=0, output=output)
+        else:
+            raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot run a function when PANDA is not running")
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
-        self.agent.start_recording(recording_name=request.recording_name)
-        return pb.StartRecordingResponse()
+        if self.agent is not None:
+            self.agent.start_recording(recording_name=request.recording_name)
+            return pb.StartRecordingResponse()
+        else:
+            raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot start a recording when PANDA is not running")
     
     def StopRecording(self, request: pb.StopRecordingRequest, context):
-        recording_name = self.agent.stop_recording()
-        return pb.StopRecordingResponse(
-            recording_name=recording_name,
-            snapshot_filename=f"{recording_name}-rr-snp",
-            ndlog_filename=f"{recording_name}-rr-nondet.log"
-        )
+        if self.agent is not None:
+            recording_name = self.agent.stop_recording()
+            return pb.StopRecordingResponse(
+                recording_name=recording_name,
+                snapshot_filename=f"{recording_name}-rr-snp",
+                ndlog_filename=f"{recording_name}-rr-nondet.log"
+            )
+        else:
+            raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a recording when PANDA is not running")
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
         if self.agent is not None:

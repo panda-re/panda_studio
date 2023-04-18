@@ -67,7 +67,6 @@ type GenericPandaAgentRecordingConcrete struct {
 
 var _ PandaAgentRecording = &GenericPandaAgentRecordingConcrete{}
 
-
 func (r *GenericPandaAgentRecordingConcrete) Name() string {
 	return r.RecordingName
 }
@@ -90,7 +89,7 @@ func (r *GenericPandaAgentRecordingConcrete) OpenNdlog(ctx context.Context) (io.
 
 type DockerPandaAgentRecording struct {
 	GenericPandaAgentRecordingConcrete
-	agent *dockerPandaAgent
+	agent *DockerPandaAgent
 }
 
 var _ PandaAgentRecording = &DockerPandaAgentRecording{}
