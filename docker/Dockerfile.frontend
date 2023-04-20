@@ -1,0 +1,13 @@
+ARG NODE_VERSION="16-bullseye"
+
+FROM node:${NODE_VERSION} as builder
+
+# Copy frontend
+COPY . /app
+WORKDIR /app/frontend
+
+# Install dependencies
+RUN yarn install
+
+# Build frontend
+RUN yarn run generate:api && yarn build

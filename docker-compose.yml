@@ -1,0 +1,54 @@
+version: "3.9"
+services:
+  panda_api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.panda-api
+    ports:
+      - "8080:8080"
+    environment:
+      S3__ENDPOINT: minio:9000
+      S3__SSL: false
+      S3__ACCESS_KEY: "${S3_ACCESS_KEY}"
+      S3__SECRET_KEY: "${S3_SECRET_KEY}"
+      MONGODB__URI: "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/"
+      MONGODB__DATABASE: "${MONGODB_DATABASE}"
+    depends_on:
+      - minio
+      - mongodb
+    volumes:
+      # Need access to docker.sock to run docker commands
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Temp files so docker binding works properly
+      - /tmp/panda-studio:/tmp/panda-studio
+    networks:
+      - panda_studio
+  minio:
+    image: "quay.io/minio/minio"
+    ports: # or expose if we only want docker network access
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "${S3_ACCESS_KEY}"
+      MINIO_ROOT_PASSWORD: "${S3_SECRET_KEY}"
+    entrypoint: minio server /data --console-address ":9001"
+    volumes:
+      - minio:/data
+    networks:
+      - panda_studio
+  mongodb:
+    image: "mongo"
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - panda_studio
+volumes:
+  minio:
+  mongodb:
+networks:
+  panda_studio:

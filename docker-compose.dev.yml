@@ -9,7 +9,7 @@ x-secrets:
 services:
   panda_api:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.panda-api
     ports:
       - "8080:8080"
