@@ -50,7 +50,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
     def RunCommand(self, request: pb.RunCommandRequest, context):
         if self.agent is not None:
             output = self.agent.run_command(request.command)
-            return pb.RunCommandResponse(statusCode=0, output=output)
+            return pb.RunCommandResponse(output=output)
         else:
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot run a function when PANDA is not running")
     
