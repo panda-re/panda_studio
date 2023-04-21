@@ -63,6 +63,7 @@ class PandaAgent:
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a PANDA instance when one is not running")
         if self.current_recording is not None:
             self.panda.end_analysis()
+            self.current_recording = None
             raise RuntimeWarning(ErrorCode.RECORDING, "Request for PANDA stop before recording ended")    
         
         @self.panda.queue_blocking
@@ -85,7 +86,6 @@ class PandaAgent:
     def run_command(self, cmd):
         def panda_run_command(panda: Panda):
             print(f'running command {cmd}')
-            # return "?"
             try:
                 return panda.run_serial_cmd(cmd)
             except Exception as err:
