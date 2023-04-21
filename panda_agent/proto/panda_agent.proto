@@ -55,7 +55,8 @@ message StopRecordingResponse {
 
 // TODO add plugins
 message StartReplayRequest {
-    string recording_name = 1;
+    PandaConfig config = 1;
+    string recording_name = 2;
 }
 message StartReplayResponse {
     string serial = 1;

@@ -12,22 +12,16 @@ import (
 type StartAgentRequest = pb.StartAgentRequest
 
 type PandaAgent interface {
-	// todo: add options such as architecture, image, networking, etc. to pass
-	// to the agent
 	StartAgent(ctx context.Context) error
 	StartAgentWithOpts(ctx context.Context, opts *StartAgentRequest) error
 	StopAgent(ctx context.Context) error
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (PandaAgentRecording, error)
-	//SendNetworkCommand(ctx context.Context, network_request *NetworkRequest) (*NetworkResponse, error)
-	Close() error
-}
-
-type PandaReplayAgent interface {
-	StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
-	StopAgent(ctx context.Context) error
+	StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
+	StartReplayWithOpts(ctx context.Context, opts *StartAgentRequest, recordingName string) (*PandaAgentReplayResult, error)
 	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
+	//SendNetworkCommand(ctx context.Context, network_request *NetworkRequest) (*NetworkResponse, error)
 	Close() error
 }
 

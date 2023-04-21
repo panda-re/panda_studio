@@ -28,6 +28,17 @@ type DockerPandaAgent struct {
 
 var _ PandaAgent = &DockerPandaAgent{}
 
+var DEFAULT_CONFIG = pb.PandaConfig{
+	QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
+	Arch:         "x86_64",
+	Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+	Prompt:       "root@ubuntu:.*#",
+	Cdrom:        "ide1-cd0",
+	Snapshot:     "root",
+	Memory:       "1024",
+	ExtraArgs:    "-display none",
+}
+
 const PANDA_STUDIO_TEMP_DIR = "/tmp/panda-studio"
 const CONTAINER_SHARED_DIR = "/panda/shared"
 const CONTAINER_DATA_DIR = "/panda/data"
@@ -185,17 +196,7 @@ func (pa *DockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaA
 
 // StartAgent implements PandaAgent
 func (pa *DockerPandaAgent) StartAgent(ctx context.Context) error {
-	config := pb.PandaConfig{
-		QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
-		Arch:         "x86_64",
-		Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
-		Prompt:       "root@ubuntu:.*#",
-		Cdrom:        "ide1-cd0",
-		Snapshot:     "root",
-		Memory:       "1024",
-		ExtraArgs:    "-display none",
-	}
-	return pa.grpcAgent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &config})
+	return pa.grpcAgent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG})
 }
 
 func (pa *DockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
@@ -227,6 +228,18 @@ func (pa *DockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecord
 	}
 
 	return &newRecording, nil
+}
+
+func (pa *DockerPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StartReplayWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG}, recordingName)
+}
+
+func (pa *DockerPandaAgent) StartReplayWithOpts(ctx context.Context, opts *pb.StartAgentRequest, recordingName string) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StartReplayWithOpts(ctx, opts, recordingName)
+}
+
+func (pa *DockerPandaAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StopReplay(ctx)
 }
 
 func (pa *DockerPandaAgent) createTempDir() error {
