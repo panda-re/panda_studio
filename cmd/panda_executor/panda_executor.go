@@ -9,7 +9,9 @@ import (
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
 )
 
-const DEFAULT_QCOW_SIZE = 17711104
+const QCOW_NAME = "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
+
+var QCOW_LOCAL = fmt.Sprintf("/root/.panda/%s", QCOW_NAME)
 
 func main() {
 	// Default agent
@@ -31,16 +33,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	fileReader, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		panic(err)
-	}
-	fileInfo, err := fileReader.Stat()
-	if err != nil {
-		panic(err)
-	}
-	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	err = copyFileToContainerHelper(ctx, QCOW_LOCAL, QCOW_NAME, agent)
 	if err != nil {
 		panic(err)
 	}
@@ -75,67 +68,97 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	dest := fmt.Sprintf("/tmp/panda-studio/%s", recording.NdlogFilename())
-	out, err := os.Create(dest)
+	ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.NdlogFilename())
+	ndl_local, err := os.Create(ndl_dest)
 	if err != nil {
 		panic(err)
 	}
-	nBytes, err := io.Copy(out, ndl)
+	nBytes, err := io.Copy(ndl_local, ndl)
 	if err != nil {
 		panic(err)
 	}
 	if nBytes == 0 {
 		panic("Bad copy")
 	}
-	ndl.Close()
+	defer ndl.Close()
 
 	snp, err := recording.OpenSnapshot(ctx)
 	if err != nil {
 		panic(err)
 	}
-	dest = fmt.Sprintf("/tmp/panda-studio/%s", recording.SnapshotFilename())
-	out, err = os.Create(dest)
+	snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.SnapshotFilename())
+	snp_local, err := os.Create(snp_dest)
 	if err != nil {
 		panic(err)
 	}
-	nBytes, err = io.Copy(out, snp)
+	nBytes, err = io.Copy(snp_local, snp)
 	if err != nil {
 		panic(err)
 	}
 	if nBytes == 0 {
 		panic("Bad copy")
 	}
-	snp.Close()
+	defer snp.Close()
 
 	fmt.Printf("Snapshot file: %s\n", recording.SnapshotFilename())
 	fmt.Printf("Nondet log file: %s\n", recording.NdlogFilename())
+
+	// Replay agent
+	replay_agent, err := controller.CreateDockerPandaAgent2(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer replay_agent.Close()
+
+	err = replay_agent.Connect(ctx)
+	if err != nil {
+		panic(err)
+	}
+	err = copyFileToContainerHelper(ctx, QCOW_LOCAL, QCOW_NAME, replay_agent)
+	if err != nil {
+		panic(err)
+	}
+	err = copyFileToContainerHelper(ctx, snp_dest, recording.SnapshotFilename(), replay_agent)
+	if err != nil {
+		panic(err)
+	}
+	err = copyFileToContainerHelper(ctx, ndl_dest, recording.NdlogFilename(), replay_agent)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Starting replay")
+	replay, err := replay_agent.StartReplay(ctx, "test")
+	if err != nil {
+		panic(err)
+	}
+	println(replay.Serial)
+	println(replay.Replay)
 
 	err = agent.StopAgent(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	// Replay agent
-	// replay_agent, err := controller.CreateDockerPandaAgent2(ctx)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer replay_agent.Close()
+	err = replay_agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
 
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// fmt.Println("Starting replay")
-	// replay, err := replay_agent.StartReplay(ctx, "test")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// println(replay.Serial)
-	// println(replay.Replay)
-
-	// err = replay_agent.StopAgent(ctx)
-	// if err != nil {
-	// 	panic(err)
-	// }
+// ctx - context
+// srcFilePath - file path on local machine
+// dstFileName - name of the file in the container
+// agent - PandaAgent to container to copy into
+func copyFileToContainerHelper(ctx context.Context, srcFilePath string, dstFilename string, agent *controller.DockerPandaAgent) error {
+	fileReader, err := os.Open(srcFilePath)
+	if err != nil {
+		return err
+	}
+	fileInfo, err := fileReader.Stat()
+	if err != nil {
+		return err
+	}
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), dstFilename)
+	return err
 }
