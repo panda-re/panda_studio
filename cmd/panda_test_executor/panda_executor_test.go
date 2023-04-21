@@ -116,12 +116,10 @@ func TestAgent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	err = agent.Connect(ctx)
 	if err != nil {
 		panic(err)
 	}
-
 	fileReader, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
@@ -231,6 +229,22 @@ func TestRecord(t *testing.T) {
 	agent, err = controller.CreateDockerPandaAgent2(ctx)
 	if err != nil {
 		t.Fatal(err)
+	}
+	err = agent.Connect(ctx)
+	if err != nil {
+		panic(err)
+	}
+	fileReader, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		panic(err)
+	}
+	fileInfo, err := fileReader.Stat()
+	if err != nil {
+		panic(err)
+	}
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	if err != nil {
+		panic(err)
 	}
 
 	err = agent.StartAgent(ctx)
@@ -346,6 +360,7 @@ var replay_agent controller.PandaReplayAgent
 // Tests to ensure the agent can replay properly
 // Tests premature stop and proper replay
 func TestReplay(t *testing.T) {
+	t.Fatal("Unimplemented")
 	var err error
 	t.Cleanup(func() {
 		err = replay_agent.StopAgent(ctx)
@@ -358,7 +373,6 @@ func TestReplay(t *testing.T) {
 		}
 	})
 
-	t.Fatal("Unimplemented")
 	// replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx)
 	// if err != nil {
 	// 	t.Fatal(err)
