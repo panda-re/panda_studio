@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -329,14 +330,41 @@ func TestStopRecording(t *testing.T) {
 		if recording.Name() != recording_name {
 			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", recording_name, recording.Name())
 		}
-		// snapshotName := fmt.Sprintf("%s/%s-rr-snp", recording.Location, recording_name)
-		// if recording.SnapshotFilename() != snapshotName {
-		// 	t.Errorf("Did not return correct snaphot name. Expected: '%s' Got: '%s'", snapshotName, recording.GetSnapshotFileLocation())
-		// }
-		// ndLogName := fmt.Sprintf("%s/%s-rr-nondet.log", recording.Location, recording_name)
-		// if recording.NdlogFilename() != ndLogName {
-		// 	t.Errorf("Did not return correct nondet log name. Expected: '%s' Got: '%s'", ndLogName, recording.GetNdlogFileLocation())
-		// }
+		ndl, err := recording.OpenNdlog(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dest := fmt.Sprintf("/tmp/panda-studio/%s", recording.NdlogFilename())
+		out, err := os.Create(dest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		nBytes, err := io.Copy(out, ndl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if nBytes == 0 {
+			t.Fatal("Failed to copy ND log")
+		}
+		ndl.Close()
+
+		snp, err := recording.OpenSnapshot(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dest = fmt.Sprintf("/tmp/panda-studio/%s", recording.SnapshotFilename())
+		out, err = os.Create(dest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		nBytes, err = io.Copy(out, snp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if nBytes == 0 {
+			t.Fatal("Failed to copy snapshot")
+		}
+		snp.Close()
 	} else {
 		t.Fatal("Did not return recording")
 	}

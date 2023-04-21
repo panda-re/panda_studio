@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
@@ -69,6 +70,42 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	ndl, err := recording.OpenNdlog(ctx)
+	if err != nil {
+		panic(err)
+	}
+	dest := fmt.Sprintf("/tmp/panda-studio/%s", recording.NdlogFilename())
+	out, err := os.Create(dest)
+	if err != nil {
+		panic(err)
+	}
+	nBytes, err := io.Copy(out, ndl)
+	if err != nil {
+		panic(err)
+	}
+	if nBytes == 0 {
+		panic("Bad copy")
+	}
+	ndl.Close()
+
+	snp, err := recording.OpenSnapshot(ctx)
+	if err != nil {
+		panic(err)
+	}
+	dest = fmt.Sprintf("/tmp/panda-studio/%s", recording.SnapshotFilename())
+	out, err = os.Create(dest)
+	if err != nil {
+		panic(err)
+	}
+	nBytes, err = io.Copy(out, snp)
+	if err != nil {
+		panic(err)
+	}
+	if nBytes == 0 {
+		panic("Bad copy")
+	}
+	snp.Close()
 
 	fmt.Printf("Snapshot file: %s\n", recording.SnapshotFilename())
 	fmt.Printf("Nondet log file: %s\n", recording.NdlogFilename())
