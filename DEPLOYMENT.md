@@ -17,16 +17,21 @@ Then change your directory to the repository
 
 ## 3. Set up PANDA Studio
 
-The PANDA Agent container must be built separately with the command
+The PANDA Agent container must be built separately with the command. Note that you may need to use `sudo` if you get permission errors.
 
 `make docker_agent`
 
 Additionally, a temporary folder must be created to allow PANDA Studio to communicate with the ephemeral agent containers
+
 `mkdir /tmp/panda-studio`
 
 ## 4. Configuration
 
-Copy the file `.env.test` to `.env` and change the environment variables to your liking.
+Copy the file `.env.example` to `.env` and change the environment variables to your liking.
+
+`cp .env.example .env`
+
+### List of Environment Variables
 
 | Variable           | Description                                                    |
 | ------------------ | -------------------------------------------------------------- |
@@ -39,6 +44,10 @@ Copy the file `.env.test` to `.env` and change the environment variables to your
 ## 5. Start Docker Compose
 
 PANDA Studio and all its required components can be started with the command
+
 `docker compose up -d`
 
-For more advanced deployment, see the [Docker Compose documentation](https://docs.docker.com/compose/). 
+Following this, Docker will pull and build all the required images and start the containers. The web UI should be available at port 8080 on the host machine.
+
+
+For more advanced deployment, see the [Docker Compose documentation](https://docs.docker.com/compose/).
