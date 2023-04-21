@@ -1,9 +1,10 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func ParseInteractionProgram(instructionList string) (InteractionProgramInstructionList, error) {
@@ -28,12 +29,12 @@ func ParseInteractionProgramInstruction(cmd string) (InteractionProgramInstructi
 			return nil, nil
 		}
 		instArray := strings.SplitN(cmd, " ", 2)
-		switch instArray[0] {
-		case "START_RECORDING":
+		switch strings.ToLower(instArray[0]) {
+		case "start_recording":
 			return &StartRecordingInstruction{RecordingName: instArray[1]}, nil
-		case "STOP_RECORDING":
+		case "stop_recording":
 			return &StopRecordingInstruction{}, nil
-		case "CMD":
+		case "command":
 			return &RunCommandInstruction{Command: instArray[1]}, nil
 		case "filesystem":
 			fmt.Printf("Filesystem placeholder\n")
@@ -42,8 +43,8 @@ func ParseInteractionProgramInstruction(cmd string) (InteractionProgramInstructi
 			fmt.Printf("Network placeholder\n")
 			return nil, errors.New("Network interactions not yet supported")
 		default:
-			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
-			return nil, errors.New("Incorrect Command Type, Correct options can be found in the commands.md file")
+			fmt.Printf("Incorrect Command Type %s, Correct options can be found in the commands.md file\n", instArray[0])
+			return nil, errors.Errorf("Incorrect Command Type %s, Correct options can be found in the commands.md file\n", instArray[0])
 		}
 	}
 

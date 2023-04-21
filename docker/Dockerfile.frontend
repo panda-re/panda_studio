@@ -1,9 +1,10 @@
 ARG NODE_VERSION="16-bullseye"
 
-FROM node:${NODE_VERSION} as builder
+FROM node:${NODE_VERSION}
 
 # Copy frontend
-COPY . /app
+COPY frontend /app/frontend
+COPY api /app/api
 WORKDIR /app/frontend
 
 # Install dependencies
@@ -11,3 +12,5 @@ RUN yarn install
 
 # Build frontend
 RUN yarn run generate:api && yarn build
+
+ENTRYPOINT [ "yarn", "start" ]

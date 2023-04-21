@@ -1,11 +1,21 @@
 version: "3.9"
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "8080:3000"
+    environment:
+      BACKEND_URL: "http://panda_api:8080"
+    depends_on:
+      - panda_api
+    networks:
+      - panda_studio
   panda_api:
     build:
       context: .
       dockerfile: docker/Dockerfile.panda-api
-    ports:
-      - "8080:8080"
     environment:
       S3__ENDPOINT: minio:9000
       S3__SSL: false
