@@ -126,7 +126,11 @@ func TestAgent(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = agent.CopyFileToContainer(ctx, fileReader, DEFAULT_QCOW_SIZE, "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
+	fileInfo, err := fileReader.Stat()
+	if err != nil {
+		panic(err)
+	}
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
 	if err != nil {
 		panic(err)
 	}
