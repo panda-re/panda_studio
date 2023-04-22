@@ -1,6 +1,9 @@
-.PHONY: all test full_initial_setup initial_setup_priviliged initial_setup docker_agent panda_agent_protoc docker_executor panda_executor
+.PHONY: all clean test full_initial_setup initial_setup_priviliged initial_setup docker_agent panda_agent_protoc docker_executor panda_executor
 
 all: panda_executor panda_agent_protoc docker_agent docker_executor
+
+clean:
+	rm -r /tmp/panda-studio/*
 
 test: docker_agent docker_executor_test
 
@@ -28,9 +31,6 @@ docker_api:
 
 panda_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_executor
-
-panda_replay_executor: panda_agent_protoc_go
-	go build -o ./bin/panda_executor ./cmd/panda_replay_executor
 
 panda_executor_test: panda_agent_protoc_go
 	go test -c ./cmd/panda_test_executor
