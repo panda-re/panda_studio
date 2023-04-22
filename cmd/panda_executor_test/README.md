@@ -23,7 +23,7 @@ docker run -it --rm \
      -v /var/run/docker.sock:/var/run/docker.sock \
      -v /root/.panda:/root/.panda \
      -v /tmp/panda-studio:/tmp/panda-studio \
-     pandare/panda_test_executor
+     pandare/panda_executor_test
 ```
 
 ### In Terminal
@@ -33,7 +33,7 @@ sudo apt install golang-go
 ```
 2.  Run the test:
 ```
-sudo go test -v -run TestMain ./cmd/panda_test_executor/
+sudo go test -v -run TestMain ./cmd/panda_executor_test/
 ```
 ### Output
 The terminal will print whenever a test starts and whether it passes or fails. Also, the number of tests run, the number of tests passed, and the success rate will be printed.

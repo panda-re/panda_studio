@@ -7,7 +7,7 @@ import socket
 PANDA_IP = '127.0.0.1'
 
 # Each enum represents the state panda was in that caused the exception
-# Enum should match that in /cmd/panda_test_executor/panda_executor_test.go
+# Enum should match that in /cmd/panda_executor_test/panda_executor_test.go
 class ErrorCode(Enum):
     RUNNING = 0
     NOT_RUNNING = 1

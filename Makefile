@@ -24,7 +24,7 @@ docker_executor:
 	docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 
 docker_executor_test:
-	docker build -f docker/Dockerfile.panda-executor-test -t pandare/panda_test_executor .
+	docker build -f docker/Dockerfile.panda-executor-test -t pandare/panda_executor_test .
 
 docker_api:
 	docker build -f docker/Dockerfile.panda-api -t pandare/panda_api .
@@ -33,7 +33,7 @@ panda_executor: panda_agent_protoc_go
 	go build -o ./bin/panda_executor ./cmd/panda_executor
 
 panda_executor_test: panda_agent_protoc_go
-	go test -c ./cmd/panda_test_executor
+	go test -c ./cmd/panda_executor_test
 
 panda_api: panda_agent_protoc_go
 	go generate ./internal/api

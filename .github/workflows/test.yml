@@ -13,4 +13,4 @@ jobs:
     - name: Run Agent Test
       run: |
           sudo make initial_setup_priviliged test
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.panda:/root/.panda -v /tmp/panda-studio:/tmp/panda-studio pandare/panda_test_executor
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.panda:/root/.panda -v /tmp/panda-studio:/tmp/panda-studio pandare/panda_executor_test
