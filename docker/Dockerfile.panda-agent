@@ -22,7 +22,7 @@ RUN python -m grpc_tools.protoc --python_out=pb --grpc_python_out=pb -I./proto .
 COPY *.py ./
 
 EXPOSE 50051
-# This will pipe PANDA's output to a file to later be read. Useful for replays
-# Disabling for now because I can't see the logs in the docker container
-# ENTRYPOINT ["sh", "-c", "python3 /panda/server.py | tee ./shared/execution.log"]
-ENTRYPOINT ["python3", "/panda/server.py"]
+# Log to stdout and file. Used for replays
+ENTRYPOINT ["sh", "-c", "python3 /panda/server.py | tee ./data/execution.log"]
+# Unbuffered version of above. Prints everything in order. Useful for debugging but messes with log
+# ENTRYPOINT ["sh", "-c", "python3 -u /panda/server.py | tee ./data/execution.log"]

@@ -15,6 +15,9 @@ from agent import PandaAgent
 from agent import ErrorCode
 from time import sleep
 
+FILE_PREFIX="data"
+EXECUTION_LOG = "execution.log"
+
 PORTS = [
     "[::]:50051",
     "unix:///panda/shared/panda-agent.sock"
@@ -80,17 +83,15 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         self.agent = PandaAgent(request.config)
 
         serial = self.agent.start_replay(request.recording_name)
-        # TODO
-        # with (open("./shared/execution.log")) as file:
-        #     replay = file.read()
-        return pb.StartReplayResponse(serial=serial, replay="Replay completed successfully")
+        log = read_execution_log()
+        
+        return pb.StartReplayResponse(serial=serial, replay=log)
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
         if self.agent is not None:    
             serial = self.agent.stop_replay()
-            # with (open("./shared/execution.log")) as file:
-            #     replay = file.read()
-            return pb.StopReplayResponse(serial=serial, replay="Replay completed successfully")
+            log = read_execution_log()
+            return pb.StopReplayResponse(serial=serial, replay=log)
         else:
             raise RuntimeError(ErrorCode.NOT_REPLAYING, "Must start a replay before stopping one")
 
@@ -100,6 +101,15 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 
         return pb.NetworkResponse(0, response)
 
+# Reads the execution log that is teed from the container startup
+# Log contains PyPANDA and Agent output
+def read_execution_log(self):
+    try:
+        os.stat(f"{FILE_PREFIX}/{EXECUTION_LOG}")
+        with (open(f"{FILE_PREFIX}/{EXECUTION_LOG}")) as file:
+            return file.read()
+    except (OSError, ValueError):
+        return "Execution log disabled. See Dockerfile.panda-agent"
 
 def serve():
     print("Starting server...")
