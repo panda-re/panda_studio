@@ -68,7 +68,9 @@ var num_tests int = 0
 // Prints the number of tests and success rate
 func TestMain(t *testing.T) {
 	t.Cleanup(func() {
-		fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
+		if num_tests != 0 {
+			fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
+		}
 	})
 	t.Run("Agent", TestAgent)
 	t.Run("Recording", TestRecord)
