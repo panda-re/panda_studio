@@ -135,7 +135,7 @@ func TestAgent(t *testing.T) {
 	}
 	runSubtest(t, "ExtraStart", TestExtraStart)
 	runSubtest(t, "Commands", TestCommands)
-	// TODO test starting replay after agent start
+	runSubtest(t, "RunExtraReplay", TestRunExtraReplay)
 }
 
 // Tests executing a command before the agent has started
@@ -345,7 +345,7 @@ func TestReplay(t *testing.T) {
 
 // Tests attempting to stop a replay when one is not in progress
 // The agent should prevent this from happening with an exception
-// Should be run before replay_agent.StartReplayAgent
+// Should be run before agent.StartReplay
 func TestPrematureReplayStop(t *testing.T) {
 	_, err := agent.StopReplay(ctx)
 	if err == nil {
@@ -397,7 +397,7 @@ func TestRunReplay(t *testing.T) {
 
 // Tests attempting to start a replay after one has started
 // The agent should prevent this from happening with an exception
-// Should be run before replay_agent.StartReplayAgent
+// Should be run before agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
 	_, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err == nil {
