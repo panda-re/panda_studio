@@ -77,6 +77,14 @@ func TestMain(t *testing.T) {
 	t.Run("Replay", TestReplay)
 }
 
+// Wrapper function for tallying number of tests and passes
+func runSubtest(t *testing.T, name string, f func(t *testing.T)) {
+	num_tests++
+	if t.Run(name, f) {
+		num_passed++
+	}
+}
+
 var agent *controller.DockerPandaAgent
 
 // Recording name for testing record and replay
@@ -119,27 +127,14 @@ func TestAgent(t *testing.T) {
 		}
 	})
 
-	t.Run("PreCommand", TestPrematureCommand)
-	// TODO absorb fail checks into tests
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("PreStop", TestPrematureStop)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "PreCommand", TestPrematureCommand)
+	runSubtest(t, "PreStop", TestPrematureStop)
 	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Run("ExtraStart", TestExtraStart)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("Commands", TestCommands)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "ExtraStart", TestExtraStart)
+	runSubtest(t, "Commands", TestCommands)
 	// TODO test starting replay after agent start
 }
 
@@ -147,7 +142,6 @@ func TestAgent(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartAgent
 func TestPrematureCommand(t *testing.T) {
-	num_tests++
 	_, err := agent.RunCommand(ctx, "")
 	if err == nil {
 		t.Fatal("Did not prevent premature command")
@@ -160,7 +154,6 @@ func TestPrematureCommand(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartAgent
 func TestPrematureStop(t *testing.T) {
-	num_tests++
 	err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent premature stop")
@@ -178,7 +171,6 @@ func TestPrematureStop(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run after agent.StartAgent
 func TestExtraStart(t *testing.T) {
-	num_tests++
 	err := agent.StartAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent a second PANDA start")
@@ -190,7 +182,6 @@ func TestExtraStart(t *testing.T) {
 // Tests sending serial commands
 // Should be run after agent.StartAgent
 func TestCommands(t *testing.T) {
-	num_tests++
 	for i, cmd := range commands {
 		response, err := agent.RunCommand(ctx, cmd)
 		if err != nil {
@@ -228,43 +219,22 @@ func TestRecord(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Run("PreStop", TestPrematureStopRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("StartRecording", TestStartRecording)
+	runSubtest(t, "PreStop", TestPrematureStopRecording)
+
+	runSubtest(t, "StartRecording", TestStartRecording)
 	if t.Failed() {
 		t.FailNow()
-	} else {
-		num_passed++
 	}
-	t.Run("ExtraStart", TestExtraStartRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("Commands", TestCommands)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("StopRecording", TestStopRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	err = agent.StartRecording(ctx, "_")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Run("HangingStop", TestHangingRecording)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "ExtraStart", TestExtraStartRecording)
+	runSubtest(t, "Commands", TestCommands)
+	runSubtest(t, "StopRecording", TestStopRecording)
+	runSubtest(t, "HangingStop", TestHangingRecording)
 }
 
 // Tests attempting to stop recording before a recording has started
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartRecording
 func TestPrematureStopRecording(t *testing.T) {
-	num_tests++
 	_, err := agent.StopRecording(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent stopping a non-existant recording")
@@ -275,7 +245,6 @@ func TestPrematureStopRecording(t *testing.T) {
 
 // Test that a recording can be started without error
 func TestStartRecording(t *testing.T) {
-	num_tests++
 	if err := agent.StartRecording(ctx, RECORDING_NAME); err != nil {
 		t.Error(err)
 	}
@@ -285,7 +254,6 @@ func TestStartRecording(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run after agent.StartRecording
 func TestExtraStartRecording(t *testing.T) {
-	num_tests++
 	err := agent.StartRecording(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
@@ -297,7 +265,6 @@ func TestExtraStartRecording(t *testing.T) {
 // Tests that a recording can be stopped without error
 // Checks the returned recording name
 func TestStopRecording(t *testing.T) {
-	num_tests++
 	recording, err := agent.StopRecording(ctx)
 	if err != nil {
 		t.Error(err)
@@ -325,8 +292,11 @@ func TestStopRecording(t *testing.T) {
 // The agent should stop the recording and raise a warning
 // Should be run after agent.StartRecording
 func TestHangingRecording(t *testing.T) {
-	num_tests++
-	err := agent.StopAgent(ctx)
+	err := agent.StartRecording(ctx, "_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not receive warning for stopping a hanging recording")
 	} else {
@@ -367,29 +337,16 @@ func TestReplay(t *testing.T) {
 		panic(err)
 	}
 
-	t.Run("PreStop", TestPrematureReplayStop)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("WrongReplay", TestNonexistantReplay)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("RunReplay", TestRunReplay)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("RunExtraReplay", TestRunExtraReplay)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "PreStop", TestPrematureReplayStop)
+	runSubtest(t, "WrongReplay", TestNonexistantReplay)
+	runSubtest(t, "RunReplay", TestRunReplay)
+	runSubtest(t, "RunExtraReplay", TestRunExtraReplay)
 }
 
 // Tests attempting to stop a replay when one is not in progress
 // The agent should prevent this from happening with an exception
 // Should be run before replay_agent.StartReplayAgent
 func TestPrematureReplayStop(t *testing.T) {
-	num_tests++
 	_, err := agent.StopReplay(ctx)
 	if err == nil {
 		t.Error("Did not prevent premature stop")
@@ -400,7 +357,6 @@ func TestPrematureReplayStop(t *testing.T) {
 
 // Tests that a recording can be replayed without error
 func TestRunReplay(t *testing.T) {
-	num_tests++
 	replay, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err != nil {
 		t.Fatal(err)
@@ -443,7 +399,6 @@ func TestRunReplay(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run before replay_agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
-	num_tests++
 	_, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent extra replay")
@@ -455,7 +410,6 @@ func TestRunExtraReplay(t *testing.T) {
 // Tests attempting to start a replay that does not exist
 // This should be prevented with an exception
 func TestNonexistantReplay(t *testing.T) {
-	num_tests++
 	_, err := agent.StartReplay(ctx, " ")
 	if err == nil {
 		t.Fatal("Did not prevent nonexistant replay")
