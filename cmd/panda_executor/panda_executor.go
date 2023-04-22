@@ -11,12 +11,20 @@ import (
 )
 
 const QCOW_NAME = "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
+const RECORDING_NAME = "test"
+const EXECUTION_LOG = "execution.log"
 
 var QCOW_LOCAL = fmt.Sprintf("/root/.panda/%s", QCOW_NAME)
 
 func main() {
-	// Default agent
 	ctx := context.Background()
+
+	runRecording(ctx)
+
+	runReplay(ctx)
+}
+
+func runRecording(ctx context.Context) {
 	agent, err := controller.CreateDockerPandaAgent2(ctx)
 	if err != nil {
 		panic(err)
@@ -79,6 +87,13 @@ func main() {
 	fmt.Printf("Snapshot file: %s\n", recording.SnapshotFilename())
 	fmt.Printf("Nondet log file: %s\n", recording.NdlogFilename())
 
+	err = agent.StopAgent(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func runReplay(ctx context.Context) {
 	// Replay agent
 	replay_agent, err := controller.CreateDockerPandaAgent2(ctx)
 	if err != nil {
@@ -94,27 +109,30 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = copyFileToContainerHelper(ctx, snp_dest, recording.SnapshotFilename(), replay_agent)
+	snp_name := fmt.Sprintf("%s-rr-snp", RECORDING_NAME)
+	snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, snp_name)
+	err = copyFileToContainerHelper(ctx, snp_dest, snp_name, replay_agent)
 	if err != nil {
 		panic(err)
 	}
-	err = copyFileToContainerHelper(ctx, ndl_dest, recording.NdlogFilename(), replay_agent)
+	ndl_name := fmt.Sprintf("%s-rr-nondet.log", RECORDING_NAME)
+	ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, ndl_name)
+	err = copyFileToContainerHelper(ctx, ndl_dest, ndl_name, replay_agent)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Starting replay")
-	replay, err := replay_agent.StartReplay(ctx, "test")
+	replay, err := replay_agent.StartReplay(ctx, RECORDING_NAME)
 	if err != nil {
 		panic(err)
 	}
 	println(replay.Serial)
 	println(replay.Replay)
-
-	err = agent.StopAgent(ctx)
-	if err != nil {
-		panic(err)
-	}
+	// Uncomment to get execution log from agent
+	// For more debugging log output, see /docker/Dockerfile.panda-agent
+	// log_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, EXECUTION_LOG)
+	// copyFileFromContainerHelper(ctx, EXECUTION_LOG, log_dest, replay_agent)
 
 	err = replay_agent.StopAgent(ctx)
 	if err != nil {
