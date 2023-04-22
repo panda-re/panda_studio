@@ -54,7 +54,7 @@ class PandaAgent:
             if message != "":
                 raise RuntimeError(ErrorCode.RUNNING, message)
         
-        print("starting panda agent ")
+        print("starting panda agent")
         panda.run()
         print("panda agent stopped")
     
@@ -135,16 +135,18 @@ class PandaAgent:
         # Replay runs its own PANDA instance so PANDA should not be running beforehand
         if self.panda.started.is_set(): 
             raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
-        if panda.recording_exists(recording_name) is False:
+        if panda.recording_exists(f"{self.FILE_PREFIX}/{recording_name}") is not True:
             raise RuntimeError(ErrorCode.REPLAYING, f"Recording {recording_name} does not exist")
         # For user to see serial output. A way to remember what the recording did
         @panda.cb_replay_serial_write
         def serial_append(env, fifo_addr, part_addr, value):
             # Append serial to string as character
             self.serial_out += '%c' % value
-        print("starting panda replay agent ")
         print(f'starting replay {recording_name}')
-        panda.run_replay(recording_name)
+        try:
+            panda.run_replay(f"{self.FILE_PREFIX}/{recording_name}")
+        except Exception as err:
+            raise RuntimeError(ErrorCode.REPLAYING, f"Unexpected {err=}, {type(err)=}")
         print("panda agent replay stopped")
         return self.serial_out
 

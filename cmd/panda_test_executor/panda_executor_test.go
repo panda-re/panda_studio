@@ -11,7 +11,12 @@ import (
 	"testing"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
+	"github.com/pkg/errors"
 )
+
+const QCOW_NAME = "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
+
+var QCOW_LOCAL = fmt.Sprintf("/root/.panda/%s", QCOW_NAME)
 
 // Each enum represents the state panda was in that caused the exception
 // Enum should match that in /panda_agent/agent.py
@@ -66,20 +71,14 @@ func TestMain(t *testing.T) {
 		fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
 	})
 	t.Run("Agent", TestAgent)
-	if t.Failed() {
-		t.Fatal("Agent unsuccessful")
-	}
 	t.Run("Recording", TestRecord)
-	if t.Failed() {
-		t.Fatal("Recording unsuccessful")
-	}
 	t.Run("Replay", TestReplay)
 }
 
 var agent *controller.DockerPandaAgent
 
 // Recording name for testing record and replay
-const recording_name string = "panda_executor_test"
+const RECORDING_NAME string = "panda_executor_test"
 
 const DEFAULT_QCOW_SIZE = 17711104
 
@@ -102,6 +101,11 @@ var ctx = context.Background()
 // Tests premature execution and that commands return properly
 func TestAgent(t *testing.T) {
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Cleanup(func() {
 		err = agent.StopAgent(ctx)
 		if err != nil {
@@ -113,28 +117,8 @@ func TestAgent(t *testing.T) {
 		}
 	})
 
-	agent, err = controller.CreateDockerPandaAgent2(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = agent.Connect(ctx)
-	if err != nil {
-		panic(err)
-	}
-	fileReader, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		panic(err)
-	}
-	fileInfo, err := fileReader.Stat()
-	if err != nil {
-		panic(err)
-	}
-	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		panic(err)
-	}
-
 	t.Run("PreCommand", TestPrematureCommand)
+	// TODO absorb fail checks into tests
 	if !t.Failed() {
 		num_passed++
 	}
@@ -154,6 +138,7 @@ func TestAgent(t *testing.T) {
 	if !t.Failed() {
 		num_passed++
 	}
+	// TODO test starting replay after agent start
 }
 
 // Tests executing a command before the agent has started
@@ -221,32 +206,21 @@ func TestCommands(t *testing.T) {
 // Tests premature start and stop and proper recording
 func TestRecord(t *testing.T) {
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Cleanup(func() {
+		err = agent.StopAgent(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
-	agent, err = controller.CreateDockerPandaAgent2(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = agent.Connect(ctx)
-	if err != nil {
-		panic(err)
-	}
-	fileReader, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		panic(err)
-	}
-	fileInfo, err := fileReader.Stat()
-	if err != nil {
-		panic(err)
-	}
-	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		panic(err)
-	}
 
 	err = agent.StartAgent(ctx)
 	if err != nil {
@@ -300,7 +274,7 @@ func TestPrematureStopRecording(t *testing.T) {
 // Test that a recording can be started without error
 func TestStartRecording(t *testing.T) {
 	num_tests++
-	if err := agent.StartRecording(ctx, recording_name); err != nil {
+	if err := agent.StartRecording(ctx, RECORDING_NAME); err != nil {
 		t.Error(err)
 	}
 }
@@ -310,7 +284,7 @@ func TestStartRecording(t *testing.T) {
 // Should be run after agent.StartRecording
 func TestExtraStartRecording(t *testing.T) {
 	num_tests++
-	err := agent.StartRecording(ctx, recording_name)
+	err := agent.StartRecording(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
 	} else {
@@ -327,44 +301,19 @@ func TestStopRecording(t *testing.T) {
 		t.Error(err)
 	}
 	if recording != nil {
-		if recording.Name() != recording_name {
-			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", recording_name, recording.Name())
+		if recording.Name() != RECORDING_NAME {
+			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", RECORDING_NAME, recording.Name())
 		}
-		ndl, err := recording.OpenNdlog(ctx)
+		ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.NdlogFilename())
+		err = copyFileFromContainerHelper(ctx, recording.NdlogFilename(), ndl_dest, agent)
 		if err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
-		dest := fmt.Sprintf("/tmp/panda-studio/%s", recording.NdlogFilename())
-		out, err := os.Create(dest)
+		snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.SnapshotFilename())
+		err = copyFileFromContainerHelper(ctx, recording.SnapshotFilename(), snp_dest, agent)
 		if err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
-		nBytes, err := io.Copy(out, ndl)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if nBytes == 0 {
-			t.Fatal("Failed to copy ND log")
-		}
-		ndl.Close()
-
-		snp, err := recording.OpenSnapshot(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		dest = fmt.Sprintf("/tmp/panda-studio/%s", recording.SnapshotFilename())
-		out, err = os.Create(dest)
-		if err != nil {
-			t.Fatal(err)
-		}
-		nBytes, err = io.Copy(out, snp)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if nBytes == 0 {
-			t.Fatal("Failed to copy snapshot")
-		}
-		snp.Close()
 	} else {
 		t.Fatal("Did not return recording")
 	}
@@ -383,28 +332,38 @@ func TestHangingRecording(t *testing.T) {
 	}
 }
 
-var replay_agent controller.PandaReplayAgent
-
 // Tests to ensure the agent can replay properly
 // Tests premature stop and proper replay
 func TestReplay(t *testing.T) {
-	t.Fatal("Unimplemented")
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() {
-		err = replay_agent.StopAgent(ctx)
+		err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = replay_agent.Close()
+		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
 
-	// replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	// Copy snapshot and nondet log to container for replay
+	snp_name := fmt.Sprintf("%s-rr-snp", RECORDING_NAME)
+	snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, snp_name)
+	err = copyFileToContainerHelper(ctx, snp_dest, snp_name, agent)
+	if err != nil {
+		panic(err)
+	}
+	ndl_name := fmt.Sprintf("%s-rr-nondet.log", RECORDING_NAME)
+	ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, ndl_name)
+	err = copyFileToContainerHelper(ctx, ndl_dest, ndl_name, agent)
+	if err != nil {
+		panic(err)
+	}
 
 	t.Run("PreStop", TestPrematureReplayStop)
 	if !t.Failed() {
@@ -429,7 +388,7 @@ func TestReplay(t *testing.T) {
 // Should be run before replay_agent.StartReplayAgent
 func TestPrematureReplayStop(t *testing.T) {
 	num_tests++
-	_, err := replay_agent.StopReplay(ctx)
+	_, err := agent.StopReplay(ctx)
 	if err == nil {
 		t.Error("Did not prevent premature stop")
 	} else {
@@ -440,7 +399,7 @@ func TestPrematureReplayStop(t *testing.T) {
 // Tests that a recording can be replayed without error
 func TestRunReplay(t *testing.T) {
 	num_tests++
-	replay, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	replay, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,7 +442,7 @@ func TestRunReplay(t *testing.T) {
 // Should be run before replay_agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
 	num_tests++
-	_, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	_, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent extra replay")
 	} else {
@@ -495,12 +454,71 @@ func TestRunExtraReplay(t *testing.T) {
 // This should be prevented with an exception
 func TestNonexistantReplay(t *testing.T) {
 	num_tests++
-	_, err := replay_agent.StartReplayAgent(ctx, " ")
+	_, err := agent.StartReplay(ctx, " ")
 	if err == nil {
 		t.Fatal("Did not prevent nonexistant replay")
-	} else if !strings.Contains(err.Error(), "Error in copying snapshot for replay") {
-		// Error happens before agent enumeration
-		t.Error("Incorrect error message")
-		t.Error(err)
+	} else {
+		checkError(err, REPLAYING, t)
 	}
+}
+
+// Sets up the container for each test
+// Uses the default config and qcow
+func setupContainer(ctx context.Context) (*controller.DockerPandaAgent, error) {
+	agent, err := controller.CreateDockerPandaAgent2(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create panda agent")
+	}
+	err = agent.Connect(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to connect to agent")
+	}
+	err = copyFileToContainerHelper(ctx, QCOW_LOCAL, QCOW_NAME, agent)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy qcow to agent")
+	}
+	return agent, nil
+}
+
+// ctx - context
+// srcFilePath - file path on local machine
+// dstFilePath - name of the file in the container
+// agent - PandaAgent to container to copy into
+func copyFileToContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
+	fileReader, err := os.Open(srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer fileReader.Close()
+	fileInfo, err := fileReader.Stat()
+	if err != nil {
+		return err
+	}
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), dstFilePath)
+	return err
+}
+
+// ctx - context
+// srcFilePath - file path in container to copy from
+// dstFilePath - file path on local machine to copy to
+// agent - PandaAgent to container to copy from
+func copyFileFromContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
+	src, err := agent.CopyFileFromContainer(ctx, srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Create(dstFilePath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+	nBytes, err := io.Copy(dst, src)
+	if err != nil {
+		return err
+	}
+	if nBytes == 0 {
+		return errors.New("did not copy file")
+	}
+	return nil
 }

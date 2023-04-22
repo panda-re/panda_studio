@@ -73,19 +73,26 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a recording when PANDA is not running")
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
-        if self.agent is not None:
-            raise RuntimeError(ErrorCode.RUNNING.value, "Cannot start another instance of PANDA while one is already running")
+        if self.agent is not None and self.agent.panda.started.is_set():
+            raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
         
+        print("Starting replay")
+        self.agent = PandaAgent(request.config)
+
         serial = self.agent.start_replay(request.recording_name)
-        with (open("./shared/execution.log")) as file:
-            replay = file.read()
-        return pb.StartReplayResponse(serial=serial, replay=replay)
+        # TODO
+        # with (open("./shared/execution.log")) as file:
+        #     replay = file.read()
+        return pb.StartReplayResponse(serial=serial, replay="Replay completed successfully")
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
-        serial = self.agent.stop_replay()
-        with (open("./shared/execution.log")) as file:
-            replay = file.read()
-        return pb.StopReplayResponse(serial=serial, replay=replay)
+        if self.agent is not None:    
+            serial = self.agent.stop_replay()
+            # with (open("./shared/execution.log")) as file:
+            #     replay = file.read()
+            return pb.StopReplayResponse(serial=serial, replay="Replay completed successfully")
+        else:
+            raise RuntimeError(ErrorCode.NOT_REPLAYING, "Must start a replay before stopping one")
 
     def SendNetworkCommand(self, request: pb.NetworkRequest, context):
         

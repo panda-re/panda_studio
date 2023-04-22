@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -64,41 +65,16 @@ func main() {
 		panic(err)
 	}
 
-	ndl, err := recording.OpenNdlog(ctx)
-	if err != nil {
-		panic(err)
-	}
 	ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.NdlogFilename())
-	ndl_local, err := os.Create(ndl_dest)
-	if err != nil {
-		panic(err)
-	}
-	nBytes, err := io.Copy(ndl_local, ndl)
-	if err != nil {
-		panic(err)
-	}
-	if nBytes == 0 {
-		panic("Bad copy")
-	}
-	defer ndl.Close()
-
-	snp, err := recording.OpenSnapshot(ctx)
+	err = copyFileFromContainerHelper(ctx, recording.NdlogFilename(), ndl_dest, agent)
 	if err != nil {
 		panic(err)
 	}
 	snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.SnapshotFilename())
-	snp_local, err := os.Create(snp_dest)
+	err = copyFileFromContainerHelper(ctx, recording.SnapshotFilename(), snp_dest, agent)
 	if err != nil {
 		panic(err)
 	}
-	nBytes, err = io.Copy(snp_local, snp)
-	if err != nil {
-		panic(err)
-	}
-	if nBytes == 0 {
-		panic("Bad copy")
-	}
-	defer snp.Close()
 
 	fmt.Printf("Snapshot file: %s\n", recording.SnapshotFilename())
 	fmt.Printf("Nondet log file: %s\n", recording.NdlogFilename())
@@ -148,17 +124,43 @@ func main() {
 
 // ctx - context
 // srcFilePath - file path on local machine
-// dstFileName - name of the file in the container
+// dstFilePath - name of the file in the container
 // agent - PandaAgent to container to copy into
-func copyFileToContainerHelper(ctx context.Context, srcFilePath string, dstFilename string, agent *controller.DockerPandaAgent) error {
+func copyFileToContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
 	fileReader, err := os.Open(srcFilePath)
 	if err != nil {
 		return err
 	}
+	defer fileReader.Close()
 	fileInfo, err := fileReader.Stat()
 	if err != nil {
 		return err
 	}
-	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), dstFilename)
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), dstFilePath)
 	return err
+}
+
+// ctx - context
+// srcFilePath - file path in container to copy from
+// dstFilePath - file path on local machine to copy to
+// agent - PandaAgent to container to copy from
+func copyFileFromContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
+	src, err := agent.CopyFileFromContainer(ctx, srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Create(dstFilePath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+	nBytes, err := io.Copy(dst, src)
+	if err != nil {
+		return err
+	}
+	if nBytes == 0 {
+		return errors.New("did not copy file")
+	}
+	return nil
 }
