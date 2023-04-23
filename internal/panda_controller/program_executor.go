@@ -184,7 +184,7 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 			if err != nil {
 				panic(err)
 			}
-		case "command":
+		case "cmd":
 			cmdResult, err := p.agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
 			if err != nil {
 				panic(err)

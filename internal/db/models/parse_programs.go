@@ -34,7 +34,7 @@ func ParseInteractionProgramInstruction(cmd string) (InteractionProgramInstructi
 			return &StartRecordingInstruction{RecordingName: instArray[1]}, nil
 		case "stop_recording":
 			return &StopRecordingInstruction{}, nil
-		case "command":
+		case "cmd":
 			return &RunCommandInstruction{Command: instArray[1]}, nil
 		case "filesystem":
 			fmt.Printf("Filesystem placeholder\n")
