@@ -1,11 +1,9 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
-import { getItemId } from '@elastic/eui/src/components/basic_table/basic_table';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
-import axios, { AxiosRequestConfig } from 'axios';
 import prettyBytes from 'pretty-bytes';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreateImageFileRequest, CreateImageRequest, findAllImages, Image, ImageFile, ImageFileType, PandaConfig, updateImage, useCreateImage, useCreateImageFile, useDeleteImageById, useFindAllImages, useUpdateImage } from '../api';
+import { CreateImageFileRequest, CreateImageRequest, Image, ImageFile, ImageFileType, PandaConfig, useCreateImage, useCreateImageFile, useDeleteImageById, useFindAllImages, useUpdateImage } from '../api';
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
@@ -32,12 +30,31 @@ function ImagesDataGrid() {
    const onFileChange = (files: FileList | null) => {
      setFiles(files!.length > 0 ? Array.from(files!) : []);
    };
+
+   // Dropdown Constants
+   const archOptions = [
+    { value: 'x86_64', text: 'x86_64' },
+    { value: 'i386', text: 'i386' },
+    { value: 'arm', text: 'arm' },
+    { value: 'aarch64', text: 'aarch64' },
+    { value: 'ppc', text: 'ppc' },
+    { value: 'mips', text: 'mips' },
+    { value: 'mipsel', text: 'mipsel' },
+    { value: 'mips64', text: 'mips64' },
+    ];
+
+    const [archValue, setArchValue] = useState(archOptions[0].value);
+
+    const basicSelectId = useGeneratedHtmlId({ prefix: 'basicSelect' });
+
+    const onDropdownChange = (val: string) => {
+      setArchValue(val);
+    };
    
    ///////// Modal Constants ///////////////////
    const [isModalVisible, setIsModalVisible] = useState(false);
    const [modalName, setModalName] = useState("");
    const [modalDesc, setModalDesc] = useState("");
-   const [modalArch, setModalArch] = useState("");
    const [modalOs, setModalOs] = useState("");
    const [modalPrompt, setModalPrompt] = useState("");
    const [modalCdrom, setModalCdrom] = useState("");
@@ -50,7 +67,6 @@ function ImagesDataGrid() {
    const closeModal = () => {
      setModalName("");
      setModalDesc("");
-     setModalArch("");
      setModalOs("");
      setModalPrompt("");
      setModalCdrom("");
@@ -138,13 +154,13 @@ function ImagesDataGrid() {
   const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
 
   function createFile(){
-    if(modalName=="" || modalArch=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
     const conf: PandaConfig = {
       qcowfilename: files[0].name,
-      arch: modalArch,
+      arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
@@ -208,13 +224,15 @@ function ImagesDataGrid() {
                       onChange={(e) => {
                         setModalDesc(e.target.value);
                       }}/>
-                      <EuiFieldText 
-                      placeholder="Enter image Architecture (required)"
-                      isInvalid={modalArch == ""}
-                      name="pandaConfigArch" 
-                      onChange={(e) => {
-                        setModalArch(e.target.value);
-                      }}/>
+                      <EuiSelect
+                        id={basicSelectId}
+                        options={archOptions}
+                        value={archValue}
+                        onChange={(e) => {
+                          onDropdownChange(e.target.value);
+                        }}
+                        aria-label="Use aria labels when no actual label is in use"
+                      />
                       <EuiFieldText 
                       placeholder="Enter image OS (required)"
                       isInvalid={modalOs == ""}
