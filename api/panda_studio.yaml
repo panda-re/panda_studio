@@ -120,6 +120,31 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         "409":
           $ref: "#/components/responses/ConflictResponse"
+  /images/{imageId}/urlFiles:
+    post:
+      tags:
+        - image
+        - file
+      summary: Create new image file from a URL
+      operationId: createImageFileFromUrl
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateImageFileFromUrlRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageFile"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
   /images/{imageId}/files/{fileId}:
     get:
       tags:
@@ -385,6 +410,7 @@ components:
       required: true
       schema:
         type: string
+
   responses:
     NotFoundResponse:
       description: Not Found
@@ -487,6 +513,16 @@ components:
         file:
           type: string
           format: binary
+
+    CreateImageFileFromUrlRequest:
+      type: object
+      properties:
+        file_name:
+          type: string
+        file_type:
+          $ref: "#/components/schemas/ImageFileType"
+        url:
+          type: string
     
     Recording:
       type: object

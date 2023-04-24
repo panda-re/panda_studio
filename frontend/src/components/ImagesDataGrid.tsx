@@ -3,22 +3,49 @@ import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CreateImageFileRequest, CreateImageRequest, Image, ImageFile, ImageFileType, PandaConfig, useCreateImage, useCreateImageFile, useDeleteImageById, useFindAllImages, useUpdateImage } from '../api';
+import {getItemId} from '@elastic/eui/src/components/basic_table/basic_table';
+import axios, {AxiosRequestConfig} from 'axios';
+import React, {useEffect, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {
+  CreateImageFileFromUrlRequest,
+  CreateImageFileRequest,
+  CreateImageRequest,
+  findAllImages,
+  Image,
+  ImageFile,
+  ImageFileType,
+  PandaConfig,
+  updateImage,
+  useCreateImage,
+  useCreateImageFile, useCreateImageFileFromUrl,
+  useDeleteImageById,
+  useFindAllImages,
+  useUpdateImage
+} from '../api';
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
   const location = useLocation();
   const {isLoading, isError, data} = useFindAllImages();
   const queryClient = useQueryClient();
+
   const deleteFunction = useDeleteImageById({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error deleting Image: " + response.error?.message)}});
+      onError: (response) => alert("Error deleting Image: " + response.toString())}});
   const updateFn = useUpdateImage({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error updating image: " + response.error?.message)}});
-
+      onError: (response) => alert("Error updating image: " + response.toString())}});
+  const createFileFromUrl = useCreateImageFileFromUrl({
+    mutation: {
+      onSuccess() {
+        setIsLoadingVisible(false);
+        queryClient.invalidateQueries();
+      },
+      onError: (response) => alert("Error uploading image: " + response.toString())}});
+      
    // File picker constants
    const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
     setIsLoadingVisible(false);
@@ -79,14 +106,13 @@ function ImagesDataGrid() {
      setIsModalVisible(true);
    }
 
-  
   /////////// Endpoint Functions //////////////
-  const deleteImage = ({itemId}: {itemId: string}) => {
+  const deleteImage = ({itemId}: { itemId: string }) => {
     deleteFunction.mutate({imageId: itemId});
   }
 
-  const updateImage = ({image}: {image: Image}) => {
-    if(image.id == null){
+  const updateImage = ({image}: { image: Image }) => {
+    if (image.id == null) {
       return;
     }
     const conf: PandaConfig = {
@@ -107,40 +133,68 @@ function ImagesDataGrid() {
     updateFn.mutate({data: req, imageId: image.id});
   }
 
-  function deleteActionPress (event: React.MouseEvent, item: Image){
+  function deleteActionPress(event: React.MouseEvent, item: Image) {
     deleteImage({itemId: item.id!})
     event.stopPropagation();
   }
 
-  function createFiles(image: Image){
-    var splitArray = files[0].name.split(".");
-    var fileTypeString = splitArray[splitArray.length-1];
-    var fileType;
-    switch(fileTypeString){
+  function getFileTypeFromString(fileTypeAsString: string, imageId: string): ImageFileType | undefined {
+    switch (fileTypeAsString) {
       case "qcow2": {
-        fileType = ImageFileType.qcow2;
-        break;
+        return ImageFileType.qcow2;
       }
       case "dtb": {
-        fileType = ImageFileType.dtb;
-        break;
+        return ImageFileType.dtb;
       }
       case "kernel": {
-        fileType = ImageFileType.kernel;
-        break;
+        return ImageFileType.kernel;
       }
-      default:{
-        fileType = undefined;
-        break;
+      default: {
+        alert("Invalid File Type");
+        deleteImage({itemId: imageId ?? ""})
+        return;
       }
     }
+  }
 
-    if(fileType == undefined){
-      // closeModal();
-      alert("Invalid File Type");
-      deleteImage({itemId: image.id ?? ""})
+
+  function createImageFileFromUrl(image: Image) {
+    const urlAsArray = url.split("/")
+    const fileName = urlAsArray[urlAsArray.length - 1]
+    const fileTypeAsArray = fileName.split(".")
+    const fileTypeAsString = fileTypeAsArray[fileTypeAsArray.length - 1]
+    const fileType = getFileTypeFromString(fileTypeAsString, image.id!)
+
+    if (fileType == undefined) {
       return;
     }
+
+    const fileFromUrlReq: CreateImageFileFromUrlRequest = {
+      file_name: fileName,
+      file_type: fileType,
+      url: url
+    }
+
+    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!}, {onError() {
+      deleteImage({itemId: image.id!});
+      setIsLoadingVisible(false);
+      alert("Received an invalid URL");
+    }})
+
+    setIsLoadingVisible(true);
+    closeModal();
+
+  }
+
+  function createFiles(image: Image) {
+    var splitArray = files[0].name.split(".");
+    var fileTypeString = splitArray[splitArray.length - 1];
+    var fileType = getFileTypeFromString(fileTypeString, image.id!)
+
+    if (fileType == undefined) {
+      return;
+    }
+
     const fileReq: CreateImageFileRequest = {
       file_name: files[0].name,
       file_type: fileType,
@@ -151,13 +205,33 @@ function ImagesDataGrid() {
     closeModal();
   }
 
-  const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
+  const createFn = useCreateImage({
+    mutation: {
+      onSuccess(data, variables, context) {
+        if (url == "") {
+          createFiles(data)
+        } else {
+          createImageFileFromUrl(data)
+        }
+      },
+    }
+  })
 
   function createFile(){
     if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
+
+    var fileName
+    if (url == "") {
+      fileName = files[0].name
+    } else {
+      const urlAsArray = url.split("/")
+      const urlFileName = urlAsArray[urlAsArray.length - 1]
+      fileName = urlFileName
+    }
+
     const conf: PandaConfig = {
       qcowfilename: files[0].name,
       arch: archValue,
@@ -178,18 +252,17 @@ function ImagesDataGrid() {
 
   //////// UI Functions ///////////
   useEffect(() => {
-    if(location.state) {
-      if(location.state.image){
+    if (location.state) {
+      if (location.state.image) {
         updateImage({image: location.state.image});
-      }
-      else{
+      } else {
         deleteImage({itemId: location.state.imageId});
       }
       window.history.replaceState({}, document.title)
     }
   }, []);
 
-  function LoadingModal(){
+  function LoadingModal() {
     return <EuiOverlayMask>
               <EuiModal onClose={()=>{}}>
                 <EuiModalHeader>
@@ -204,7 +277,7 @@ function ImagesDataGrid() {
             </EuiOverlayMask>
   }
 
-  function CreateModal(){
+  function CreateModal() {
     return <EuiOverlayMask>
               <EuiModal onClose={closeModal}>
                 <EuiModalHeader>
@@ -306,10 +379,10 @@ function ImagesDataGrid() {
       name: 'Size',
       render: (value: ImageFile[]) => {
         var size = 0;
-        for(var f of value){
-          size+= (f.size != null) ? +f.size: 0;
+        for (var f of value) {
+          size += (f.size != null) ? +f.size : 0;
         }
-        return prettyBytes(size, { maximumFractionDigits: 2 });
+        return prettyBytes(size, {maximumFractionDigits: 2});
       },
     },
     {
@@ -318,20 +391,22 @@ function ImagesDataGrid() {
       render: (item: Image) => {
         return (
           <EuiButtonIcon
-            onClick={(event: React.MouseEvent) => {deleteActionPress(event, item)}}
+            onClick={(event: React.MouseEvent) => {
+              deleteActionPress(event, item)
+            }}
             iconType={"trash"}
           />
         );
       },
     },
   ]
-  
+
   const getRowProps = (item: Image) => {
     const id = item.id;
     return {
       'data-test-subj': `image-row-${id}`,
       onClick: () => {
-        navigate('/imageDetails', {state:{item: item}})
+        navigate('/imageDetails', {state: {item: item}})
       },
     }
   }
@@ -350,8 +425,8 @@ function ImagesDataGrid() {
   ////////// UI Element //////////
   return (<>
     <EuiFlexGroup justifyContent='spaceBetween'>
-      <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
-        <EuiSearchBar 
+      <EuiFlexItem grow={false} style={{minWidth: 300}}>
+        <EuiSearchBar
           box={{
             incremental: true,
           }}
@@ -359,8 +434,8 @@ function ImagesDataGrid() {
           onChange={onChange}/>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
-          <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
-        </EuiFlexItem>
+        <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
+      </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
     {(isError) ? (<div>Error...</div>)

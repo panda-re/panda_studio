@@ -30,5 +30,6 @@ RUN make panda_api
 
 FROM ubuntu:20.04
 WORKDIR /app
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/bin/panda_api /app/
 ENTRYPOINT [ "/app/panda_api" ]
