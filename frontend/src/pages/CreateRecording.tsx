@@ -25,7 +25,7 @@ function CreateRecordingPage() {
         navigate('/recordings')},
       onError: (response) => {
         setIsLoadingVisible(false)
-        alert("Error executing program: " + response.toString());
+        alert(response.response?.data.error?.message);
       }}});
 
   if(images != null){

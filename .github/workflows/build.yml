@@ -32,20 +32,11 @@ jobs:
   build_frontend:
     runs-on: ubuntu-20.04
     name: Build React Frontend
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Node 14.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: 14.x
-    - name: Install yarn
-      run: npm install -g yarn
-    - name: Install npm packages using yarn
-      run: yarn install
-    - name: Generate API client
-      run: yarn run generate:api
-    - name: Build static site
-      run: yarn run build
+    - name: Build React Frontend Container
+      run: DOCKER_BUILDKIT=1 docker build
+           --progress=plain
+           -f ./docker/Dockerfile.frontend
+           -t pandare/panda_api
+           .

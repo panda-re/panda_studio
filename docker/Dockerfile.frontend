@@ -2,13 +2,19 @@ ARG NODE_VERSION="16-bullseye"
 
 FROM node:${NODE_VERSION}
 
-# Copy frontend
-COPY frontend /app/frontend
-COPY api /app/api
+# Copy files needed to install dependencies
+COPY frontend/package.json /app/frontend/package.json
+COPY frontend/yarn.lock /app/frontend/yarn.lock
+COPY frontend/patches /app/frontend/patches
+
 WORKDIR /app/frontend
 
 # Install dependencies
 RUN yarn install
+
+# Copy frontend
+COPY frontend /app/frontend
+COPY api /app/api
 
 # Build frontend
 RUN yarn run generate:api && yarn build
