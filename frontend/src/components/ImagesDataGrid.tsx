@@ -1,8 +1,6 @@
 import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import {getItemId} from '@elastic/eui/src/components/basic_table/basic_table';
 import axios, {AxiosRequestConfig} from 'axios';
 import React, {useEffect, useState} from 'react';
@@ -88,6 +86,7 @@ function ImagesDataGrid() {
    const [modalSnapshot, setModalSnapshot] = useState("");
    const [modalMemory, setModalMemory] = useState("");
    const [modalExtraArgs, setModalExtraArgs] = useState("");
+   const [url, setModalUrl] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
  
@@ -101,6 +100,7 @@ function ImagesDataGrid() {
      setModalMemory("");
      setModalExtraArgs("");
      setIsModalVisible(false)
+     setModalUrl("")
    };
    const showModal = () => {
      setIsModalVisible(true);
@@ -351,6 +351,10 @@ function ImagesDataGrid() {
                         onChange={onFileChange}
                         aria-label="Use aria labels when no actual label is in use"
                       />
+                      <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
+                      <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
+                        setModalUrl(e.target.value);
+                      }}/>
                 </EuiModalBody>
                 <EuiModalFooter>
                   <EuiButton onClick={closeModal} fill>Close</EuiButton>
