@@ -55,7 +55,15 @@ function CreateInteractionProgramPage (){
   }
 
   const queryClient = useQueryClient();
-  const createInteractionProgram = useCreateProgram({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
+  const createInteractionProgram = useCreateProgram({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        navigate('/interactions')
+      },
+      onError: ({ response }) => alert(response?.data.error?.message),
+    }
+  });
 
   // Use to make temp data. Will replace once object storage and db implemented
   const makeList = (number: number, start = 1) =>
@@ -337,7 +345,6 @@ function CreateInteractionProgramPage (){
                 instructions: instructionsValue
               }
               createInteractionProgram.mutate({data: createProgramRequest})
-              navigate('/interactions')
             }}>Create Interaction Program</EuiButton>
           </div>
         </EuiFlexItem>

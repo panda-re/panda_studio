@@ -1,20 +1,16 @@
 import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
-import {getItemId} from '@elastic/eui/src/components/basic_table/basic_table';
-import axios, {AxiosRequestConfig} from 'axios';
 import React, {useEffect, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {
   CreateImageFileFromUrlRequest,
   CreateImageFileRequest,
   CreateImageRequest,
-  findAllImages,
   Image,
   ImageFile,
   ImageFileType,
   PandaConfig,
-  updateImage,
   useCreateImage,
   useCreateImageFile, useCreateImageFileFromUrl,
   useDeleteImageById,
@@ -31,18 +27,18 @@ function ImagesDataGrid() {
   const deleteFunction = useDeleteImageById({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error deleting Image: " + response.toString())}});
+      onError: (response) => alert("Error deleting Image:\n" + response.response?.data.error?.message)}});
   const updateFn = useUpdateImage({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error updating image: " + response.toString())}});
+      onError: (response) => alert("Error updating image: \n" + response.response?.data.error?.message)}});
   const createFileFromUrl = useCreateImageFileFromUrl({
     mutation: {
       onSuccess() {
         setIsLoadingVisible(false);
         queryClient.invalidateQueries();
       },
-      onError: (response) => alert("Error uploading image: " + response.toString())}});
+      onError: (response) => alert("Error uploading image: \n" + response.response?.data.error?.message)}});
       
    // File picker constants
    const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {

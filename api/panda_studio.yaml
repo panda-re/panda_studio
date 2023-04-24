@@ -302,6 +302,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InteractionProgram"
+        "403":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /programs/{programId}:
     get:
       tags:

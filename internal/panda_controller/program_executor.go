@@ -3,6 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
@@ -161,13 +162,16 @@ func (p *PandaProgramExecutorJob) runProgram(ctx context.Context, prog *models.I
 		}
 	}
 
+	fmt.Printf("Done running commands\n")
+
 	return nil
 }
 
 func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.InteractionProgramInstruction) error {
 	if cmd != nil {
 		// todo: I think we should make this polymorphic
-		switch cmd.GetInstructionType() {
+		fmt.Printf("Running command: %+v", cmd)
+		switch strings.ToLower(cmd.GetInstructionType()) {
 		case "start_recording":
 			// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
 			err := p.agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
@@ -181,7 +185,7 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 			if err != nil {
 				panic(err)
 			}
-		case "command":
+		case "cmd":
 			cmdResult, err := p.agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
 			if err != nil {
 				panic(err)
@@ -193,7 +197,7 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 		case "network":
 			// for the future
 		default:
-			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
+			fmt.Printf("Incorrect Command Type %s, Correct options can be found in the commands.md file\n", cmd.GetInstructionType())
 		}
 	}
 	return nil
