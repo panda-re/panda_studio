@@ -46,20 +46,24 @@ function CreateImageDetailsPage() {
     setModalCdrom(location.state.item.config.cdrom);
     setModalSnapshot(location.state.item.config.snapshot);
     setModalMemory(location.state.item.config.memory);
-    setModalExtraArgs(location.state.item.config.extra_args);
+    setModalExtraArgs(location.state.item.config.extraargs);
     setIsModalVisible(true);
   }
 
   function createUpdateImageAndReturn(){
+    if(modalName=="" || modalArch=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+      alert("Please fill out all required fields")
+      return;
+    }
     const conf: PandaConfig = {
-      qcow_file_name: location.state.item.qcow_file_name,
+      qcowfilename: location.state.item.config.qcowfilename,
       arch: modalArch,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
       snapshot: modalSnapshot,
       memory: modalMemory,
-      extra_args: modalExtraArgs,   
+      extraargs: modalExtraArgs,   
     }
     var img = {
       id: location.state.item.id,
@@ -73,7 +77,7 @@ function CreateImageDetailsPage() {
   function CreateConfigDisplay(){ 
     return <>
         <EuiText textAlign={"center"}>
-          <strong>Qcow File Name:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.qcow_file_name}
+          <strong>Qcow File Name:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.qcowfilename}
         </EuiText>
         <EuiSpacer size='s'></EuiSpacer>
         <EuiText textAlign={"center"}>
@@ -101,7 +105,7 @@ function CreateImageDetailsPage() {
         </EuiText>
         <EuiSpacer size='s'></EuiSpacer>
         <EuiText textAlign={"center"}>
-          <strong>Extra Args:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.extra_args}
+          <strong>Extra Args:</strong>&nbsp;&nbsp;&nbsp;&nbsp;{location.state.item.config.extraargs}
         </EuiText>
     </>
   }
@@ -118,6 +122,7 @@ function CreateImageDetailsPage() {
                       <EuiFieldText
                         placeholder="Enter Name"  
                         name="imageName"
+                        isInvalid={modalName == ""}
                         value={modalName}
                         onChange={(e) => {
                           setModalName(e.target.value);

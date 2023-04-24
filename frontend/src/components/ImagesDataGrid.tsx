@@ -1,29 +1,8 @@
-import {
-  EuiBasicTable,
-  EuiBasicTableColumn,
-  EuiButton,
-  EuiButtonIcon,
-  EuiFieldText,
-  EuiFilePicker,
-  EuiFlexGroup,
-  EuiFlexItem,
-  EuiModal,
-  EuiModalBody,
-  EuiModalFooter,
-  EuiModalHeader,
-  EuiModalHeaderTitle,
-  EuiOverlayMask,
-  EuiSearchBar,
-  EuiSearchBarOnChangeArgs,
-  EuiSpacer,
-  EuiText,
-  RIGHT_ALIGNMENT,
-  useGeneratedHtmlId
-} from '@elastic/eui';
-import {getItemId} from '@elastic/eui/src/components/basic_table/basic_table';
-import {useQueryClient} from '@tanstack/react-query';
-import axios, {AxiosRequestConfig} from 'axios';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
+import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
+import {getItemId} from '@elastic/eui/src/components/basic_table/basic_table';
+import axios, {AxiosRequestConfig} from 'axios';
 import React, {useEffect, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {
@@ -46,63 +25,86 @@ import {
 function ImagesDataGrid() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {isLoading, error, data} = useFindAllImages();
+  const {isLoading, isError, data} = useFindAllImages();
   const queryClient = useQueryClient();
-  const deleteFunction = useDeleteImageById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
-  const updateFn = useUpdateImage({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
-  const createFileFromUrl = useCreateImageFileFromUrl({mutation: {onSuccess() {
+
+  const deleteFunction = useDeleteImageById({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error deleting Image: " + response.toString())}});
+  const updateFn = useUpdateImage({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error updating image: " + response.toString())}});
+  const createFileFromUrl = useCreateImageFileFromUrl({
+    mutation: {
+      onSuccess() {
+        setIsLoadingVisible(false);
+        queryClient.invalidateQueries();
+      },
+      onError: (response) => alert("Error uploading image: " + response.toString())}});
+      
+   // File picker constants
+   const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
     setIsLoadingVisible(false);
     queryClient.invalidateQueries();
   }}})
+   const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
+   const [files, setFiles] = useState(new Array<File>);
+ 
+   const onFileChange = (files: FileList | null) => {
+     setFiles(files!.length > 0 ? Array.from(files!) : []);
+   };
 
-  // File picker constants
-  const createFileFn = useCreateImageFile({
-    mutation: {
-      onSuccess(data, variables, context) {
-        setIsLoadingVisible(false);
-        queryClient.invalidateQueries();
-      }
-    }
-  })
-  const filePickerId = useGeneratedHtmlId({prefix: 'filePicker'});
-  const [files, setFiles] = useState(new Array<File>);
+   // Dropdown Constants
+   const archOptions = [
+    { value: 'x86_64', text: 'x86_64' },
+    { value: 'i386', text: 'i386' },
+    { value: 'arm', text: 'arm' },
+    { value: 'aarch64', text: 'aarch64' },
+    { value: 'ppc', text: 'ppc' },
+    { value: 'mips', text: 'mips' },
+    { value: 'mipsel', text: 'mipsel' },
+    { value: 'mips64', text: 'mips64' },
+    ];
 
-  const onFileChange = (files: FileList | null) => {
-    setFiles(files!.length > 0 ? Array.from(files!) : []);
-  };
+    const [archValue, setArchValue] = useState(archOptions[0].value);
 
-  ///////// Modal Constants ///////////////////
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalName, setModalName] = useState("");
-  const [modalDesc, setModalDesc] = useState("");
-  const [modalArch, setModalArch] = useState("");
-  const [modalOs, setModalOs] = useState("");
-  const [modalPrompt, setModalPrompt] = useState("");
-  const [modalCdrom, setModalCdrom] = useState("");
-  const [modalSnapshot, setModalSnapshot] = useState("");
-  const [modalMemory, setModalMemory] = useState("");
-  const [modalExtraArgs, setModalExtraArgs] = useState("");
-  const [url, setModalUrl] = useState("");
+    const basicSelectId = useGeneratedHtmlId({ prefix: 'basicSelect' });
 
-  const [isLoadingVisible, setIsLoadingVisible] = useState(false);
-
-  const closeModal = () => {
-    setModalName("");
-    setModalDesc("");
-    setModalArch("");
-    setModalOs("");
-    setModalPrompt("");
-    setModalCdrom("");
-    setModalSnapshot("");
-    setModalMemory("");
-    setModalExtraArgs("");
-    setIsModalVisible(false)
-    setModalUrl("")
-  };
-  const showModal = () => {
-    setIsModalVisible(true);
-  }
-
+    const onDropdownChange = (val: string) => {
+      setArchValue(val);
+    };
+   
+   ///////// Modal Constants ///////////////////
+   const [isModalVisible, setIsModalVisible] = useState(false);
+   const [modalName, setModalName] = useState("");
+   const [modalDesc, setModalDesc] = useState("");
+   const [modalOs, setModalOs] = useState("");
+   const [modalPrompt, setModalPrompt] = useState("");
+   const [modalCdrom, setModalCdrom] = useState("");
+   const [modalSnapshot, setModalSnapshot] = useState("");
+   const [modalMemory, setModalMemory] = useState("");
+   const [modalExtraArgs, setModalExtraArgs] = useState("");
+   const [url, setModalUrl] = useState("");
+ 
+   const [isLoadingVisible, setIsLoadingVisible] = useState(false);
+ 
+   const closeModal = () => {
+     setModalName("");
+     setModalDesc("");
+     setModalOs("");
+     setModalPrompt("");
+     setModalCdrom("");
+     setModalSnapshot("");
+     setModalMemory("");
+     setModalExtraArgs("");
+     setIsModalVisible(false)
+     setModalUrl("")
+   };
+   const showModal = () => {
+     setIsModalVisible(true);
+   }
 
   /////////// Endpoint Functions //////////////
   const deleteImage = ({itemId}: { itemId: string }) => {
@@ -114,14 +116,14 @@ function ImagesDataGrid() {
       return;
     }
     const conf: PandaConfig = {
-      qcow_file_name: image.config?.qcow_file_name,
-      arch: modalArch,
-      os: modalOs,
-      prompt: modalPrompt,
-      cdrom: modalCdrom,
-      snapshot: modalSnapshot,
-      memory: modalMemory,
-      extra_args: modalExtraArgs,
+      qcowfilename: image.config?.qcowfilename,
+      arch: image.config?.arch,
+      os: image.config?.os,
+      prompt: image.config?.prompt,
+      cdrom: image.config?.cdrom,
+      snapshot: image.config?.snapshot,
+      memory: image.config?.memory,
+      extraargs: image.config?.extraargs,      
     }
     const req: CreateImageRequest = {
       name: image.name,
@@ -215,8 +217,8 @@ function ImagesDataGrid() {
     }
   })
 
-  function createFile() {
-    if (modalName == "" || modalArch == "" || modalOs == "" || modalPrompt == "" || modalMemory == "") {
+  function createFile(){
+    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
@@ -231,14 +233,14 @@ function ImagesDataGrid() {
     }
 
     const conf: PandaConfig = {
-      qcow_file_name: fileName,
-      arch: modalArch,
+      qcowfilename: files[0].name,
+      arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
       snapshot: modalSnapshot,
       memory: modalMemory,
-      extra_args: modalExtraArgs,
+      extraargs: modalExtraArgs,   
     }
     const req: CreateImageRequest = {
       name: modalName,
@@ -262,108 +264,109 @@ function ImagesDataGrid() {
 
   function LoadingModal() {
     return <EuiOverlayMask>
-      <EuiModal onClose={closeModal}>
-        <EuiModalHeader>
-          <EuiModalHeaderTitle>Uploading Image</EuiModalHeaderTitle>
-        </EuiModalHeader>
-        <EuiModalBody>
-          <EuiText>
-            Loading...
-          </EuiText>
-        </EuiModalBody>
-      </EuiModal>
-    </EuiOverlayMask>
+              <EuiModal onClose={()=>{}}>
+                <EuiModalHeader>
+                  <EuiModalHeaderTitle>Uploading Image</EuiModalHeaderTitle>
+                </EuiModalHeader>
+                <EuiModalBody>
+                    <EuiText>
+                      Loading...
+                    </EuiText>
+                </EuiModalBody>
+              </EuiModal>
+            </EuiOverlayMask>
   }
 
   function CreateModal() {
     return <EuiOverlayMask>
-      <EuiModal onClose={closeModal}>
-        <EuiModalHeader>
-          <EuiModalHeaderTitle>Upload New Image</EuiModalHeaderTitle>
-        </EuiModalHeader>
-        <EuiModalBody>
-          <EuiFieldText
-            placeholder="Enter Name (required)"
-            isInvalid={modalName == ""}
-            name="imageName"
-            onChange={(e) => {
-              setModalName(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter New Description"
-            name="imageDesc"
-            onChange={(e) => {
-              setModalDesc(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter image Architecture (required)"
-            isInvalid={modalArch == ""}
-            name="pandaConfigArch"
-            onChange={(e) => {
-              setModalArch(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter image OS (required)"
-            isInvalid={modalOs == ""}
-            name="pandaConfigOs"
-            onChange={(e) => {
-              setModalOs(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter prompt (required)"
-            isInvalid={modalPrompt == ""}
-            name="pandaConfigPrompt"
-            onChange={(e) => {
-              setModalPrompt(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter Cdrom"
-            name="pandaConfigCdrom"
-            onChange={(e) => {
-              setModalCdrom(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter Snapshot"
-            name="pandaConfigSnapshot"
-            onChange={(e) => {
-              setModalSnapshot(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter memory amount (required)"
-            isInvalid={modalMemory == ""}
-            name="pandaConfigMemory"
-            onChange={(e) => {
-              setModalMemory(e.target.value);
-            }}/>
-          <EuiFieldText
-            placeholder="Enter Extra args"
-            name="pandaConfigExtraArgs"
-            onChange={(e) => {
-              setModalExtraArgs(e.target.value);
-            }}/>
-          <EuiFilePicker
-            id={filePickerId}
-            initialPromptText="Select or drag and drop multiple files"
-            onChange={onFileChange}
-            aria-label="Use aria labels when no actual label is in use"
-          />
-          <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
-          <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
-            setModalUrl(e.target.value);
-          }}/>
-
-        </EuiModalBody>
-        <EuiModalFooter>
-          <EuiButton onClick={closeModal} fill>Close</EuiButton>
-          <EuiButton
-            onClick={() => {
-              createFile();
-            }}
-            fill>
-            Submit</EuiButton>
-        </EuiModalFooter>
-      </EuiModal>
-    </EuiOverlayMask>
+              <EuiModal onClose={closeModal}>
+                <EuiModalHeader>
+                  <EuiModalHeaderTitle>Upload New Image</EuiModalHeaderTitle>
+                </EuiModalHeader>
+                <EuiModalBody>
+                    <EuiFieldText 
+                      placeholder="Enter Name (required)"
+                      isInvalid={modalName == ""}
+                      name="imageName" 
+                      onChange={(e) => {
+                        setModalName(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter New Description"  
+                      name="imageDesc" 
+                      onChange={(e) => {
+                        setModalDesc(e.target.value);
+                      }}/>
+                      <EuiSelect
+                        id={basicSelectId}
+                        options={archOptions}
+                        value={archValue}
+                        onChange={(e) => {
+                          onDropdownChange(e.target.value);
+                        }}
+                        aria-label="Use aria labels when no actual label is in use"
+                      />
+                      <EuiFieldText 
+                      placeholder="Enter image OS (required)"
+                      isInvalid={modalOs == ""}
+                      name="pandaConfigOs" 
+                      onChange={(e) => {
+                        setModalOs(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter prompt (required)"
+                      isInvalid={modalPrompt == ""}
+                      name="pandaConfigPrompt" 
+                      onChange={(e) => {
+                        setModalPrompt(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Cdrom" 
+                      name="pandaConfigCdrom" 
+                      onChange={(e) => {
+                        setModalCdrom(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Snapshot"  
+                      name="pandaConfigSnapshot" 
+                      onChange={(e) => {
+                        setModalSnapshot(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter memory amount (required)"
+                      isInvalid={modalMemory == ""}
+                      name="pandaConfigMemory" 
+                      onChange={(e) => {
+                        setModalMemory(e.target.value);
+                      }}/>
+                      <EuiFieldText 
+                      placeholder="Enter Extra args"  
+                      name="pandaConfigExtraArgs"
+                      onChange={(e) => {
+                        setModalExtraArgs(e.target.value);
+                      }}/>
+                      <EuiFilePicker
+                        id={filePickerId}
+                        initialPromptText="Select or drag and drop multiple files"
+                        onChange={onFileChange}
+                        aria-label="Use aria labels when no actual label is in use"
+                      />
+                      <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
+                      <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
+                        setModalUrl(e.target.value);
+                      }}/>
+                </EuiModalBody>
+                <EuiModalFooter>
+                  <EuiButton onClick={closeModal} fill>Close</EuiButton>
+                  <EuiButton 
+                    onClick={() => {
+                      createFile();
+                    }} 
+                    fill>
+                      Submit</EuiButton>
+                </EuiModalFooter>
+              </EuiModal>
+            </EuiOverlayMask>
   }
 
   const tableColumns: EuiBasicTableColumn<Image>[] = [
@@ -439,17 +442,18 @@ function ImagesDataGrid() {
       </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
-    {isLoading && <div>Loading...</div> ||
-    <EuiBasicTable
+    {(isError) ? (<div>Error...</div>)
+    : ((isLoading) ? (<div>Loading...</div>) 
+    : <EuiBasicTable
       tableCaption="Images"
       items={queriedItems ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
-    />
-    }
-    {(isModalVisible) ? (CreateModal()) : null}
-    {(isLoadingVisible) ? (LoadingModal()) : null}
+    />)
+  }
+  {(isModalVisible) ? (CreateModal()) : null}
+  {(isLoadingVisible) ? (LoadingModal()) : null}
   </>)
 }
 

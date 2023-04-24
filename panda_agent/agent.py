@@ -31,11 +31,11 @@ class PandaAgent:
         # Construct PANDA instance based on config
         return Panda(
             arch=config.arch,
-            qcow=f"{self.FILE_PREFIX}/{config.qcow_file_name}",
+            qcow=f"{self.FILE_PREFIX}/{config.qcowfilename}",
             mem=config.memory,
             os=config.os,
             expect_prompt=config.prompt,
-            extra_args=config.extra_args)
+            extra_args=config.extraargs)
     
     # This function is meant to run in a different thread
     def start(self):

@@ -99,10 +99,11 @@ func (s *PandaStudioServer) ExecuteProgramById(ctx *gin.Context, programId strin
 		ctx.Error(errors.Wrap(err, "Could not find program"))
 		return
 	}
-	
+
 	job, err := s.programExecutor.NewExecutorJob(ctx, &panda_controller.PandaProgramExecutorOptions{
-		Image: image,
+		Image:   image,
 		Program: program,
+		Name:    req.Name,
 	})
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "Could not create job"))
