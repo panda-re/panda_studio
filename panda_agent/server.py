@@ -103,7 +103,7 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
 
 # Reads the execution log that is teed from the container startup
 # Log contains PyPANDA and Agent output
-def read_execution_log(self):
+def read_execution_log():
     try:
         os.stat(f"{FILE_PREFIX}/{EXECUTION_LOG}")
         with (open(f"{FILE_PREFIX}/{EXECUTION_LOG}")) as file:
