@@ -11,6 +11,7 @@ import (
 
 type StartAgentRequest = pb.StartAgentRequest
 
+// Various gRPC messages and the ProtoBuf protocols that make the agent
 type PandaAgent interface {
 	StartAgent(ctx context.Context) error
 	StartAgentWithOpts(ctx context.Context, opts *StartAgentRequest) error
@@ -24,6 +25,8 @@ type PandaAgent interface {
 	//SendNetworkCommand(ctx context.Context, network_request *NetworkRequest) (*NetworkResponse, error)
 	Close() error
 }
+
+// Structs match the types in panda_agent.proto
 
 type PandaAgentRunCommandResult struct {
 	Logs string
@@ -47,6 +50,8 @@ type NetworkResponse struct {
 	Output     string
 }
 
+// Interface for interacting with PANDA recordings
+// Includes helper functions
 type PandaAgentRecording interface {
 	Name() string
 	SnapshotFilename() string

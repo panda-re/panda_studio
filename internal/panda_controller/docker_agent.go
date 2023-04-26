@@ -28,6 +28,7 @@ type DockerPandaAgent struct {
 
 var _ PandaAgent = &DockerPandaAgent{}
 
+// See https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/qcows.json
 var DEFAULT_CONFIG = pb.PandaConfig{
 	QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
 	Arch:         "x86_64",
@@ -44,6 +45,7 @@ const CONTAINER_SHARED_DIR = "/panda/shared"
 const CONTAINER_DATA_DIR = "/panda/data"
 const DOCKER_IMAGE = "pandare/panda_agent"
 
+// Creates a PandaAgent inside a Docker client
 func CreateDockerPandaAgent2(ctx context.Context) (*DockerPandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
@@ -61,6 +63,7 @@ func CreateDockerPandaAgent2(ctx context.Context) (*DockerPandaAgent, error) {
 	return agent, nil
 }
 
+// Starts the Docker container and connects it to the gRPC agent
 func (pa *DockerPandaAgent) Connect(ctx context.Context) error {
 	// start the container
 	err := pa.startContainer(ctx)
@@ -81,6 +84,7 @@ func (pa *DockerPandaAgent) Connect(ctx context.Context) error {
 	return nil
 }
 
+// Connects to the gRPC agent in the Docker container that is spun up
 func (pa *DockerPandaAgent) connectGrpc(ctx context.Context) error {
 	grpcSocketPath := path.Join(*pa.sharedDir, "panda-agent.sock")
 	grpcSocketUrl := fmt.Sprintf("unix://%s", grpcSocketPath)
@@ -195,10 +199,12 @@ func (pa *DockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaA
 }
 
 // StartAgent implements PandaAgent
+// Uses x86_64 generic defaults
 func (pa *DockerPandaAgent) StartAgent(ctx context.Context) error {
 	return pa.grpcAgent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG})
 }
 
+// StartAgentWithOpts implements PandaAgent
 func (pa *DockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
 	return pa.grpcAgent.StartAgentWithOpts(ctx, opts)
 }
@@ -230,14 +236,18 @@ func (pa *DockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecord
 	return &newRecording, nil
 }
 
+// StartReplay implements PandaAgent
+// Uses x86_64 generic defaults
 func (pa *DockerPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
 	return pa.grpcAgent.StartReplayWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG}, recordingName)
 }
 
+// StartReplayWithOpts implements PandaAgent
 func (pa *DockerPandaAgent) StartReplayWithOpts(ctx context.Context, opts *pb.StartAgentRequest, recordingName string) (*PandaAgentReplayResult, error) {
 	return pa.grpcAgent.StartReplayWithOpts(ctx, opts, recordingName)
 }
 
+// StopReplay implements PandaAgent
 func (pa *DockerPandaAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResult, error) {
 	return pa.grpcAgent.StopReplay(ctx)
 }

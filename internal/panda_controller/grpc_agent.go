@@ -17,7 +17,7 @@ var _ PandaAgent = &grpcPandaAgent{}
 
 const DEFAULT_GRPC_ADDR = "localhost:50051"
 
-// Either PandaAgent or PandaReplayAgent interface
+// PandaAgent interface
 func CreateGrpcPandaAgent(endpoint string) (interface{}, error) {
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -32,7 +32,7 @@ func CreateGrpcPandaAgent(endpoint string) (interface{}, error) {
 	}, nil
 }
 
-// Either PandaAgent or PandaReplayAgent interface
+// PandaAgent interface
 func CreateDefaultGrpcPandaAgent() (interface{}, error) {
 	return CreateGrpcPandaAgent(DEFAULT_GRPC_ADDR)
 }
@@ -43,6 +43,7 @@ func (pa *grpcPandaAgent) StartAgent(ctx context.Context) error {
 }
 
 // StartAgentWithOpts implements PandaAgent
+// Uses x86_64 generic defaults
 func (pa *grpcPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
 	_, err := pa.cli.StartAgent(ctx, opts)
 	if err != nil {
@@ -101,6 +102,7 @@ func (pa *grpcPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecordin
 }
 
 // StartReplay implements PandaAgent
+// Uses x86_64 generic defaults
 func (pa *grpcPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
 	return pa.StartReplayWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG}, recordingName)
 }
