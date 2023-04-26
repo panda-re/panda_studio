@@ -2,9 +2,6 @@ import grpc
 import concurrent.futures as futures
 import os
 
-from pandare import Panda
-
-# protobuf compiler is stupid
 import sys
 sys.path.append(".")
 sys.path.append("pb")
@@ -26,11 +23,28 @@ PORTS = [
 executor = futures.ThreadPoolExecutor(max_workers=10)
 
 class PandaAgentServicer(pb_grpc.PandaAgentServicer):
+    '''
+    Servicer that accepts gRPC messages and calls the corresponding agent functions.
+    '''
     def __init__(self, server):
         self.server = server
         self.agent = None
     
     def StartAgent(self, request: pb.StartAgentRequest, context):
+        '''
+        Starts a PANDA instance with the specified configuration. It also loads the snapshot specified.
+
+        Only one PANDA instance per agent can be running at one time.
+
+        Args:
+            request: gRPC request that contains the PANDA configuration parameters
+
+        Returns:
+            gRPC response acknowledging PANDA starting
+        
+        Raises:
+            RuntimeError if PANDA was already running
+        '''
         if self.agent is not None:
             raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
 
@@ -43,6 +57,19 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         return pb.StartAgentResponse()
     
     def StopAgent(self, request: pb.StopAgentRequest, context):
+        '''
+        Stops the server and the agent
+
+        Args:
+            request: gRPC request
+
+        Returns:
+            gRPC response acknowledging PANDA stopping
+
+        Raises:
+            RuntimeError if PANDA was already stopped
+            RuntimeWarning if a recording was in progress
+        '''
         if self.agent is not None:
             self.agent.stop()
             self.server.stop(grace=5)
@@ -51,6 +78,18 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a PANDA instance when one is not running")
     
     def RunCommand(self, request: pb.RunCommandRequest, context):
+        '''
+        Runs a serial command in PANDA
+
+        Args:
+            request: gRPC request containing the serial command
+        
+        Returns:
+            gRPC response containing the serial output
+
+        Raises:
+            RuntimeError if PANDA was not running
+        '''
         if self.agent is not None:
             output = self.agent.run_command(request.command)
             return pb.RunCommandResponse(output=output)
@@ -58,6 +97,19 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot run a function when PANDA is not running")
     
     def StartRecording(self, request: pb.StartRecordingRequest, context):
+        '''
+        Starts a PANDA recording
+
+        Args:
+            request: gRPC request containing the recording name
+
+        Returns:
+            gRPC response acknowledging the recording started
+        
+        Raises:
+            RuntimeError if PANDA was not running
+            RuntimeError if PANDA was already recording
+        '''
         if self.agent is not None:
             self.agent.start_recording(recording_name=request.recording_name)
             return pb.StartRecordingResponse()
@@ -65,6 +117,19 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot start a recording when PANDA is not running")
     
     def StopRecording(self, request: pb.StopRecordingRequest, context):
+        '''
+        Stops a PANDA recording
+
+        Args:
+            request: gRPC request
+
+        Returns:
+            gRPC response containing the recording name and the filename of the recording files
+
+        Raises:
+            RuntimeError if PANDA was not running
+            RuntimeWarning if PANDA was not recording
+        '''
         if self.agent is not None:
             recording_name = self.agent.stop_recording()
             return pb.StopRecordingResponse(
@@ -76,6 +141,21 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a recording when PANDA is not running")
 
     def StartReplay(self, request: pb.StartReplayRequest, context):
+        '''
+        Starts a PANDA replay with the specified configuration.
+
+        Only one PANDA instance per agent can be running at one time.
+
+        Args:
+            request: gRPC request containing the replay name
+
+        Returns:
+            gRPC response containing the serial and PANDA output of the replay
+
+        Raises:
+            RuntimeError if PANDA was already running
+            RuntimeError if recording files to replay to not exist
+        '''
         if self.agent is not None and self.agent.panda.started.is_set():
             raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
         
@@ -88,6 +168,20 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
         return pb.StartReplayResponse(serial=serial, replay=log)
 
     def StopReplay(self, request: pb.StopReplayRequest, context):
+        '''
+        Stops a PANDA replay.
+
+        PANDA replays stop naturally.
+
+        Args:
+            request: gRPC request
+
+        Returns:
+            gRPC response containing the serial and PANDA output of the replay
+
+        Raises:
+            RuntimeError if PANDA was not replaying
+        '''
         if self.agent is not None:    
             serial = self.agent.stop_replay()
             log = read_execution_log()
@@ -96,14 +190,28 @@ class PandaAgentServicer(pb_grpc.PandaAgentServicer):
             raise RuntimeError(ErrorCode.NOT_REPLAYING, "Must start a replay before stopping one")
 
     def SendNetworkCommand(self, request: pb.NetworkRequest, context):
+        '''
+        Executes a network command
+
+        Args:
+            request: gRPC request containing the networking information such as application, command, etc.
         
+        Returns:
+            gRPC response containing the status and response
+        '''
         response = self.agent.execute_network_command(request)
 
         return pb.NetworkResponse(0, response)
 
-# Reads the execution log that is teed from the container startup
-# Log contains PyPANDA and Agent output
 def read_execution_log():
+    '''
+    Reads the log that is teed from the container startup.
+
+    Log contains the PyPANDA and Agent output.
+
+    Returns:
+        Data in the file `data/execution.log`
+    '''
     try:
         os.stat(f"{FILE_PREFIX}/{EXECUTION_LOG}")
         with (open(f"{FILE_PREFIX}/{EXECUTION_LOG}")) as file:
@@ -112,6 +220,9 @@ def read_execution_log():
         return "Execution log disabled. See Dockerfile.panda-agent"
 
 def serve():
+    '''
+    Starts the gRPC server and the servicer
+    '''
     print("Starting server...")
     server = grpc.server(executor)
     pb_grpc.add_PandaAgentServicer_to_server(
