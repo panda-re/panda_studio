@@ -17,6 +17,11 @@ class ErrorCode(Enum):
     NOT_REPLAYING = 5
 
 class PandaAgent:
+    '''
+    Agent that translates interaction requests into PANDA commands.
+    
+    Uses PyPANDA to produce desired results.
+    '''
     # sentinel object to signal end of queue
     STOP_PANDA = object()
     FILE_PREFIX="data"
@@ -28,7 +33,15 @@ class PandaAgent:
         self.serial_out = ""
     
     def init_panda(self, config: pb.PandaConfig):
-        # Construct PANDA instance based on config
+        '''
+        Construct PANDA instance based on the config
+
+        Args:
+            config: PANDA configuration parameters
+
+        Returns:
+            Panda: the created PANDA object
+        '''
         return Panda(
             arch=config.arch,
             qcow=f"{self.FILE_PREFIX}/{config.qcow_file_name}",
@@ -39,6 +52,17 @@ class PandaAgent:
     
     # This function is meant to run in a different thread
     def start(self):
+        '''
+        Starts the PANDA object and sets its snapshot.
+
+        Supposed to run in a separate thread because QEMU is blocking.
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError if PANDA was already recording
+        '''
         panda = self.panda
         if self.panda.started.is_set():
             raise RuntimeError(ErrorCode.RUNNING, "Cannot start another instance of PANDA while one is already running")
@@ -59,6 +83,16 @@ class PandaAgent:
         print("panda agent stopped")
     
     def stop(self):
+        '''
+        Stops the PANDA object.
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError if PANDA was not running
+            RuntimeWarning if PANDA was not recording
+        '''
         if self.panda.started.is_set() is False: 
             raise RuntimeError(ErrorCode.NOT_RUNNING, "Cannot stop a PANDA instance when one is not running")
         if self.current_recording is not None:
@@ -71,6 +105,18 @@ class PandaAgent:
             self.panda.end_analysis()
     
     def _run_function(self, func, block=True, timeout=None):
+        '''
+        Wrapper function that utilizes PANDA queue to run commands and pass return value back to thread
+
+        Args:
+            func: function to run
+
+        Returns:
+            Output of the function
+        
+        Raises:
+            RuntimeError if PANDA was not running
+        '''
         # Since the queued function will be running in another thread, we need
         # a queue in order to pass the return value back to this thread
         if self.panda.running.is_set() is False: 
@@ -84,6 +130,18 @@ class PandaAgent:
         return returnChannel.get(block=block, timeout=timeout)
     
     def run_command(self, cmd):
+        '''
+        Runs a serial command in PANDA
+
+        Args:
+            cmd: serial command to be run
+        
+        Returns:
+            String: all the output (stdout + stderr)
+
+        Raises:
+            RuntimeError if PANDA was not running
+        '''
         def panda_run_command(panda: Panda):
             print(f'running command {cmd}')
             try:
@@ -94,6 +152,15 @@ class PandaAgent:
         return self._run_function(panda_run_command)
     
     def revert_to_snapshot(self, snapshot):
+        '''
+        Reverts PANDA to a snapshot
+
+        Args:
+            snapshot: name of snapshot in the current qcow to load
+
+        Returns:
+            String: error message. Empty on success.
+        '''
         def panda_revert_snapshot(panda: Panda):
             print(f'reverting to snapshot {snapshot}')
             return panda.revert_sync(snapshot)
@@ -101,6 +168,19 @@ class PandaAgent:
         return self._run_function(panda_revert_snapshot)
     
     def start_recording(self, recording_name):
+        '''
+        Starts a PANDA recording
+
+        Args:
+            recording_name: name of recording to save
+
+        Returns:
+            gRPC response acknowledging the recording started
+        
+        Raises:
+            RuntimeError if PANDA was not running
+            RuntimeError if PANDA was already recording
+        '''
         if self.current_recording is not None:
             raise RuntimeError(ErrorCode.RECORDING, "Cannot start new recording while recording in progress")
 
@@ -115,6 +195,16 @@ class PandaAgent:
         return self._run_function(panda_start_recording)
     
     def stop_recording(self):
+        '''
+        Stops a PANDA recording
+
+        Returns:
+            str: name of the recording
+
+        Raises:
+            RuntimeError if PANDA was not running
+            RuntimeWarning if PANDA was not recording
+        '''
         if self.current_recording is None:
             raise RuntimeError(ErrorCode.NOT_RECORDING, "Must start a recording before stopping one")
         
@@ -131,6 +221,21 @@ class PandaAgent:
         return recording_name
 
     def start_replay(self, recording_name):
+        '''
+        Starts a PANDA replay with the specified configuration.
+
+        Only one PANDA instance per agent can be running at one time.
+
+        Args:
+            recording_name: Replay name/path
+
+        Returns:
+            str: Serial output of the replay
+
+        Raises:
+            RuntimeError if PANDA was already running
+            RuntimeError if recording files to replay to not exist
+        '''
         panda = self.panda
         # Replay runs its own PANDA instance so PANDA should not be running beforehand
         if self.panda.started.is_set(): 
@@ -151,6 +256,17 @@ class PandaAgent:
         return self.serial_out
 
     def stop_replay(self):
+        '''
+        Stops a PANDA replay.
+
+        PANDA replays stop naturally.
+
+        Returns:
+            str: Serial output of the replay
+
+        Raises:
+            RuntimeError if PANDA was not replaying
+        '''
         if self.panda._in_replay is False:
             raise RuntimeError(ErrorCode.NOT_REPLAYING, "Must start a replay before stopping one")
 
@@ -165,7 +281,15 @@ class PandaAgent:
         return self.serial_out
 
     def execute_network_command(self, request: pb.NetworkRequest):
+        '''
+        Executes a network command
+
+        Args:
+            request: gRPC request containing the networking information such as application, command, etc.
         
+        Returns:
+            bytes: Response
+        '''
         response = b''
         message = b''
 
