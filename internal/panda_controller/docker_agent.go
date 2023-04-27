@@ -379,7 +379,7 @@ func (pa *DockerPandaAgent) stopContainer(ctx context.Context) error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) getLogs(ctx context.Context) (string, error) {
+func (pa *DockerPandaAgent) getLogs(ctx context.Context) (string, error) {
 	if pa.containerId == nil {
 		return "", errors.New("container not started")
 	}
