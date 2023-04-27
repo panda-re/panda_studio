@@ -30,14 +30,14 @@ var _ PandaAgent = &DockerPandaAgent{}
 
 // See https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/qcows.json
 var DEFAULT_CONFIG = pb.PandaConfig{
-	QcowFileName: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
+	Qcowfilename: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
 	Arch:         "x86_64",
 	Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
 	Prompt:       "root@ubuntu:.*#",
 	Cdrom:        "ide1-cd0",
 	Snapshot:     "root",
 	Memory:       "1024",
-	ExtraArgs:    "-display none",
+	Extraargs:    "-display none",
 }
 
 const PANDA_STUDIO_TEMP_DIR = "/tmp/panda-studio"
