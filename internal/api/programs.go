@@ -42,6 +42,13 @@ func (s *PandaStudioServer) CreateProgram(ctx *gin.Context) {
 		return
 	}
 
+	// Parse the program
+	_, err = models.ParseInteractionProgram(toCreate.Instructions)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "invalid interaction program"))
+		return
+	}
+
 	created, err := s.programRepo.Create(ctx, &toCreate)
 	if err != nil {
 		ctx.Error(err)
@@ -57,6 +64,13 @@ func (s *PandaStudioServer) UpdateProgramById(ctx *gin.Context, programId string
 	err := ctx.BindJSON(&toUpdate)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "invalid request"))
+		return
+	}
+
+	// Parse the program
+	_, err = models.ParseInteractionProgram(toUpdate.Instructions)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "invalid interaction program"))
 		return
 	}
 
@@ -99,10 +113,11 @@ func (s *PandaStudioServer) ExecuteProgramById(ctx *gin.Context, programId strin
 		ctx.Error(errors.Wrap(err, "Could not find program"))
 		return
 	}
-	
+
 	job, err := s.programExecutor.NewExecutorJob(ctx, &panda_controller.PandaProgramExecutorOptions{
-		Image: image,
+		Image:   image,
 		Program: program,
+		Name:    req.Name,
 	})
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "Could not create job"))

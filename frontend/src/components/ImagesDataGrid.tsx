@@ -1,20 +1,45 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
-import { getItemId } from '@elastic/eui/src/components/basic_table/basic_table';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
-import axios, { AxiosRequestConfig } from 'axios';
 import prettyBytes from 'pretty-bytes';
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { CreateImageFileRequest, CreateImageRequest, findAllImages, Image, ImageFile, ImageFileType, PandaConfig, updateImage, useCreateImage, useCreateImageFile, useDeleteImageById, useFindAllImages, useUpdateImage } from '../api';
+import React, {useEffect, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {
+  CreateImageFileFromUrlRequest,
+  CreateImageFileRequest,
+  CreateImageRequest,
+  Image,
+  ImageFile,
+  ImageFileType,
+  PandaConfig,
+  useCreateImage,
+  useCreateImageFile, useCreateImageFileFromUrl,
+  useDeleteImageById,
+  useFindAllImages,
+  useUpdateImage
+} from '../api';
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {isLoading, error, data} = useFindAllImages();
+  const {isLoading, isError, data} = useFindAllImages();
   const queryClient = useQueryClient();
-  const deleteFunction = useDeleteImageById({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
-  const updateFn = useUpdateImage({mutation: {onSuccess: () => queryClient.invalidateQueries()}});
 
+  const deleteFunction = useDeleteImageById({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error deleting Image:\n" + response.response?.data.error?.message)}});
+  const updateFn = useUpdateImage({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries(),
+      onError: (response) => alert("Error updating image: \n" + response.response?.data.error?.message)}});
+  const createFileFromUrl = useCreateImageFileFromUrl({
+    mutation: {
+      onSuccess() {
+        setIsLoadingVisible(false);
+        queryClient.invalidateQueries();
+      },
+      onError: (response) => alert("Error uploading image: \n" + response.response?.data.error?.message)}});
+      
    // File picker constants
    const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
     setIsLoadingVisible(false);
@@ -26,25 +51,44 @@ function ImagesDataGrid() {
    const onFileChange = (files: FileList | null) => {
      setFiles(files!.length > 0 ? Array.from(files!) : []);
    };
+
+   // Dropdown Constants
+   const archOptions = [
+    { value: 'x86_64', text: 'x86_64' },
+    { value: 'i386', text: 'i386' },
+    { value: 'arm', text: 'arm' },
+    { value: 'aarch64', text: 'aarch64' },
+    { value: 'ppc', text: 'ppc' },
+    { value: 'mips', text: 'mips' },
+    { value: 'mipsel', text: 'mipsel' },
+    { value: 'mips64', text: 'mips64' },
+    ];
+
+    const [archValue, setArchValue] = useState(archOptions[0].value);
+
+    const basicSelectId = useGeneratedHtmlId({ prefix: 'basicSelect' });
+
+    const onDropdownChange = (val: string) => {
+      setArchValue(val);
+    };
    
    ///////// Modal Constants ///////////////////
    const [isModalVisible, setIsModalVisible] = useState(false);
    const [modalName, setModalName] = useState("");
    const [modalDesc, setModalDesc] = useState("");
-   const [modalArch, setModalArch] = useState("");
    const [modalOs, setModalOs] = useState("");
    const [modalPrompt, setModalPrompt] = useState("");
    const [modalCdrom, setModalCdrom] = useState("");
    const [modalSnapshot, setModalSnapshot] = useState("");
    const [modalMemory, setModalMemory] = useState("");
    const [modalExtraArgs, setModalExtraArgs] = useState("");
+   const [url, setModalUrl] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
  
    const closeModal = () => {
      setModalName("");
      setModalDesc("");
-     setModalArch("");
      setModalOs("");
      setModalPrompt("");
      setModalCdrom("");
@@ -52,30 +96,30 @@ function ImagesDataGrid() {
      setModalMemory("");
      setModalExtraArgs("");
      setIsModalVisible(false)
+     setModalUrl("")
    };
    const showModal = () => {
      setIsModalVisible(true);
    }
 
-  
   /////////// Endpoint Functions //////////////
-  const deleteImage = ({itemId}: {itemId: string}) => {
+  const deleteImage = ({itemId}: { itemId: string }) => {
     deleteFunction.mutate({imageId: itemId});
   }
 
-  const updateImage = ({image}: {image: Image}) => {
-    if(image.id == null){
+  const updateImage = ({image}: { image: Image }) => {
+    if (image.id == null) {
       return;
     }
     const conf: PandaConfig = {
-      qcow_file_name: image.config?.qcow_file_name,
-      arch: modalArch,
-      os: modalOs,
-      prompt: modalPrompt,
-      cdrom: modalCdrom,
-      snapshot: modalSnapshot,
-      memory: modalMemory,
-      extra_args: modalExtraArgs,      
+      qcowfilename: image.config?.qcowfilename,
+      arch: image.config?.arch,
+      os: image.config?.os,
+      prompt: image.config?.prompt,
+      cdrom: image.config?.cdrom,
+      snapshot: image.config?.snapshot,
+      memory: image.config?.memory,
+      extraargs: image.config?.extraargs,      
     }
     const req: CreateImageRequest = {
       name: image.name,
@@ -85,40 +129,68 @@ function ImagesDataGrid() {
     updateFn.mutate({data: req, imageId: image.id});
   }
 
-  function deleteActionPress (event: React.MouseEvent, item: Image){
+  function deleteActionPress(event: React.MouseEvent, item: Image) {
     deleteImage({itemId: item.id!})
     event.stopPropagation();
   }
 
-  function createFiles(image: Image){
-    var splitArray = files[0].name.split(".");
-    var fileTypeString = splitArray[splitArray.length-1];
-    var fileType;
-    switch(fileTypeString){
+  function getFileTypeFromString(fileTypeAsString: string, imageId: string): ImageFileType | undefined {
+    switch (fileTypeAsString) {
       case "qcow2": {
-        fileType = ImageFileType.qcow2;
-        break;
+        return ImageFileType.qcow2;
       }
       case "dtb": {
-        fileType = ImageFileType.dtb;
-        break;
+        return ImageFileType.dtb;
       }
       case "kernel": {
-        fileType = ImageFileType.kernel;
-        break;
+        return ImageFileType.kernel;
       }
-      default:{
-        fileType = undefined;
-        break;
+      default: {
+        alert("Invalid File Type");
+        deleteImage({itemId: imageId ?? ""})
+        return;
       }
     }
+  }
 
-    if(fileType == undefined){
-      // closeModal();
-      alert("Invalid File Type");
-      deleteImage({itemId: image.id ?? ""})
+
+  function createImageFileFromUrl(image: Image) {
+    const urlAsArray = url.split("/")
+    const fileName = urlAsArray[urlAsArray.length - 1]
+    const fileTypeAsArray = fileName.split(".")
+    const fileTypeAsString = fileTypeAsArray[fileTypeAsArray.length - 1]
+    const fileType = getFileTypeFromString(fileTypeAsString, image.id!)
+
+    if (fileType == undefined) {
       return;
     }
+
+    const fileFromUrlReq: CreateImageFileFromUrlRequest = {
+      file_name: fileName,
+      file_type: fileType,
+      url: url
+    }
+
+    createFileFromUrl.mutate({data: fileFromUrlReq, imageId: image.id!}, {onError() {
+      deleteImage({itemId: image.id!});
+      setIsLoadingVisible(false);
+      alert("Received an invalid URL");
+    }})
+
+    setIsLoadingVisible(true);
+    closeModal();
+
+  }
+
+  function createFiles(image: Image) {
+    var splitArray = files[0].name.split(".");
+    var fileTypeString = splitArray[splitArray.length - 1];
+    var fileType = getFileTypeFromString(fileTypeString, image.id!)
+
+    if (fileType == undefined) {
+      return;
+    }
+
     const fileReq: CreateImageFileRequest = {
       file_name: files[0].name,
       file_type: fileType,
@@ -129,22 +201,42 @@ function ImagesDataGrid() {
     closeModal();
   }
 
-  const createFn = useCreateImage({mutation: {onSuccess(data, variables, context) {createFiles(data)},}})
+  const createFn = useCreateImage({
+    mutation: {
+      onSuccess(data, variables, context) {
+        if (url == "") {
+          createFiles(data)
+        } else {
+          createImageFileFromUrl(data)
+        }
+      },
+    }
+  })
 
   function createFile(){
-    if(modalName=="" || modalArch=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
+
+    var fileName
+    if (url == "") {
+      fileName = files[0].name
+    } else {
+      const urlAsArray = url.split("/")
+      const urlFileName = urlAsArray[urlAsArray.length - 1]
+      fileName = urlFileName
+    }
+
     const conf: PandaConfig = {
-      qcow_file_name: files[0].name,
-      arch: modalArch,
+      qcowfilename: files[0].name,
+      arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
       snapshot: modalSnapshot,
       memory: modalMemory,
-      extra_args: modalExtraArgs,   
+      extraargs: modalExtraArgs,   
     }
     const req: CreateImageRequest = {
       name: modalName,
@@ -156,20 +248,19 @@ function ImagesDataGrid() {
 
   //////// UI Functions ///////////
   useEffect(() => {
-    if(location.state) {
-      if(location.state.image){
+    if (location.state) {
+      if (location.state.image) {
         updateImage({image: location.state.image});
-      }
-      else{
+      } else {
         deleteImage({itemId: location.state.imageId});
       }
       window.history.replaceState({}, document.title)
     }
   }, []);
 
-  function LoadingModal(){
+  function LoadingModal() {
     return <EuiOverlayMask>
-              <EuiModal onClose={closeModal}>
+              <EuiModal onClose={()=>{}}>
                 <EuiModalHeader>
                   <EuiModalHeaderTitle>Uploading Image</EuiModalHeaderTitle>
                 </EuiModalHeader>
@@ -182,7 +273,7 @@ function ImagesDataGrid() {
             </EuiOverlayMask>
   }
 
-  function CreateModal(){
+  function CreateModal() {
     return <EuiOverlayMask>
               <EuiModal onClose={closeModal}>
                 <EuiModalHeader>
@@ -202,13 +293,15 @@ function ImagesDataGrid() {
                       onChange={(e) => {
                         setModalDesc(e.target.value);
                       }}/>
-                      <EuiFieldText 
-                      placeholder="Enter image Architecture (required)"
-                      isInvalid={modalArch == ""}
-                      name="pandaConfigArch" 
-                      onChange={(e) => {
-                        setModalArch(e.target.value);
-                      }}/>
+                      <EuiSelect
+                        id={basicSelectId}
+                        options={archOptions}
+                        value={archValue}
+                        onChange={(e) => {
+                          onDropdownChange(e.target.value);
+                        }}
+                        aria-label="Use aria labels when no actual label is in use"
+                      />
                       <EuiFieldText 
                       placeholder="Enter image OS (required)"
                       isInvalid={modalOs == ""}
@@ -254,6 +347,10 @@ function ImagesDataGrid() {
                         onChange={onFileChange}
                         aria-label="Use aria labels when no actual label is in use"
                       />
+                      <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
+                      <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
+                        setModalUrl(e.target.value);
+                      }}/>
                 </EuiModalBody>
                 <EuiModalFooter>
                   <EuiButton onClick={closeModal} fill>Close</EuiButton>
@@ -282,10 +379,10 @@ function ImagesDataGrid() {
       name: 'Size',
       render: (value: ImageFile[]) => {
         var size = 0;
-        for(var f of value){
-          size+= (f.size != null) ? +f.size: 0;
+        for (var f of value) {
+          size += (f.size != null) ? +f.size : 0;
         }
-        return prettyBytes(size, { maximumFractionDigits: 2 });
+        return prettyBytes(size, {maximumFractionDigits: 2});
       },
     },
     {
@@ -294,20 +391,22 @@ function ImagesDataGrid() {
       render: (item: Image) => {
         return (
           <EuiButtonIcon
-            onClick={(event: React.MouseEvent) => {deleteActionPress(event, item)}}
+            onClick={(event: React.MouseEvent) => {
+              deleteActionPress(event, item)
+            }}
             iconType={"trash"}
           />
         );
       },
     },
   ]
-  
+
   const getRowProps = (item: Image) => {
     const id = item.id;
     return {
       'data-test-subj': `image-row-${id}`,
       onClick: () => {
-        navigate('/imageDetails', {state:{item: item}})
+        navigate('/imageDetails', {state: {item: item}})
       },
     }
   }
@@ -326,8 +425,8 @@ function ImagesDataGrid() {
   ////////// UI Element //////////
   return (<>
     <EuiFlexGroup justifyContent='spaceBetween'>
-      <EuiFlexItem grow={false} style={{ minWidth: 300 }}>
-        <EuiSearchBar 
+      <EuiFlexItem grow={false} style={{minWidth: 300}}>
+        <EuiSearchBar
           box={{
             incremental: true,
           }}
@@ -335,18 +434,19 @@ function ImagesDataGrid() {
           onChange={onChange}/>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
-          <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
-        </EuiFlexItem>
+        <EuiButton onClick={showModal} iconType={'plusInCircle'}>Upload Base Image</EuiButton>
+      </EuiFlexItem>
     </EuiFlexGroup>
     <EuiSpacer></EuiSpacer>
-    {isLoading && <div>Loading...</div> ||
-    <EuiBasicTable
+    {(isError) ? (<div>Error...</div>)
+    : ((isLoading) ? (<div>Loading...</div>) 
+    : <EuiBasicTable
       tableCaption="Images"
       items={queriedItems ?? []}
       rowHeader="firstName"
       columns={tableColumns}
       rowProps={getRowProps}
-    />
+    />)
   }
   {(isModalVisible) ? (CreateModal()) : null}
   {(isLoadingVisible) ? (LoadingModal()) : null}

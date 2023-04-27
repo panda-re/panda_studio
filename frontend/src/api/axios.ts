@@ -1,6 +1,7 @@
 // See: https://orval.dev/guides/custom-axios
 
-import Axios, { AxiosRequestConfig } from 'axios';
+import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { ErrorResponse } from './panda_studio.gen';
  
 export const AXIOS_INSTANCE = Axios.create({
     baseURL: import.meta.env.API_URL ?? '/api'
@@ -25,3 +26,5 @@ export const customInstance = <T>(
 
   return promise;
 };
+
+export type ErrorType<T> = AxiosError<T>;

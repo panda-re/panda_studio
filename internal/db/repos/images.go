@@ -105,6 +105,7 @@ func (r *mongoS3ImageRepository) Update(ctx context.Context, obj *models.Image) 
 		{"$set", bson.D{
 			{"name", obj.Name},
 			{"description", obj.Description},
+			{"config", obj.Config},
 		},
 		}})
 

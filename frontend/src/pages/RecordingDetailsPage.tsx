@@ -1,14 +1,24 @@
-import {EuiButton, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
+import {EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import { ReactElement } from 'react';
 import {useLocation, useNavigate} from 'react-router';
-import { RecordingFile } from '../api';
+import { downloadRecordingFile, RecordingFile, useDownloadRecordingFile } from '../api';
 
+function downloadHandler (event: React.MouseEvent, recordingId: string, file: RecordingFile){
+  downloadRecordingFile(recordingId, file.id ?? "").then((data) => {
+    const fileURL = window.URL.createObjectURL(data);
+    let alink = document.createElement('a');
+    alink.href = fileURL;
+    alink.download = file.name ?? "defaultName";
+    alink.click();
+  });
+}
 
 function RecordingDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  
   const buttonStyle = {
     marginRight: "25px",
     marginTop: "25px"
@@ -20,8 +30,8 @@ function RecordingDetailsPage() {
 
   function CreateRecordingFileRows(files: RecordingFile[]){
     var items: ReactElement[] = [];
-    for(var file of files){
-      items.push(<EuiFlexGroup>
+    for(const file of files){
+      items.push(<EuiFlexGroup justifyContent='center'>
               <EuiFlexItem>
                 <EuiText textAlign={"center"}>
                   {file.id}
@@ -40,6 +50,15 @@ function RecordingDetailsPage() {
               <EuiFlexItem>
                 <EuiText textAlign={"center"}>
                   {(file.size != null) ? prettyBytes(file.size, { maximumFractionDigits: 2 }) : "0"}
+                </EuiText>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiText textAlign='center'>
+                  <EuiButtonIcon
+                    iconType={"download"}
+                    onClick={(value: React.MouseEvent) => {
+                      downloadHandler(value, location.state.item.id, file)}}>
+                  </EuiButtonIcon>
                 </EuiText>
               </EuiFlexItem>
             </EuiFlexGroup>)
@@ -92,6 +111,11 @@ function RecordingDetailsPage() {
               <EuiFlexItem>
                 <EuiText textAlign={"center"}>
                   <strong>File Size:</strong>
+                </EuiText>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiText textAlign={"center"}>
+                  <strong>Download:</strong>
                 </EuiText>
               </EuiFlexItem>
             </EuiFlexGroup>

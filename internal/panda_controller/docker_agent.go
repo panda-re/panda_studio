@@ -3,7 +3,6 @@ package panda_controller
 import (
 	"archive/tar"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,6 +16,7 @@ import (
 	docker "github.com/docker/docker/client"
 	"github.com/panda-re/panda_studio/internal/util"
 	"github.com/panda-re/panda_studio/panda_agent/pb"
+	"github.com/pkg/errors"
 )
 
 type DockerPandaAgent struct {
@@ -195,7 +195,16 @@ func (pa *DockerPandaAgent) Close() error {
 
 // RunCommand implements PandaAgent
 func (pa *DockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
-	return pa.grpcAgent.RunCommand(ctx, cmd)
+	resp, err := pa.grpcAgent.RunCommand(ctx, cmd)
+	if err != nil {
+		logs, logErr := pa.getLogs(ctx)
+		if logErr != nil {
+			logs = fmt.Sprintf("Failed to get logs: %s", logErr.Error())
+		}
+		return nil, errors.Wrap(err, fmt.Sprintf("Failed to run command %s. Logs: %s", cmd, logs))
+	}
+
+	return resp, nil
 }
 
 // StartAgent implements PandaAgent
@@ -206,24 +215,55 @@ func (pa *DockerPandaAgent) StartAgent(ctx context.Context) error {
 
 // StartAgentWithOpts implements PandaAgent
 func (pa *DockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
-	return pa.grpcAgent.StartAgentWithOpts(ctx, opts)
+	err := pa.grpcAgent.StartAgentWithOpts(ctx, opts)
+	if err != nil {
+		logs, logErr := pa.getLogs(ctx)
+		if logErr != nil {
+			logs = fmt.Sprintf("Failed to get logs: %s", logErr.Error())
+		}
+		return errors.Wrap(err, fmt.Sprintf("Failed to start agent. Logs: %s", logs))
+	}
+
+	return nil
 }
 
 // StartRecording implements PandaAgent
 func (pa *DockerPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
-	return pa.grpcAgent.StartRecording(ctx, recordingName)
+	err := pa.grpcAgent.StartRecording(ctx, recordingName)
+	if err != nil {
+		logs, logErr := pa.getLogs(ctx)
+		if logErr != nil {
+			logs = fmt.Sprintf("Failed to get logs: %s", logErr.Error())
+		}
+		return errors.Wrap(err, fmt.Sprintf("Failed to start recording. Logs: %s", logs))
+	}
+
+	return nil
 }
 
 // StopAgent implements PandaAgent
 func (pa *DockerPandaAgent) StopAgent(ctx context.Context) error {
-	return pa.grpcAgent.StopAgent(ctx)
+	err := pa.grpcAgent.StopAgent(ctx)
+	if err != nil {
+		logs, logErr := pa.getLogs(ctx)
+		if logErr != nil {
+			logs = fmt.Sprintf("Failed to get logs: %s", logErr.Error())
+		}
+		return errors.Wrap(err, fmt.Sprintf("Failed to stop agent. Logs: %s", logs))
+	}
+
+	return nil
 }
 
 // StopRecording implements PandaAgent
 func (pa *DockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
 	innerRec, err := pa.grpcAgent.StopRecording(ctx)
 	if err != nil {
-		return nil, err
+		logs, logErr := pa.getLogs(ctx)
+		if logErr != nil {
+			logs = fmt.Sprintf("Failed to get logs: %s", logErr.Error())
+		}
+		return nil, errors.Wrap(err, fmt.Sprintf("Stopping recording failed. Logs: %s", logs))
 	}
 
 	recording := innerRec.(*GenericPandaAgentRecordingConcrete)
@@ -337,4 +377,26 @@ func (pa *DockerPandaAgent) stopContainer(ctx context.Context) error {
 	}
 	pa.containerId = nil
 	return nil
+}
+
+func (pa *dockerPandaAgent) getLogs(ctx context.Context) (string, error) {
+	if pa.containerId == nil {
+		return "", errors.New("container not started")
+	}
+
+	logs, err := pa.cli.ContainerLogs(ctx, *pa.containerId, dockerTypes.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     false,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	logsBytes, err := io.ReadAll(logs)
+	if err != nil {
+		return "", err
+	}
+
+	return string(logsBytes), nil
 }

@@ -21,7 +21,7 @@ type RunCommandInstruction struct {
 }
 
 func (RunCommandInstruction) GetInstructionType() string {
-	return "command"
+	return "cmd"
 }
 
 type StartRecordingInstruction struct {

@@ -102,7 +102,7 @@ Whenever a new feature is implemented, tests should be added to demonstrate how 
 
 2. Start the API server with the required services
 ```
-docker compose -f ./docker/docker-compose.dev.yml up --build panda_api
+docker compose -f ./docker-compose.dev.yml up --build panda_api
 ```
 
 Note: you can use ctrl-C to quit the API. Changes made to the API will automatically be rebuilt

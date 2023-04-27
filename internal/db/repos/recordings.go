@@ -31,6 +31,7 @@ type RecordingRepository interface {
 	DeleteRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (*models.RecordingFile, error)
 	CreateRecordingFile(ctx context.Context, req *models.CreateRecordingFileRequest) (*models.RecordingFile, error)
 	UploadRecordingFile(ctx context.Context, req *models.UploadRecordingFileRequest, reader io.Reader) (*models.RecordingFile, error)
+	OpenRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error)
 }
 
 type mongoS3RecordingRepository struct {
@@ -249,4 +250,22 @@ func (m *mongoS3RecordingRepository) DeleteRecordingFile(ctx context.Context, re
 func (m *mongoS3RecordingRepository) getObjectName(recordingId db.ObjectID, file *models.RecordingFile) string {
 	objectName := fmt.Sprintf("%s/%s", recordingId.Hex(), file.Name)
 	return objectName
+}
+
+func (r *mongoS3RecordingRepository) OpenRecordingFile(ctx context.Context, recordingId db.ObjectID, fileId db.ObjectID) (io.ReadCloser, error) {
+	imgFile, err := r.FindRecordingFile(ctx, recordingId, fileId)
+	if err != nil {
+		return nil, err
+	}
+
+	objectName := r.getObjectName(recordingId, imgFile)
+
+	obj, err := r.s3Client.GetObject(ctx, r.recordingsBucket, objectName, minio.GetObjectOptions{
+		Checksum: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }

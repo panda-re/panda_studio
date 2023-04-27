@@ -1,25 +1,28 @@
 version: "3.9"
-x-secrets:
-  - &s3-access-key UZgFLiypw2yKUqfm
-  - &s3-secret-key HaGTqhqSRfjmjrD3patK5HBtJyyUgyMC
-  - &mongo-username admin
-  - &mongo-password abc123def456
-  - &mongo-uri mongodb://admin:abc123def456@mongodb:27017/
-  - &mongo-dbname panda_studio
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "8080:3000"
+    environment:
+      BACKEND_URL: "http://panda_api:8080"
+    depends_on:
+      - panda_api
+    networks:
+      - panda_studio
   panda_api:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.panda-api
-    ports:
-      - "8080:8080"
     environment:
       S3__ENDPOINT: minio:9000
       S3__SSL: false
-      S3__ACCESS_KEY: *s3-access-key
-      S3__SECRET_KEY: *s3-secret-key
-      MONGODB__URI: *mongo-uri
-      MONGODB__DATABASE: *mongo-dbname
+      S3__ACCESS_KEY: "${S3_ACCESS_KEY}"
+      S3__SECRET_KEY: "${S3_SECRET_KEY}"
+      MONGODB__URI: "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/"
+      MONGODB__DATABASE: "${MONGODB_DATABASE}"
     depends_on:
       - minio
       - mongodb
@@ -36,8 +39,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: *s3-access-key 
-      MINIO_ROOT_PASSWORD: *s3-secret-key
+      MINIO_ROOT_USER: "${S3_ACCESS_KEY}"
+      MINIO_ROOT_PASSWORD: "${S3_SECRET_KEY}"
     entrypoint: minio server /data --console-address ":9001"
     volumes:
       - minio:/data
@@ -48,24 +51,10 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: *mongo-username
-      MONGO_INITDB_ROOT_PASSWORD: *mongo-password
+      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_USERNAME}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
     volumes:
       - mongodb:/data/db
-    networks:
-      - panda_studio
-  
-  # Mongo express is
-  mongo-express:
-    image: mongo-express
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: *mongo-username
-      ME_CONFIG_MONGODB_ADMINPASSWORD: *mongo-password
-      ME_CONFIG_MONGODB_URL: *mongo-uri
-    depends_on:
-      - mongodb
     networks:
       - panda_studio
 volumes:

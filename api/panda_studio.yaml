@@ -120,6 +120,31 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         "409":
           $ref: "#/components/responses/ConflictResponse"
+  /images/{imageId}/urlFiles:
+    post:
+      tags:
+        - image
+        - file
+      summary: Create new image file from a URL
+      operationId: createImageFileFromUrl
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateImageFileFromUrlRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageFile"
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
   /images/{imageId}/files/{fileId}:
     get:
       tags:
@@ -224,6 +249,26 @@ paths:
                 $ref: "#/components/schemas/Recording"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+  /recordings/{recordingId}/files/{fileId}:
+    get:
+      tags:
+        - recording
+        - file
+      summary: Download recording file
+      operationId: downloadRecordingFile
+      parameters:
+        - $ref: "#/components/parameters/RecordingId"
+        - $ref: "#/components/parameters/FileId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
   /programs:
     get:
       tags:
@@ -257,6 +302,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InteractionProgram"
+        "403":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /programs/{programId}:
     get:
       tags:
@@ -365,6 +416,7 @@ components:
       required: true
       schema:
         type: string
+
   responses:
     NotFoundResponse:
       description: Not Found
@@ -430,7 +482,7 @@ components:
     PandaConfig:
       type: object
       properties:
-        qcow_file_name:
+        qcowfilename:
           type: string
         arch:
           type: string
@@ -444,7 +496,7 @@ components:
           type: string
         memory:
           type: string
-        extra_args:
+        extraargs:
           type: string
     
     CreateImageRequest:
@@ -467,6 +519,16 @@ components:
         file:
           type: string
           format: binary
+
+    CreateImageFileFromUrlRequest:
+      type: object
+      properties:
+        file_name:
+          type: string
+        file_type:
+          $ref: "#/components/schemas/ImageFileType"
+        url:
+          type: string
     
     Recording:
       type: object
@@ -557,6 +619,8 @@ components:
       type: object
       properties:
         imageId:
+          type: string
+        name:
           type: string
     
     ExecuteProgramResponse:
