@@ -3,41 +3,41 @@
 
 ## Table of Contents
 
-Introduction
+[Introduction](#introduction)
 
-Getting Started
+[Getting Started](#getting-started)
 
-Tech Stack
+[Tech Stack](#tech-stack)
 
-Project Structure
+[Project Structure](#project-structure)
 
-cmd
+[cmd](#cmd)
 
-frontend
+[frontend](#frontend)
 
-internal
+[internal](#internal)
 
-panda_agent
+[panda_agent](#internal)
 
-Architecture
+[Architecture](#architecture)
 
-Troubleshooting and Bug Tracking
+[Troubleshooting and Bug Tracking](#troubleshooting-and-bug-tracking)
 
-Troubleshooting Table
+[Troubleshooting Table](#troubleshooting-table)
 
-Bug Tracking
+[Bug Tracking](#bug-tracking)
 
-Contributing, Maintenance, and Next Steps
+[Contributing, Maintenance, and Next Steps](#contributing-maintenance-and-next-steps)
 
-Potential Feature Additions and Next Steps
+[Potential Feature Additions and Next Steps](#potential-feature-additions-and-next-steps)
 
-High Priority Items
+[High Priority Items](#high-priority-items)
 
-Low Priority Items
+[Low Priority Items](#low-priority-items)
 
-Pull Requests
+[Pull Requests](#pull-requests)
 
-General Comments on Style
+[General Comments on Style](#general-comments-on-style)
 
 
 
@@ -89,8 +89,9 @@ PANDA Studio is built using the following technologies:
 * MinIO: https://min.io/docs/minio/linux/index.html
 * OpenAPI: https://swagger.io/specification/
 * gRPC: https://grpc.io/docs/
+* Protocol Buffers: https://protobuf.dev/
 
-Links to documentation for each are provided above, as it is outside the scope of this document to go into significant detail about each technology. Different parts of the system will rely on different technologies; for example, the API is built using Go, the gRPC agent is written in Python, and the front-end uses React. Developers and maintainers of the software system can seek out necessary documentation as they find it necessary. 
+Links to documentation for each are provided above, as it is outside the scope of this document to go into significant detail about each technology. Different parts of the system will rely on different technologies; for example, the API is built using Go, the gRPC agent is written in Python, and the front-end uses React. Some rudimentary information is given in the [research document](./RESEARCH.md). Developers and maintainers of the software system can seek out necessary documentation as they find it necessary. 
 
 
 # Project Structure
@@ -98,9 +99,9 @@ Links to documentation for each are provided above, as it is outside the scope o
 Inside the root project directory, there are four folders worth noting that encompass most of PANDA Studio’s functionality. The name and a brief description of each folder is discussed below.
 
 
-## cmd
+## [cmd](../cmd)
 
-This folder contains two other folders, but it is primarily where the entrypoint to the application is. Within this folder is the panda_api folder, which contains the code that starts the API server (panda_server.go). It also contains a test executor which is used to test the back-end functionality of the software. Any changes to the run configuration of the server itself would be done here.
+This folder contains two other folders, but it is primarily where the entrypoint to the application is. Within this folder is the panda_api folder, which contains the code that starts the API server ([panda_server.go](../cmd/panda_api/panda_server.go)). It also contains a [test executor](../cmd/panda_executor_test/panda_executor_test.go) which is used to test the back-end functionality of the software. Any changes to the run configuration of the server itself would be done here.
 
 
     
@@ -111,7 +112,7 @@ This folder contains two other folders, but it is primarily where the entrypoint
 
 
 
-## frontend
+## [frontend](../frontend)
 
 This folder contains all front-end application code. All files relating to the UI and other front-end application logic live here. Within this folder are several other folders, but the src folder contains most of the frontend code. Within the src folder are the components and pages folders. Many of the components contain the actual logic for API calls and the displayed information; the pages folder contains pages which use these components.
 
@@ -123,9 +124,9 @@ This folder contains all front-end application code. All files relating to the U
 
 
 
-## internal
+## [internal](../internal)
 
-This folder contains the model and database code that MongoDB uses, as well as the configuration for MongoDB. Within this folder is the api folder, which has implementations for each API endpoint in their respective files (images.go, programs.go, etc.). The db folder contains both the models, as Go structs, for each item and the repos folder contains the logic for getting and storing data to and from MongoDB and MinIO object storage. The endpoints written in the api directory call directly to the implementations in the db/repos folder.
+This folder contains the model and database code that MongoDB uses, as well as the configuration for MongoDB. Within this folder is the [api folder](../internal/api/), which has implementations for each API endpoint in their respective files (images.go, programs.go, etc.). The [db folder](../internal/db/) contains both the models, as Go structs, for each item and the repos folder contains the logic for getting and storing data to and from MongoDB and MinIO object storage. The endpoints written in the api directory call directly to the implementations in the [db/repos](../internal/db/repos/) folder.
 
 
     
@@ -136,7 +137,7 @@ This folder contains the model and database code that MongoDB uses, as well as t
 
 
 
-## panda_agent
+## [panda_agent](../panda_agent)
 
 This folder contains the back-end PANDA agent. It is responsible for actually executing the commands that are sent over grpc in PANDA.
 
@@ -283,7 +284,11 @@ This section covers the immediate vision for the project. During the course of d
 
 ### Low Priority Items
 
+* gRPC Streaming
+    * One feature that was implemented, but left behind due to time constraints, conflicts, and because it was an extra feature was utilizing gRPC streams to give more frequent updates on long-running items such as replays. This can be found in the [23-PANDA-VM-logs branch](https://github.com/panda-re/panda_studio/tree/23-PANDA-VM-logs).
 
+* Argument parity with PyPANDA
+    * Some PyPANDA functions such as `run_serial_cmd` have additional arguments such as a timeout that are not incorporated in gRPC or protobuf. It may be worth adding those arguments or other PyPANDA functions as interactions.
 
 * Features which have no frontend support
     * This is an all-encompassing category which covers everything that has backend implementation but no current frontend functionality. This is classified as lower priority due to the fact that the items listed in the other category will make implementation of these features easier.
