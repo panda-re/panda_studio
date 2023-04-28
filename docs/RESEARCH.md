@@ -4,17 +4,12 @@ The following document contains various topics that were researched during the c
 
 # Table of Contents
 
-[PANDA](#panda)
-
-[Docker](#docker)
-
-[Go](#golang)
-
-[gRPC](#grpc)
-
-[ProtoBuf](#protobuf)
-
-[QEMU](#qemu)
+* [PANDA](#panda)
+* [Docker](#docker)
+* [Go](#golang)
+* [gRPC](#grpc)
+* [ProtoBuf](#protobuf)
+* [QEMU](#qemu)
 
 # PANDA
 

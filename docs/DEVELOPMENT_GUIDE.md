@@ -3,41 +3,24 @@
 
 ## Table of Contents
 
-[Introduction](#introduction)
-
-[Getting Started](#getting-started)
-
-[Tech Stack](#tech-stack)
-
-[Project Structure](#project-structure)
-
-[cmd](#cmd)
-
-[frontend](#frontend)
-
-[internal](#internal)
-
-[panda_agent](#internal)
-
-[Architecture](#architecture)
-
-[Troubleshooting and Bug Tracking](#troubleshooting-and-bug-tracking)
-
-[Troubleshooting Table](#troubleshooting-table)
-
-[Bug Tracking](#bug-tracking)
-
-[Contributing, Maintenance, and Next Steps](#contributing-maintenance-and-next-steps)
-
-[Potential Feature Additions and Next Steps](#potential-feature-additions-and-next-steps)
-
-[High Priority Items](#high-priority-items)
-
-[Low Priority Items](#low-priority-items)
-
-[Pull Requests](#pull-requests)
-
-[General Comments on Style](#general-comments-on-style)
+* [Introduction](#introduction)
+* [Getting Started](#getting-started)
+* [Tech Stack](#tech-stack)
+* [Project Structure](#project-structure)
+    * [cmd](#cmd)
+    * [frontend](#frontend)
+    * [internal](#internal)
+    * [panda_agent](#internal)
+* [Architecture](#architecture)
+* [Troubleshooting and Bug Tracking](#troubleshooting-and-bug-tracking)
+    * [Troubleshooting Table](#troubleshooting-table)
+    * [Bug Tracking](#bug-tracking)
+* [Contributing, Maintenance, and Next Steps](#contributing-maintenance-and-next-steps)
+    * [Potential Feature Additions and Next Steps](#potential-feature-additions-and-next-steps)
+        * [High Priority Items](#high-priority-items)
+        * [Low Priority Items](#low-priority-items)
+    * [Pull Requests](#pull-requests)
+    * [General Comments on Style](#general-comments-on-style)
 
 
 
