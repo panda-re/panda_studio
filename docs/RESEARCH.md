@@ -2,6 +2,20 @@
 
 The following document contains various topics that were researched during the course of the project that could be useful to future developers.
 
+# Table of Contents
+
+[PANDA](#panda)
+
+[Docker](#docker)
+
+[Go](#golang)
+
+[gRPC](#grpc)
+
+[ProtoBuf](#protobuf)
+
+[QEMU](#qemu)
+
 # PANDA
 
 (Platform for Architecture Neutral Dynamic Analysis) [PANDA](https://panda.re) is a useful tool for software reverse engineering where researchers can record and replay the execution of instructions on various architectures and operating systems using QEMU.
