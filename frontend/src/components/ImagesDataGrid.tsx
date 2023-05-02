@@ -27,23 +27,25 @@ function ImagesDataGrid() {
   const deleteFunction = useDeleteImageById({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error deleting Image:\n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error deleting Image:\n" + response.error?.message)}});
   const updateFn = useUpdateImage({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error updating image: \n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error updating image: \n" + response.error?.message)}});
   const createFileFromUrl = useCreateImageFileFromUrl({
     mutation: {
       onSuccess() {
         setIsLoadingVisible(false);
         queryClient.invalidateQueries();
       },
-      onError: (response) => alert("Error uploading image: \n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error uploading image: \n" + response.error?.message)}});
       
    // File picker constants
-   const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
-    setIsLoadingVisible(false);
-    queryClient.invalidateQueries();
+   const createFileFn = useCreateImageFile({
+    mutation: {
+      onSuccess(data, variables, context) {
+        setIsLoadingVisible(false);
+        queryClient.invalidateQueries();
   }}})
    const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
    const [files, setFiles] = useState(new Array<File>);
@@ -58,10 +60,6 @@ function ImagesDataGrid() {
     { value: 'i386', text: 'i386' },
     { value: 'arm', text: 'arm' },
     { value: 'aarch64', text: 'aarch64' },
-    { value: 'ppc', text: 'ppc' },
-    { value: 'mips', text: 'mips' },
-    { value: 'mipsel', text: 'mipsel' },
-    { value: 'mips64', text: 'mips64' },
     ];
 
     const [archValue, setArchValue] = useState(archOptions[0].value);
@@ -214,7 +212,7 @@ function ImagesDataGrid() {
   })
 
   function createFile(){
-    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+    if(modalName=="" || modalSnapshot=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
@@ -229,7 +227,7 @@ function ImagesDataGrid() {
     }
 
     const conf: PandaConfig = {
-      qcowfilename: files[0].name,
+      qcowfilename: fileName,
       arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
@@ -303,8 +301,7 @@ function ImagesDataGrid() {
                         aria-label="Use aria labels when no actual label is in use"
                       />
                       <EuiFieldText 
-                      placeholder="Enter image OS (required)"
-                      isInvalid={modalOs == ""}
+                      placeholder="Enter image OS"
                       name="pandaConfigOs" 
                       onChange={(e) => {
                         setModalOs(e.target.value);
@@ -323,8 +320,9 @@ function ImagesDataGrid() {
                         setModalCdrom(e.target.value);
                       }}/>
                       <EuiFieldText 
-                      placeholder="Enter Snapshot"  
+                      placeholder="Enter Snapshot (required)"  
                       name="pandaConfigSnapshot" 
+                      isInvalid={modalSnapshot == ""}
                       onChange={(e) => {
                         setModalSnapshot(e.target.value);
                       }}/>
