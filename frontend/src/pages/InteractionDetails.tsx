@@ -1,4 +1,4 @@
-import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation} from "react-router";
 import {useNavigate} from "react-router-dom";
@@ -24,8 +24,7 @@ function InteractionDetails() {
           <EuiText textAlign={"center"}>
             <strong>ID:</strong> {location.state.item.id}
           </EuiText>
-        </EuiPageTemplate.Section>
-        <EuiPageTemplate.Section>
+          <EuiSpacer size='xxl'></EuiSpacer>
           <EuiText textAlign={"center"}>
             <strong>Name:</strong> {location.state.item.name}
           </EuiText>

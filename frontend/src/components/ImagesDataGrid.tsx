@@ -17,6 +17,7 @@ import {
   useFindAllImages,
   useUpdateImage
 } from '../api';
+import { archOptions } from './DefaultImageData';
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
@@ -54,14 +55,6 @@ function ImagesDataGrid() {
      setFiles(files!.length > 0 ? Array.from(files!) : []);
    };
 
-   // Dropdown Constants
-   const archOptions = [
-    { value: 'x86_64', text: 'x86_64' },
-    { value: 'i386', text: 'i386' },
-    { value: 'arm', text: 'arm' },
-    { value: 'aarch64', text: 'aarch64' },
-    ];
-
     const [archValue, setArchValue] = useState(archOptions[0].value);
 
     const basicSelectId = useGeneratedHtmlId({ prefix: 'basicSelect' });
@@ -79,7 +72,7 @@ function ImagesDataGrid() {
    const [modalCdrom, setModalCdrom] = useState("");
    const [modalSnapshot, setModalSnapshot] = useState("");
    const [modalMemory, setModalMemory] = useState("");
-   const [modalExtraArgs, setModalExtraArgs] = useState("");
+   const [modalExtraArgs, setModalExtraArgs] = useState("-display none");
    const [url, setModalUrl] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
@@ -92,7 +85,7 @@ function ImagesDataGrid() {
      setModalCdrom("");
      setModalSnapshot("");
      setModalMemory("");
-     setModalExtraArgs("");
+     setModalExtraArgs("-display none");
      setIsModalVisible(false)
      setModalUrl("")
    };
@@ -278,16 +271,37 @@ function ImagesDataGrid() {
                   <EuiModalHeaderTitle>Upload New Image</EuiModalHeaderTitle>
                 </EuiModalHeader>
                 <EuiModalBody>
+                  <EuiFlexGroup>
+                    {archOptions.map((element) => {
+                      return <EuiFlexItem>
+                                <EuiButton
+                                  onClick={() => {
+                                    setArchValue(element.value)
+                                    setModalOs(element.defaultConfig.os);
+                                    setModalPrompt(element.defaultConfig.prompt);
+                                    setModalCdrom(element.defaultConfig.cdrom);
+                                    setModalSnapshot(element.defaultConfig.snapshot);
+                                    setModalMemory(element.defaultConfig.default_mem);
+                                    setModalExtraArgs(element.defaultConfig.extra_args);
+                                    setModalUrl(element.defaultConfig.url);
+                                  }}
+                                >{element.text}</EuiButton>
+                                </EuiFlexItem>;
+                    })}
+                  </EuiFlexGroup>
+                  <EuiSpacer size='m'></EuiSpacer>
                     <EuiFieldText 
                       placeholder="Enter Name (required)"
                       isInvalid={modalName == ""}
-                      name="imageName" 
+                      name="imageName"
+                      value={modalName}
                       onChange={(e) => {
                         setModalName(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter New Description"  
-                      name="imageDesc" 
+                      name="imageDesc"
+                      value={modalDesc}
                       onChange={(e) => {
                         setModalDesc(e.target.value);
                       }}/>
@@ -302,26 +316,30 @@ function ImagesDataGrid() {
                       />
                       <EuiFieldText 
                       placeholder="Enter image OS"
-                      name="pandaConfigOs" 
+                      name="pandaConfigOs"
+                      value={modalOs}
                       onChange={(e) => {
                         setModalOs(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter prompt (required)"
                       isInvalid={modalPrompt == ""}
-                      name="pandaConfigPrompt" 
+                      name="pandaConfigPrompt"
+                      value={modalPrompt}
                       onChange={(e) => {
                         setModalPrompt(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter Cdrom" 
                       name="pandaConfigCdrom" 
+                      value={modalCdrom}
                       onChange={(e) => {
                         setModalCdrom(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter Snapshot (required)"  
                       name="pandaConfigSnapshot" 
+                      value={modalSnapshot}
                       isInvalid={modalSnapshot == ""}
                       onChange={(e) => {
                         setModalSnapshot(e.target.value);
@@ -330,12 +348,14 @@ function ImagesDataGrid() {
                       placeholder="Enter memory amount (required)"
                       isInvalid={modalMemory == ""}
                       name="pandaConfigMemory" 
+                      value={modalMemory}
                       onChange={(e) => {
                         setModalMemory(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter Extra args"  
                       name="pandaConfigExtraArgs"
+                      value={modalExtraArgs}
                       onChange={(e) => {
                         setModalExtraArgs(e.target.value);
                       }}/>
@@ -346,8 +366,11 @@ function ImagesDataGrid() {
                         aria-label="Use aria labels when no actual label is in use"
                       />
                       <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
-                      <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
-                        setModalUrl(e.target.value);
+                      <EuiFieldText 
+                        placeholder={"Enter an image URL"} 
+                        value={url}
+                        onChange={(e) => {
+                          setModalUrl(e.target.value);
                       }}/>
                 </EuiModalBody>
                 <EuiModalFooter>
