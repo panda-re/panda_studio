@@ -39,7 +39,7 @@ function ImagesDataGrid() {
         setIsLoadingVisible(false);
         queryClient.invalidateQueries();
       },
-      onError: (response) => alert("Error uploading image: \n" + response.error?.message)}});
+      onError: (response) => alert("Error uploading image: \n" + response)}});
       
    // File picker constants
    const createFileFn = useCreateImageFile({
