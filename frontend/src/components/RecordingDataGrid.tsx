@@ -1,4 +1,4 @@
-import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButton, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, formatDate, RIGHT_ALIGNMENT} from '@elastic/eui';
+import {EuiBasicTable, EuiBasicTableColumn, EuiBasicTableProps, EuiButton, EuiButtonIcon, EuiConfirmModal, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, formatDate, RIGHT_ALIGNMENT} from '@elastic/eui';
 import {useLoaderData, useLocation, useNavigate} from 'react-router';
 import {Recording, useDeleteRecordingById, useFindAllRecordings, useFindImageById} from '../api';
 import prettyBytes from 'pretty-bytes';
@@ -23,9 +23,34 @@ function RecordingDataGrid() {
     }
   }, []);
 
-  function deleteActionPress (event: React.MouseEvent, item: Recording){
+  function deleteActionPress (item: Recording){
     deleteRecording({itemId: item.id!})
+    setIsConfirmVisible(false);
+  }
+
+  // Confirm Modal Fields and Methods
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({})
+
+  function showConfirmModal(event: React.MouseEvent){
+    setIsConfirmVisible(true);
     event.stopPropagation();
+  }
+
+  function closeConfirmModal(){
+    setIsConfirmVisible(false);
+  }
+
+  function ConfirmModal(){
+    return <EuiConfirmModal
+      title="Are you sure you want to delete?"
+      onCancel={closeConfirmModal}
+      onConfirm={() => deleteActionPress(itemToDelete)}
+      cancelButtonText="Cancel"
+      confirmButtonText="Delete Recording"
+      buttonColor="danger"
+      defaultFocusedButton="confirm"
+    ></EuiConfirmModal>;
   }
 
   const tableColumns: EuiBasicTableColumn<Recording>[] = [
@@ -58,7 +83,10 @@ function RecordingDataGrid() {
       render: (item: Recording) => {
         return (
           <EuiButtonIcon
-            onClick={(event: React.MouseEvent) => {deleteActionPress(event, item)}}
+            onClick={(event: React.MouseEvent) => {
+              setItemToDelete(item);
+              showConfirmModal(event);
+            }}
             iconType={"trash"}
           />
         );
@@ -110,6 +138,7 @@ function RecordingDataGrid() {
         rowProps={getRowProps}
       />
       }
+      {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 
