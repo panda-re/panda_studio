@@ -1,9 +1,10 @@
-import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSpacer, EuiText, EuiToolTip} from '@elastic/eui';
+import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
 import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
 import { ImageFile, PandaConfig } from '../api';
+import { archOptions } from '../components/DefaultImageData';
 
 function CreateImageDetailsPage() {
   const location = useLocation()
@@ -17,7 +18,7 @@ function CreateImageDetailsPage() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalName, setModalName] = useState("");
   const [modalDesc, setModalDesc] = useState("");
-  const [modalArch, setModalArch] = useState("");
+  // const [modalArch, setModalArch] = useState("");
   const [modalOs, setModalOs] = useState("");
   const [modalPrompt, setModalPrompt] = useState("");
   const [modalCdrom, setModalCdrom] = useState("");
@@ -25,10 +26,17 @@ function CreateImageDetailsPage() {
   const [modalMemory, setModalMemory] = useState("");
   const [modalExtraArgs, setModalExtraArgs] = useState("");
 
+  const [archValue, setArchValue] = useState(archOptions[0].value);
+
+  const basicSelectId = useGeneratedHtmlId({ prefix: 'basicSelect' });
+
+  const onDropdownChange = (val: string) => {
+    setArchValue(val);
+  };
+
   const closeModal = () => {
     setModalName("");
     setModalDesc("");
-    setModalArch("");
     setModalOs("");
     setModalPrompt("");
     setModalCdrom("");
@@ -40,7 +48,7 @@ function CreateImageDetailsPage() {
   const showModal = () => {
     setModalName(location.state.item.name);
     setModalDesc(location.state.item.description);
-    setModalArch(location.state.item.config.arch);
+    setArchValue(location.state.item.config.arch);
     setModalOs(location.state.item.config.os);
     setModalPrompt(location.state.item.config.prompt);
     setModalCdrom(location.state.item.config.cdrom);
@@ -51,13 +59,13 @@ function CreateImageDetailsPage() {
   }
 
   function createUpdateImageAndReturn(){
-    if(modalName=="" || modalArch=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
     const conf: PandaConfig = {
       qcowfilename: location.state.item.config.qcowfilename,
-      arch: modalArch,
+      arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
       cdrom: modalCdrom,
@@ -140,14 +148,13 @@ function CreateImageDetailsPage() {
                       </EuiFlexGroup>
                       <EuiFlexGroup>
                       <EuiText size='s'>Arch:</EuiText>
-                      <EuiFieldText 
-                      placeholder="Enter image Architecture (required)"
-                      value={modalArch}
-                      isInvalid={modalArch == ""}
-                      name="pandaConfigArch" 
-                      onChange={(e) => {
-                        setModalArch(e.target.value);
-                      }}/>
+                      <EuiSelect
+                        id={basicSelectId}
+                        options={archOptions}
+                        value={archValue}
+                        onChange={(e) => {
+                          onDropdownChange(e.target.value);
+                        }}/>
                       </EuiFlexGroup>
                       <EuiFlexGroup>
                       <EuiText size='s'>Os:</EuiText>

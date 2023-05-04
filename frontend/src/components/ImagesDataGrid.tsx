@@ -1,4 +1,4 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiConfirmModal, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
 import React, {useEffect, useState} from 'react';
@@ -28,11 +28,11 @@ function ImagesDataGrid() {
   const deleteFunction = useDeleteImageById({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error deleting Image:\n" + response.error?.message)}});
+      onError: (response) => alert("Error deleting Image:\n" + response)}});
   const updateFn = useUpdateImage({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error updating image: \n" + response.error?.message)}});
+      onError: (response) => alert("Error updating image: \n" + response)}});
   const createFileFromUrl = useCreateImageFileFromUrl({
     mutation: {
       onSuccess() {
@@ -76,7 +76,9 @@ function ImagesDataGrid() {
    const [url, setModalUrl] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
- 
+   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+   const [itemToDelete, setItemToDelete] = useState({})
+
    const closeModal = () => {
      setModalName("");
      setModalDesc("");
@@ -91,6 +93,16 @@ function ImagesDataGrid() {
    };
    const showModal = () => {
      setIsModalVisible(true);
+   }
+
+   function showConfirmModal(event: React.MouseEvent, item: Image){
+    setItemToDelete(item);
+    setIsConfirmVisible(true);
+    event.stopPropagation();
+   }
+
+   function closeConfirmModal(){
+    setIsConfirmVisible(false);
    }
 
   /////////// Endpoint Functions //////////////
@@ -120,9 +132,9 @@ function ImagesDataGrid() {
     updateFn.mutate({data: req, imageId: image.id});
   }
 
-  function deleteActionPress(event: React.MouseEvent, item: Image) {
-    deleteImage({itemId: item.id!})
-    event.stopPropagation();
+  function deleteActionPress(item: Image) {
+    deleteImage({itemId: item.id!});
+    setIsConfirmVisible(false);
   }
 
   function getFileTypeFromString(fileTypeAsString: string, imageId: string): ImageFileType | undefined {
@@ -249,6 +261,18 @@ function ImagesDataGrid() {
     }
   }, []);
 
+  function ConfirmModal(){
+    return <EuiConfirmModal
+        title="Are you sure you want to delete?"
+        onCancel={closeConfirmModal}
+        onConfirm={() => deleteActionPress(itemToDelete)}
+        cancelButtonText="Cancel"
+        confirmButtonText="Delete Image"
+        buttonColor="danger"
+        defaultFocusedButton="confirm"
+      ></EuiConfirmModal>;
+  }
+
   function LoadingModal() {
     return <EuiOverlayMask>
               <EuiModal onClose={()=>{}}>
@@ -311,9 +335,7 @@ function ImagesDataGrid() {
                         value={archValue}
                         onChange={(e) => {
                           onDropdownChange(e.target.value);
-                        }}
-                        aria-label="Use aria labels when no actual label is in use"
-                      />
+                        }}/>
                       <EuiFieldText 
                       placeholder="Enter image OS"
                       name="pandaConfigOs"
@@ -413,7 +435,7 @@ function ImagesDataGrid() {
         return (
           <EuiButtonIcon
             onClick={(event: React.MouseEvent) => {
-              deleteActionPress(event, item)
+              showConfirmModal(event, item);
             }}
             iconType={"trash"}
           />
@@ -471,6 +493,7 @@ function ImagesDataGrid() {
   }
   {(isModalVisible) ? (CreateModal()) : null}
   {(isLoadingVisible) ? (LoadingModal()) : null}
+  {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 
