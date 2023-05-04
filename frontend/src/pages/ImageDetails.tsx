@@ -12,13 +12,10 @@ function CreateImageDetailsPage() {
 
   const [isTextCopied, setTextCopied] = useState(false);
 
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalName, setModalName] = useState("");
   const [modalDesc, setModalDesc] = useState("");
-  // const [modalArch, setModalArch] = useState("");
   const [modalOs, setModalOs] = useState("");
   const [modalPrompt, setModalPrompt] = useState("");
   const [modalCdrom, setModalCdrom] = useState("");
