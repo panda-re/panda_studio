@@ -1,4 +1,4 @@
-import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
+import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiConfirmModal, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
 import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
@@ -57,6 +57,8 @@ function CreateImageDetailsPage() {
     setModalExtraArgs(location.state.item.config.extraargs);
     setIsModalVisible(true);
   }
+
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
   function createUpdateImageAndReturn(){
     if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
@@ -302,6 +304,18 @@ function CreateImageDetailsPage() {
     return items;
   }
 
+  function ConfirmModal(){
+    return <EuiConfirmModal
+        title="Are you sure you want to delete?"
+        onCancel={() => setIsConfirmVisible(false)}
+        onConfirm={() => navigate('/images', {state: {imageId: location.state.item.id}})}
+        cancelButtonText="Cancel"
+        confirmButtonText="Delete Image"
+        buttonColor="danger"
+        defaultFocusedButton="confirm"
+      ></EuiConfirmModal>;
+  }
+
   return(<>
     <EuiPageTemplate.Header pageTitle="Image Details" />
     <EuiFlexGroup>
@@ -354,9 +368,7 @@ function CreateImageDetailsPage() {
           <EuiFlexItem grow={false}>
           <EuiButton 
               style={buttonStyle}
-              onClick= {() => {
-                navigate('/images', {state: {imageId: location.state.item.id}})
-              }}
+              onClick= {() => setIsConfirmVisible(true)}
             >Delete Image</EuiButton>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
@@ -369,6 +381,7 @@ function CreateImageDetailsPage() {
       </EuiFlexItem>
     </EuiFlexGroup>
     {(isModalVisible) ? (CreateModal()) : null}
+    {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 
