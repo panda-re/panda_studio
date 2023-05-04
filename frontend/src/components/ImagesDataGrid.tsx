@@ -1,4 +1,4 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiConfirmModal, EuiFieldText, EuiFilePicker, EuiFlexGroup, EuiFlexItem, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSelect, EuiSpacer, EuiText, RIGHT_ALIGNMENT, useGeneratedHtmlId } from '@elastic/eui';
 import { useQueryClient } from '@tanstack/react-query';
 import prettyBytes from 'pretty-bytes';
 import React, {useEffect, useState} from 'react';
@@ -17,6 +17,7 @@ import {
   useFindAllImages,
   useUpdateImage
 } from '../api';
+import { archOptions } from './DefaultImageData';
 
 function ImagesDataGrid() {
   const navigate = useNavigate();
@@ -27,23 +28,25 @@ function ImagesDataGrid() {
   const deleteFunction = useDeleteImageById({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error deleting Image:\n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error deleting Image:\n" + response)}});
   const updateFn = useUpdateImage({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries(),
-      onError: (response) => alert("Error updating image: \n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error updating image: \n" + response)}});
   const createFileFromUrl = useCreateImageFileFromUrl({
     mutation: {
       onSuccess() {
         setIsLoadingVisible(false);
         queryClient.invalidateQueries();
       },
-      onError: (response) => alert("Error uploading image: \n" + response.response?.data.error?.message)}});
+      onError: (response) => alert("Error uploading image: \n" + response)}});
       
    // File picker constants
-   const createFileFn = useCreateImageFile({mutation: {onSuccess(data, variables, context) {
-    setIsLoadingVisible(false);
-    queryClient.invalidateQueries();
+   const createFileFn = useCreateImageFile({
+    mutation: {
+      onSuccess(data, variables, context) {
+        setIsLoadingVisible(false);
+        queryClient.invalidateQueries();
   }}})
    const filePickerId = useGeneratedHtmlId({ prefix: 'filePicker' });
    const [files, setFiles] = useState(new Array<File>);
@@ -51,18 +54,6 @@ function ImagesDataGrid() {
    const onFileChange = (files: FileList | null) => {
      setFiles(files!.length > 0 ? Array.from(files!) : []);
    };
-
-   // Dropdown Constants
-   const archOptions = [
-    { value: 'x86_64', text: 'x86_64' },
-    { value: 'i386', text: 'i386' },
-    { value: 'arm', text: 'arm' },
-    { value: 'aarch64', text: 'aarch64' },
-    { value: 'ppc', text: 'ppc' },
-    { value: 'mips', text: 'mips' },
-    { value: 'mipsel', text: 'mipsel' },
-    { value: 'mips64', text: 'mips64' },
-    ];
 
     const [archValue, setArchValue] = useState(archOptions[0].value);
 
@@ -81,11 +72,13 @@ function ImagesDataGrid() {
    const [modalCdrom, setModalCdrom] = useState("");
    const [modalSnapshot, setModalSnapshot] = useState("");
    const [modalMemory, setModalMemory] = useState("");
-   const [modalExtraArgs, setModalExtraArgs] = useState("");
+   const [modalExtraArgs, setModalExtraArgs] = useState("-display none");
    const [url, setModalUrl] = useState("");
  
    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
- 
+   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+   const [itemToDelete, setItemToDelete] = useState({})
+
    const closeModal = () => {
      setModalName("");
      setModalDesc("");
@@ -94,12 +87,22 @@ function ImagesDataGrid() {
      setModalCdrom("");
      setModalSnapshot("");
      setModalMemory("");
-     setModalExtraArgs("");
+     setModalExtraArgs("-display none");
      setIsModalVisible(false)
      setModalUrl("")
    };
    const showModal = () => {
      setIsModalVisible(true);
+   }
+
+   function showConfirmModal(event: React.MouseEvent, item: Image){
+    setItemToDelete(item);
+    setIsConfirmVisible(true);
+    event.stopPropagation();
+   }
+
+   function closeConfirmModal(){
+    setIsConfirmVisible(false);
    }
 
   /////////// Endpoint Functions //////////////
@@ -129,9 +132,9 @@ function ImagesDataGrid() {
     updateFn.mutate({data: req, imageId: image.id});
   }
 
-  function deleteActionPress(event: React.MouseEvent, item: Image) {
-    deleteImage({itemId: item.id!})
-    event.stopPropagation();
+  function deleteActionPress(item: Image) {
+    deleteImage({itemId: item.id!});
+    setIsConfirmVisible(false);
   }
 
   function getFileTypeFromString(fileTypeAsString: string, imageId: string): ImageFileType | undefined {
@@ -214,7 +217,7 @@ function ImagesDataGrid() {
   })
 
   function createFile(){
-    if(modalName=="" || modalOs=="" || modalPrompt=="" || modalMemory==""){
+    if(modalName=="" || modalSnapshot=="" || modalPrompt=="" || modalMemory==""){
       alert("Please fill out all required fields")
       return;
     }
@@ -229,7 +232,7 @@ function ImagesDataGrid() {
     }
 
     const conf: PandaConfig = {
-      qcowfilename: files[0].name,
+      qcowfilename: fileName,
       arch: archValue,
       os: modalOs,
       prompt: modalPrompt,
@@ -258,6 +261,18 @@ function ImagesDataGrid() {
     }
   }, []);
 
+  function ConfirmModal(){
+    return <EuiConfirmModal
+        title="Are you sure you want to delete?"
+        onCancel={closeConfirmModal}
+        onConfirm={() => deleteActionPress(itemToDelete)}
+        cancelButtonText="Cancel"
+        confirmButtonText="Delete Image"
+        buttonColor="danger"
+        defaultFocusedButton="confirm"
+      ></EuiConfirmModal>;
+  }
+
   function LoadingModal() {
     return <EuiOverlayMask>
               <EuiModal onClose={()=>{}}>
@@ -280,16 +295,37 @@ function ImagesDataGrid() {
                   <EuiModalHeaderTitle>Upload New Image</EuiModalHeaderTitle>
                 </EuiModalHeader>
                 <EuiModalBody>
+                  <EuiFlexGroup>
+                    {archOptions.map((element) => {
+                      return <EuiFlexItem>
+                                <EuiButton
+                                  onClick={() => {
+                                    setArchValue(element.value)
+                                    setModalOs(element.defaultConfig.os);
+                                    setModalPrompt(element.defaultConfig.prompt);
+                                    setModalCdrom(element.defaultConfig.cdrom);
+                                    setModalSnapshot(element.defaultConfig.snapshot);
+                                    setModalMemory(element.defaultConfig.default_mem);
+                                    setModalExtraArgs(element.defaultConfig.extra_args);
+                                    setModalUrl(element.defaultConfig.url);
+                                  }}
+                                >{element.text}</EuiButton>
+                                </EuiFlexItem>;
+                    })}
+                  </EuiFlexGroup>
+                  <EuiSpacer size='m'></EuiSpacer>
                     <EuiFieldText 
                       placeholder="Enter Name (required)"
                       isInvalid={modalName == ""}
-                      name="imageName" 
+                      name="imageName"
+                      value={modalName}
                       onChange={(e) => {
                         setModalName(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter New Description"  
-                      name="imageDesc" 
+                      name="imageDesc"
+                      value={modalDesc}
                       onChange={(e) => {
                         setModalDesc(e.target.value);
                       }}/>
@@ -299,32 +335,34 @@ function ImagesDataGrid() {
                         value={archValue}
                         onChange={(e) => {
                           onDropdownChange(e.target.value);
-                        }}
-                        aria-label="Use aria labels when no actual label is in use"
-                      />
+                        }}/>
                       <EuiFieldText 
-                      placeholder="Enter image OS (required)"
-                      isInvalid={modalOs == ""}
-                      name="pandaConfigOs" 
+                      placeholder="Enter image OS"
+                      name="pandaConfigOs"
+                      value={modalOs}
                       onChange={(e) => {
                         setModalOs(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter prompt (required)"
                       isInvalid={modalPrompt == ""}
-                      name="pandaConfigPrompt" 
+                      name="pandaConfigPrompt"
+                      value={modalPrompt}
                       onChange={(e) => {
                         setModalPrompt(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter Cdrom" 
                       name="pandaConfigCdrom" 
+                      value={modalCdrom}
                       onChange={(e) => {
                         setModalCdrom(e.target.value);
                       }}/>
                       <EuiFieldText 
-                      placeholder="Enter Snapshot"  
+                      placeholder="Enter Snapshot (required)"  
                       name="pandaConfigSnapshot" 
+                      value={modalSnapshot}
+                      isInvalid={modalSnapshot == ""}
                       onChange={(e) => {
                         setModalSnapshot(e.target.value);
                       }}/>
@@ -332,12 +370,14 @@ function ImagesDataGrid() {
                       placeholder="Enter memory amount (required)"
                       isInvalid={modalMemory == ""}
                       name="pandaConfigMemory" 
+                      value={modalMemory}
                       onChange={(e) => {
                         setModalMemory(e.target.value);
                       }}/>
                       <EuiFieldText 
                       placeholder="Enter Extra args"  
                       name="pandaConfigExtraArgs"
+                      value={modalExtraArgs}
                       onChange={(e) => {
                         setModalExtraArgs(e.target.value);
                       }}/>
@@ -348,8 +388,11 @@ function ImagesDataGrid() {
                         aria-label="Use aria labels when no actual label is in use"
                       />
                       <EuiText>Alternatively, use a URL to a valid image file:</EuiText>
-                      <EuiFieldText placeholder={"Enter an image URL"} onChange={(e) => {
-                        setModalUrl(e.target.value);
+                      <EuiFieldText 
+                        placeholder={"Enter an image URL"} 
+                        value={url}
+                        onChange={(e) => {
+                          setModalUrl(e.target.value);
                       }}/>
                 </EuiModalBody>
                 <EuiModalFooter>
@@ -392,7 +435,7 @@ function ImagesDataGrid() {
         return (
           <EuiButtonIcon
             onClick={(event: React.MouseEvent) => {
-              deleteActionPress(event, item)
+              showConfirmModal(event, item);
             }}
             iconType={"trash"}
           />
@@ -450,6 +493,7 @@ function ImagesDataGrid() {
   }
   {(isModalVisible) ? (CreateModal()) : null}
   {(isLoadingVisible) ? (LoadingModal()) : null}
+  {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 

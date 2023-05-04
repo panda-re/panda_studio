@@ -1,7 +1,7 @@
-import {EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
+import {EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiConfirmModal, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
 import {useLocation, useNavigate} from 'react-router';
 import { downloadRecordingFile, RecordingFile, useDownloadRecordingFile } from '../api';
 
@@ -19,13 +19,23 @@ function RecordingDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+
   const buttonStyle = {
     marginRight: "25px",
     marginTop: "25px"
   }
 
-  const deleteCurrentRecording = () => {
-    navigate('/recordings', {state: {recordingId: location.state.item.id}});
+  function ConfirmModal(){
+    return <EuiConfirmModal
+      title="Are you sure you want to delete?"
+      onCancel={() => setIsConfirmVisible(false)}
+      onConfirm={() => navigate('/recordings', {state: {recordingId: location.state.item.id}})}
+      cancelButtonText="Cancel"
+      confirmButtonText="Delete Program"
+      buttonColor="danger"
+      defaultFocusedButton="confirm"
+    ></EuiConfirmModal>;
   }
 
   function CreateRecordingFileRows(files: RecordingFile[]){
@@ -126,11 +136,12 @@ function RecordingDetailsPage() {
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
           <EuiFlexItem grow={false}>
-            <EuiButton style={buttonStyle} onClick={deleteCurrentRecording}>Delete Recording</EuiButton>
+            <EuiButton style={buttonStyle} onClick={() => setIsConfirmVisible(true)}>Delete Recording</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
     </EuiFlexGroup>
+    {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 

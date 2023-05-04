@@ -1,4 +1,4 @@
-import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT } from '@elastic/eui';
+import { EuiBasicTable, EuiBasicTableColumn, EuiButton, EuiButtonIcon, EuiConfirmModal, EuiFlexGroup, EuiFlexItem, EuiSearchBar, EuiSearchBarOnChangeArgs, EuiSpacer, RIGHT_ALIGNMENT } from '@elastic/eui';
 import { useNavigate } from 'react-router-dom';
 import {InteractionProgram, Recording, useDeleteProgramById, useDeleteRecordingById, useFindAllPrograms} from "../api";
 import {useQueryClient} from "@tanstack/react-query";
@@ -17,11 +17,37 @@ function ImagesDataGrid() {
     deleteFunction.mutate({programId: programId});
   }
 
-  function deleteActionPress (event: React.MouseEvent, item: InteractionProgram){
+  function deleteActionPress (item: InteractionProgram){
     deleteProgram({programId: item.id!})
+    setIsConfirmVisible(false);
+  }
+
+  // Confirm Modal Fields and Methods
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({})
+
+  function showConfirmModal(event: React.MouseEvent){
+    setIsConfirmVisible(true);
     event.stopPropagation();
   }
 
+  function closeConfirmModal(){
+  setIsConfirmVisible(false);
+  }
+
+  function ConfirmModal(){
+    return <EuiConfirmModal
+      title="Are you sure you want to delete?"
+      onCancel={closeConfirmModal}
+      onConfirm={() => deleteActionPress(itemToDelete)}
+      cancelButtonText="Cancel"
+      confirmButtonText="Delete Program"
+      buttonColor="danger"
+      defaultFocusedButton="confirm"
+    ></EuiConfirmModal>;
+  }
+
+  // Delete if program is passed back tp dashboard
   useEffect(() => {
     if(location.state) {
       deleteProgram({programId: location.state.programId});
@@ -43,7 +69,10 @@ function ImagesDataGrid() {
       render: (item: InteractionProgram) => {
         return (
           <EuiButtonIcon
-            onClick={(event: React.MouseEvent) => {deleteActionPress(event, item)}}
+            onClick={(event: React.MouseEvent) => {
+              setItemToDelete(item);
+              showConfirmModal(event);
+            }}
             iconType={"trash"}
           />
         );
@@ -95,6 +124,7 @@ function ImagesDataGrid() {
       rowProps={getRowProps}
     />
     }
+    {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 
