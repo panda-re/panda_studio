@@ -105,7 +105,7 @@ paths:
         - $ref: "#/components/parameters/ImageId"
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
               $ref: "#/components/schemas/DeriveImageFileRequest"
       responses:
