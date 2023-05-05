@@ -15,7 +15,7 @@ type Recording struct {
 }
 
 type RecordingFile struct {
-	ID         db.ObjectID `bson:"_id" json:"_id"`
+	ID         db.ObjectID `bson:"_id" json:"id"`
 	Name       string      `bson:"name" json:"name"`
 	FileType   string      `bson:"file_type" json:"file_type"`
 	IsUploaded bool        `bson:"is_uploaded" json:"is_uploaded"`

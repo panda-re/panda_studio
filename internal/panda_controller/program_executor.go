@@ -3,6 +3,7 @@ package panda_controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/panda-re/panda_studio/internal/db/models"
@@ -11,21 +12,22 @@ import (
 )
 
 type PandaProgramExecutor struct {
-	imageRepo repos.ImageRepository
+	imageRepo   repos.ImageRepository
 	programRepo repos.ProgramRepository
-	recRepo repos.RecordingRepository
+	recRepo     repos.RecordingRepository
 }
 
 type PandaProgramExecutorJob struct {
-	imageRepo repos.ImageRepository
-	recRepo   repos.RecordingRepository
-	opts *PandaProgramExecutorOptions
-	agent *dockerPandaAgent
+	imageRepo  repos.ImageRepository
+	recRepo    repos.RecordingRepository
+	opts       *PandaProgramExecutorOptions
+	agent      *dockerPandaAgent
 	Recordings []PandaAgentRecording
 }
 
 type PandaProgramExecutorOptions struct {
-	Image *models.Image
+	Name    *string
+	Image   *models.Image
 	Program *models.InteractionProgram
 }
 
@@ -46,9 +48,9 @@ func NewPandaProgramExecutor(ctx context.Context) (*PandaProgramExecutor, error)
 	}
 
 	return &PandaProgramExecutor{
-		imageRepo: imageRepo,
+		imageRepo:   imageRepo,
 		programRepo: programRepo,
-		recRepo: recRepo,
+		recRepo:     recRepo,
 	}, nil
 }
 
@@ -62,9 +64,9 @@ func (p *PandaProgramExecutor) NewExecutorJob(ctx context.Context, opts *PandaPr
 	// Rest in StartJob
 
 	job := &PandaProgramExecutorJob{
-		imageRepo: p.imageRepo,
-		recRepo: p.recRepo,
-		opts: opts,
+		imageRepo:  p.imageRepo,
+		recRepo:    p.recRepo,
+		opts:       opts,
 		Recordings: []PandaAgentRecording{},
 	}
 	return job, nil
@@ -126,7 +128,7 @@ func (p *PandaProgramExecutorJob) Run(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Parse the interaction program instructions and run them
 	err = p.runProgram(ctx, p.opts.Program)
 	if err != nil {
@@ -160,13 +162,16 @@ func (p *PandaProgramExecutorJob) runProgram(ctx context.Context, prog *models.I
 		}
 	}
 
+	fmt.Printf("Done running commands\n")
+
 	return nil
 }
 
 func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.InteractionProgramInstruction) error {
 	if cmd != nil {
 		// todo: I think we should make this polymorphic
-		switch cmd.GetInstructionType() {
+		fmt.Printf("Running command: %+v", cmd)
+		switch strings.ToLower(cmd.GetInstructionType()) {
 		case "start_recording":
 			// Since we have a start recording command, we have to type cast cmd to a pointer for a StartRecordingInstruction from the models package
 			err := p.agent.StartRecording(ctx, cmd.(*models.StartRecordingInstruction).RecordingName)
@@ -180,7 +185,7 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 			if err != nil {
 				panic(err)
 			}
-		case "command":
+		case "cmd":
 			cmdResult, err := p.agent.RunCommand(ctx, cmd.(*models.RunCommandInstruction).Command)
 			if err != nil {
 				panic(err)
@@ -192,7 +197,7 @@ func (p *PandaProgramExecutorJob) runCommand(ctx context.Context, cmd models.Int
 		case "network":
 			// for the future
 		default:
-			fmt.Printf("Incorrect Command Type, Correct options can be found in the commands.md file")
+			fmt.Printf("Incorrect Command Type %s, Correct options can be found in the commands.md file\n", cmd.GetInstructionType())
 		}
 	}
 	return nil
@@ -202,12 +207,12 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 	for _, rec := range p.Recordings {
 		fmt.Println("Uploading recording: " + rec.Name())
 		newRecording := &models.Recording{
-			ID: nil,
-			ImageID: p.opts.Image.ID,
-			ProgramID: p.opts.Program.ID,
-			Name: rec.Name(),
+			ID:          nil,
+			ImageID:     p.opts.Image.ID,
+			ProgramID:   p.opts.Program.ID,
+			Name:        *p.opts.Name + "-" + rec.Name(),
 			Description: "",
-			Date: time.Now().String(),
+			Date:        time.Now().String(),
 		}
 
 		newRecording, err := p.recRepo.CreateRecording(ctx, newRecording)
@@ -217,8 +222,8 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 
 		ndlogRecordingFile, err := p.recRepo.CreateRecordingFile(ctx, &models.CreateRecordingFileRequest{
 			RecordingID: newRecording.ID,
-			Name: rec.NdlogFilename(),
-			FileType: "ndlog",
+			Name:        *p.opts.Name + "-" + rec.NdlogFilename(),
+			FileType:    "ndlog",
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to create ndlog object")
@@ -233,7 +238,7 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 
 		_, err = p.recRepo.UploadRecordingFile(ctx, &models.UploadRecordingFileRequest{
 			RecordingID: newRecording.ID,
-			FileID: ndlogRecordingFile.ID,
+			FileID:      ndlogRecordingFile.ID,
 		}, ndlogStream)
 		if err != nil {
 			return errors.Wrap(err, "failed to upload ndlog object")
@@ -241,8 +246,8 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 
 		snapshotRecordingFile, err := p.recRepo.CreateRecordingFile(ctx, &models.CreateRecordingFileRequest{
 			RecordingID: newRecording.ID,
-			Name: rec.SnapshotFilename(),
-			FileType: "snapshot",
+			Name:        *p.opts.Name + "-" + rec.SnapshotFilename(),
+			FileType:    "snapshot",
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to create snapshot object")
@@ -257,7 +262,7 @@ func (p *PandaProgramExecutorJob) uploadRecordings(ctx context.Context) error {
 
 		_, err = p.recRepo.UploadRecordingFile(ctx, &models.UploadRecordingFileRequest{
 			RecordingID: newRecording.ID,
-			FileID: snapshotRecordingFile.ID,
+			FileID:      snapshotRecordingFile.ID,
 		}, snapshotStream)
 		if err != nil {
 			return errors.Wrap(err, "failed to upload snapshot object")

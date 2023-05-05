@@ -6,9 +6,9 @@
 
 Run the given command in the serial console of the backend's PANDA instance.
 
-command
-    - type: "command"
-    - command: serial command to be run ("touch FILE")
+cmd
+    - type: "cmd"
+    - cmd: serial command to be run ("touch FILE")
 
 ### Start and Stop Recording Interactions
 

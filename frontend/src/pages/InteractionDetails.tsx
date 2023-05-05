@@ -1,5 +1,6 @@
-import {EuiButton, EuiPageTemplate, EuiText} from '@elastic/eui';
+import {EuiButton, EuiConfirmModal, EuiPageTemplate, EuiSpacer, EuiText} from '@elastic/eui';
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
+import { useState } from 'react';
 import {useLocation} from "react-router";
 import {useNavigate} from "react-router-dom";
 
@@ -7,70 +8,56 @@ function InteractionDetails() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+
   const buttonStyle = {
     marginRight: "25px",
     marginTop: "25px"
   }
 
-  const deleteCurrentInteractionProgram = () => {
-    navigate('/interactions', {state: {programId: location.state.item.id}});
+  function ConfirmModal(){
+    return <EuiConfirmModal
+      title="Are you sure you want to delete?"
+      onCancel={() => setIsConfirmVisible(false)}
+      onConfirm={() => navigate('/interactions', {state: {programId: location.state.item.id}})}
+      cancelButtonText="Cancel"
+      confirmButtonText="Delete Program"
+      buttonColor="danger"
+      defaultFocusedButton="confirm"
+    ></EuiConfirmModal>;
   }
 
   return(<>
     <EuiPageTemplate.Header pageTitle="Interaction Details" />
-
     <EuiFlexGroup>
       <EuiFlexItem grow={6}>
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>ID:</strong>
+            <strong>ID:</strong> {location.state.item.id}
           </EuiText>
+          <EuiSpacer size='xxl'></EuiSpacer>
           <EuiText textAlign={"center"}>
-            {location.state.item.id}
-          </EuiText>
-        </EuiPageTemplate.Section>
-
-        <EuiPageTemplate.Section>
-          <EuiText textAlign={"center"}>
-            <strong>Name:</strong>
-          </EuiText>
-          <EuiText textAlign={"center"}>
-            {location.state.item.name}
+            <strong>Name:</strong> {location.state.item.name}
           </EuiText>
         </EuiPageTemplate.Section>
-
         <EuiPageTemplate.Section>
           <EuiText textAlign={"center"}>
-            <strong>Interactions:</strong>
+            <strong><u>Interactions:</u></strong>
           </EuiText>
           <EuiText textAlign={"center"}>
             <div style={{ whiteSpace: "pre-line" }}>{location.state.item.instructions}</div>
           </EuiText>
         </EuiPageTemplate.Section>
-
       </EuiFlexItem>
-
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
           <EuiFlexItem grow={false}>
-            <EuiButton
-              style={buttonStyle}
-              onClick={() => {
-                navigate('/interactions')
-              }}
-            >
-              Interactions Dashboard
-            </EuiButton>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
-            <EuiButton style={buttonStyle} onClick={deleteCurrentInteractionProgram}>Delete Interaction</EuiButton>
+            <EuiButton style={buttonStyle} onClick={() => setIsConfirmVisible(true)}>Delete Interaction</EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>
-
-
     </EuiFlexGroup>
-
+    {(isConfirmVisible) ? (ConfirmModal()) : null}
   </>)
 }
 

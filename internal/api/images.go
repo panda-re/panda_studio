@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,9 +12,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 )
 
@@ -48,10 +52,22 @@ func (s *PandaStudioServer) CreateImage(ctx *gin.Context) {
 		return
 	}
 
+	var newConfig pb.PandaConfig
+	temporaryVariable, _ := json.Marshal(createReq.Config)
+	err = json.Unmarshal(temporaryVariable, &newConfig)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to recast config"))
+		return
+	}
+
 	created, err := s.imageRepo.Create(ctx, &models.Image{
 		Name:        *createReq.Name,
 		Description: *createReq.Description,
+		Config: &models.ImageConfiguration{
+			PandaConfig: newConfig,
+		},
 	})
+
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -78,10 +94,21 @@ func (s *PandaStudioServer) UpdateImage(ctx *gin.Context, imageId string) {
 		return
 	}
 
+	var newConfig pb.PandaConfig
+	temporaryVariable, _ := json.Marshal(updateReq.Config)
+	err = json.Unmarshal(temporaryVariable, &newConfig)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to recast config"))
+		return
+	}
+
 	updated, err := s.imageRepo.Update(ctx, &models.Image{
 		Name:        *updateReq.Name,
 		Description: *updateReq.Description,
 		ID:          db.ParseObjectID(imageId),
+		Config: &models.ImageConfiguration{
+			PandaConfig: newConfig,
+		},
 	})
 	if err != nil {
 		ctx.Error(err)
@@ -125,6 +152,50 @@ func (s *PandaStudioServer) CreateImageFile(ctx *gin.Context, imageId string) {
 		ImageId: db.ParseObjectID(imageId),
 		FileId:  fileObj.ID,
 	}, fileReader)
+
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	// todo: convert to dto
+	ctx.JSON(http.StatusOK, fileObj)
+}
+
+func (s *PandaStudioServer) CreateImageFileFromUrl(ctx *gin.Context, imageId string) {
+	form, err := ctx.MultipartForm()
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	fileObj, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
+		ImageID:  db.ParseObjectID(imageId),
+		FileName: form.Value["file_name"][0],
+		FileType: form.Value["file_type"][0],
+	})
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	resp, err := http.Get(form.Value["url"][0])
+	if err != nil {
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Non-OK HTTP status:", resp.StatusCode)
+		ctx.Error(errors.WithStack(err))
+		return
+	}
+
+	fileObj, err = s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
+		ImageId: db.ParseObjectID(imageId),
+		FileId:  fileObj.ID,
+	}, resp.Body)
 
 	if err != nil {
 		ctx.Error(errors.WithStack(err))
