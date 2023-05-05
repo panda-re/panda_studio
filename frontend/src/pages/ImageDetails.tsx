@@ -1,4 +1,4 @@
-import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiConfirmModal, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
+import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiConfirmModal, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
 import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
@@ -11,6 +11,7 @@ function CreateImageDetailsPage() {
   const navigate = useNavigate()
 
   const [isTextCopied, setTextCopied] = useState(false);
+  const [isLinkCopied, setLinkCopied] = useState(false);
 
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -276,7 +277,7 @@ function CreateImageDetailsPage() {
                   {(file.size != null) ? prettyBytes(file.size, { maximumFractionDigits: 2 }) : "0"}
                 </EuiText>
               </EuiFlexItem>
-              <EuiFlexItem >
+              <EuiFlexItem>
                 <EuiText textAlign='center'>
                   <strong>Hash:</strong>
                 </EuiText>
@@ -285,9 +286,7 @@ function CreateImageDetailsPage() {
                     content={isTextCopied ? 'Hash copied to clipboard' : 'Copy hash'}>
                     <EuiButtonEmpty 
                       color='text'
-                      onBlur={() => {
-                        setTextCopied(false);
-                      }}             
+                      onBlur={() => setTextCopied(false)}             
                       onClick={() => {
                         copyToClipboard(file.sha256 ?? "");
                         setTextCopied(true);
@@ -296,7 +295,23 @@ function CreateImageDetailsPage() {
                     </EuiButtonEmpty>
                   </EuiToolTip>
                 </EuiText>
-              </EuiFlexItem>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                <EuiText textAlign='center'>
+                  <strong>Download Link:</strong>
+                </EuiText>
+                <EuiText textAlign='center'>
+                <EuiToolTip content={isLinkCopied ? 'Link copied to clipboard' : 'Copy link'}>
+                  <EuiButtonIcon
+                      iconType={"link"}
+                      onBlur={() => setLinkCopied(false)}
+                      onClick={(value: React.MouseEvent) => {
+                        copyToClipboard(`http://localhost:8080/api/images/${location.state.item.id}/files/${file.id}`);
+                        setLinkCopied(true)}}>
+                  </EuiButtonIcon>
+                </EuiToolTip>
+                </EuiText>
+                </EuiFlexItem>
             </EuiFlexGroup>)}
     return items;
   }
