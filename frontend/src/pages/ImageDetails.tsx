@@ -3,8 +3,18 @@ import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { ImageFile, PandaConfig } from '../api';
+import { downloadImageFile, ImageFile, PandaConfig } from '../api';
 import { archOptions } from '../components/DefaultImageData';
+
+function downloadHandler (imageId: string, file: ImageFile){
+  downloadImageFile(imageId, file.id ?? "").then((data) => {
+    const fileURL = window.URL.createObjectURL(data);
+    let alink = document.createElement('a');
+    alink.href = fileURL;
+    alink.download = file.file_name ?? "defaultName";
+    alink.click();
+  });
+}
 
 function CreateImageDetailsPage() {
   const location = useLocation()
@@ -12,6 +22,7 @@ function CreateImageDetailsPage() {
 
   const [isTextCopied, setTextCopied] = useState(false);
   const [isLinkCopied, setLinkCopied] = useState(false);
+  const [isFileDownloading, setFileDownloading] = useState(false);
 
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -298,9 +309,18 @@ function CreateImageDetailsPage() {
                 </EuiFlexItem>
                 <EuiFlexItem>
                 <EuiText textAlign='center'>
-                  <strong>Download Link:</strong>
+                  <strong>Download:</strong>
                 </EuiText>
                 <EuiText textAlign='center'>
+                <EuiToolTip content={isFileDownloading ? 'File downloading, could take a few seconds' : 'Download file'}>
+                <EuiButtonIcon
+                    iconType={"download"}
+                    onBlur={() => setFileDownloading(false)}
+                    onClick={(value: React.MouseEvent) => {
+                      downloadHandler(location.state.item.id, file)
+                      setFileDownloading(true)}}>
+                </EuiButtonIcon>
+                </EuiToolTip>
                 <EuiToolTip content={isLinkCopied ? 'Link copied to clipboard' : 'Copy link'}>
                   <EuiButtonIcon
                       iconType={"link"}
