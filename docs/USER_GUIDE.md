@@ -295,6 +295,20 @@ Below are step-by-step instructions for how to perform each of these tasks in PA
 
 ![alt_text](user_images/image21.png "image_tooltip")
     Note: A user can also click the delete icon displayed on the right of any recording from the dashboard page to delete it.
+    
+## Download Recording
+1\.Navigate to the  Recording Dashboard by clicking the Recordings tab on the left
+
+![alt_text](user_images/image10.png "image_tooltip")
+
+2\.Click on an existing recording
+
+![alt_text](user_images/image27.png "image_tooltip")
+
+3\.Click the download icons for each recording file
+
+![alt_text](user_images/image28.png "image_tooltip")
+
 
 # Interaction Program Format
 
