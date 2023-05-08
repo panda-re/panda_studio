@@ -14,7 +14,6 @@
 * [Architecture](#architecture)
 * [Troubleshooting and Bug Tracking](#troubleshooting-and-bug-tracking)
     * [Troubleshooting Table](#troubleshooting-table)
-    * [Bug Tracking](#bug-tracking)
 * [Contributing, Maintenance, and Next Steps](#contributing-maintenance-and-next-steps)
     * [Potential Feature Additions and Next Steps](#potential-feature-additions-and-next-steps)
         * [High Priority Items](#high-priority-items)
@@ -33,9 +32,11 @@ This document covers the basics of development and maintenance in the PANDA Stud
 
 # Getting Started
 
+Since PANDA Studio operates as a standalone Docker container, it is possible to expedite the process of building and running the software. This only relies on Docker being properly installed. Directions for running PANDA Studio through Docker can be found here: https://github.com/panda-re/panda_studio/blob/main/readme.md.
+
 To begin working with PANDA Studio, it is helpful to have an understanding of how PANDA itself works. A PANDA introductory class can be found here: https://github.com/panda-re/panda_class. This repo walks through the basic features of PANDA and will provide some insight into the kinds of things PANDA Studio can be used for. 
 
-To begin with PANDA and PANDA Studio, developers will need either a Linux system running version 20.04 or higher, or a Mac system on version 12.3.1 or higher. There are several options for getting a suitable development environment: a physical machine, virtual machine, or Windows Subsystem for Linux (WSL). WSL is recommended over a VM for performance reasons.
+To begin with PANDA and PANDA Studio, developers will need either an Ubuntu Linux system running version 20.04 or higher, or a Mac system on version 12.3.1 or higher. There are several options for getting a suitable development environment: a physical machine, virtual machine, or Windows Subsystem for Linux (WSL). WSL is recommended over a VM for performance reasons.
 
 The next task for obtaining the repos is to install git. Directions can be found at the following link: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git. Git is required as it is responsible for the source control of the project. Since no official releases of PANDA Studio are provided yet, git is the best method to obtain the source code.
 
@@ -43,17 +44,15 @@ A few other installations will be necessary. Namely, Go, npm, and Docker will be
 
 
 
-* Go: https://go.dev/doc/install
-* Docker: https://docs.docker.com/get-docker
-* Node: https://nodejs.dev/en/learn/how-to-install-nodejs
-* Nvm (recommended): https://github.com/nvm-sh/nvm
+* Go: https://go.dev/doc/install (v1.19.4)
+* Docker: https://docs.docker.com/get-docker (v4.15.0)
+* Node: https://nodejs.dev/en/learn/how-to-install-nodejs (v14.21.2)
+* Nvm (recommended): https://github.com/nvm-sh/nvm (v0.39.2)
+
 
 Developers may run into issues with dependencies on particular versions of node or some other software. Console output is usually clear enough that developers should be able to resolve these issues on their own.
 
 With all of the appropriate software installed, one can run an “npm install” inside the root directory of the PANDA Studio project to install all of the front-end dependencies. After importing all of the appropriate dependencies used in the API, a developer should be able to build the system from source and begin developing.
-
-Since PANDA Studio operates as a standalone Docker container, it is possible to expedite the process of building and running the software. This only relies on Docker being properly installed. Directions for running PANDA Studio through Docker can be found here: https://github.com/panda-re/panda_studio/blob/main/readme.md.
-
 
 # Tech Stack
 
@@ -62,17 +61,49 @@ PANDA Studio is built using the following technologies:
 
 
 * Docker: https://docs.docker.com/
+
+  * Used for containerizing different parts of the application
+      
 * React: https://react.dev/
+
+  * Frontend web framework
+      
 * ElasticUI: https://elastic.github.io/eui/#/
+
+  * Component library, used for frontend UI components
+  
 * TypeScript: https://www.typescriptlang.org/docs/
+
+  * Scripting language for frontend
+  
 * Go: https://go.dev/doc/
+
+  * API implementation language
+
 * MongoDB: https://www.mongodb.com/docs/
+
+  * Data storage for documents, such as recording/image metadata
+  
 * Python: https://docs.python.org/3/
+
+  * Used to make the wrapper for PyPANDA
+
 * QEMU: https://www.qemu.org/documentation/
+
+  * The emulation technology with which PANDA is built
+
 * MinIO: https://min.io/docs/minio/linux/index.html
+
+  * Stores non-document data, such as recording files and images
+
 * OpenAPI: https://swagger.io/specification/
+
+  * Specifies API endpoints
+
 * gRPC: https://grpc.io/docs/
-* Protocol Buffers: https://protobuf.dev/
+
+  * Use to send remote procedure calls from API to PANDA agent
+
 
 Links to documentation for each are provided above, as it is outside the scope of this document to go into significant detail about each technology. Different parts of the system will rely on different technologies; for example, the API is built using Go, the gRPC agent is written in Python, and the front-end uses React. Some rudimentary information is given in the [research document](./RESEARCH.md). Developers and maintainers of the software system can seek out necessary documentation as they find it necessary. 
 
@@ -109,7 +140,7 @@ This folder contains all front-end application code. All files relating to the U
 
 ## [internal](../internal)
 
-This folder contains the model and database code that MongoDB uses, as well as the configuration for MongoDB. Within this folder is the [api folder](../internal/api/), which has implementations for each API endpoint in their respective files (images.go, programs.go, etc.). The [db folder](../internal/db/) contains both the models, as Go structs, for each item and the repos folder contains the logic for getting and storing data to and from MongoDB and MinIO object storage. The endpoints written in the api directory call directly to the implementations in the [db/repos](../internal/db/repos/) folder.
+This folder contains the model and database code that MongoDB uses, as well as the configuration for MongoDB. Within this folder is the [api folder](../internal/api/), which has implementations for each API endpoint in their respective files (images.go, programs.go, etc.). The [db folder](../internal/db/) contains both the models, as Go structs, for each item and the repos folder contains the logic for getting and storing data to and from MongoDB and MinIO object storage. The endpoints written in the api directory call directly to the implementations in the [db/repos](../internal/db/repos/) folder. Unlike the panda_api folder in cmd, the api folder here contains implementations whereas the other simply starts the API.
 
 
     
@@ -122,7 +153,7 @@ This folder contains the model and database code that MongoDB uses, as well as t
 
 ## [panda_agent](../panda_agent)
 
-This folder contains the back-end PANDA agent. It is responsible for actually executing the commands that are sent over grpc in PANDA.
+This folder contains the back-end PANDA agent. It is responsible for actually executing the commands that are sent over gRPC in PANDA. For example, a certain interaction program may contain a START_RECORDING instruction. This instruction is parsed and then sent over gRPC to the PANDA agent, where the instruction will be executed.
 
 
     
@@ -213,16 +244,6 @@ The other part of this section is dedicated to keeping a list of known bugs and 
    </td>
   </tr>
   <tr>
-   <td>Response 500 - "Error: No such container:path:xxxx:/panda/data
-<p>
-failed to copy file to agent
-   </td>
-   <td>Unknown cause
-   </td>
-   <td>Unknown solution
-   </td>
-  </tr>
-  <tr>
    <td>Response 500 - db error: server selection error:...
    </td>
    <td>The MongoDB container is not running
@@ -234,9 +255,6 @@ failed to copy file to agent
 
 
 
-## Bug Tracking
-
-As new bugs are discovered, they can be added to some bug tracking mechanism. One such option is using the issue reporting feature that comes standard with the GitHub repo, as these issues can easily be associated with pull requests. Other options are available, but it is best to use a tool which automatically handles the traceability between the bug and any development work.
 
 
 # Contributing, Maintenance, and Next Steps
@@ -263,6 +281,7 @@ This section covers the immediate vision for the project. During the course of d
     * This functionality exists in the backend but has no frontend implementation. Implementing this feature involves being able to replay recordings from the PANDA Studio web client.
 * Progress Bars
     * Currently, there is no way to view image file upload or recording creation progress in the frontend, there is just a loading screen that disappears once the process is complete or errors. Adding in a way to view the progress could be very helpful to users.
+* Timeout parameter
 
 
 ### Low Priority Items
@@ -274,7 +293,7 @@ This section covers the immediate vision for the project. During the course of d
     * Some PyPANDA functions such as `run_serial_cmd` have additional arguments such as a timeout that are not incorporated in gRPC or protobuf. It may be worth adding those arguments or other PyPANDA functions as interactions.
 
 * Features which have no frontend support
-    * This is an all-encompassing category which covers everything that has backend implementation but no current frontend functionality. This is classified as lower priority due to the fact that the items listed in the other category will make implementation of these features easier.
+    * This is an all-encompassing category which covers everything that has backend implementation but no current frontend functionality. This is classified as lower priority due to the fact that the items listed in the other category will make implementation of these features easier. Two of these are specifically listed above (Record/Replay and other interaction types).
 
 
 ## Pull Requests
