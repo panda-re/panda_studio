@@ -177,6 +177,7 @@ Below are step-by-step instructions for how to perform each of these tasks in PA
 6\. Fill out the Extra Args field associated with the Image    
 
 ![alt_text](user_images/image19.png "image_tooltip")
+   Note: The size field here refers to the system memory, not the actual image size.
 
 7\. Click the Create button
 
