@@ -303,11 +303,11 @@ Below are step-by-step instructions for how to perform each of these tasks in PA
 
 2\. Click on an existing recording
 
-![alt_text](user_images/image27.png "image_tooltip")
+![alt_text](user_images/image27.PNG "image_tooltip")
 
 3\. Click the download icons for each recording file
 
-![alt_text](user_images/image28.png "image_tooltip")
+![alt_text](user_images/image28.PNG "image_tooltip")
 
 
 # Interaction Program Format
