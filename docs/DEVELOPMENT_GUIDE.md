@@ -153,7 +153,7 @@ This folder contains the model and database code that MongoDB uses, as well as t
 
 ## [panda_agent](../panda_agent)
 
-This folder contains the back-end PANDA agent. It is responsible for actually executing the commands that are sent over gRPC in PANDA. For example, a certain interaction program may contain a START_RECORDING instruction. This instruction is parsed and then sent over gRPC to the PANDA agent, where the instruction will be executed.
+This folder contains the back-end PANDA agent. It is responsible for executing commands in PANDA that are sent to it through gRPC. For example, a certain interaction program may contain a START_RECORDING instruction. This instruction is parsed and then sent over gRPC to the PANDA agent, where the instruction will be executed using PyPANDA.
 
 
     
@@ -282,6 +282,7 @@ This section covers the immediate vision for the project. During the course of d
 * Progress Bars
     * Currently, there is no way to view image file upload or recording creation progress in the frontend, there is just a loading screen that disappears once the process is complete or errors. Adding in a way to view the progress could be very helpful to users.
 * Timeout parameter
+    * A timeout parameter will keep an incorrectly configured container from running infinitely
 
 
 ### Low Priority Items
@@ -294,6 +295,23 @@ This section covers the immediate vision for the project. During the course of d
 
 * Features which have no frontend support
     * This is an all-encompassing category which covers everything that has backend implementation but no current frontend functionality. This is classified as lower priority due to the fact that the items listed in the other category will make implementation of these features easier. Two of these are specifically listed above (Record/Replay and other interaction types).
+
+## Backend Features In Need of Frontend Support
+
+* Replay Functionality
+    * Adding replay functionality will allow PANDA-Studio to be used for the analysis portion of PANDA. To do this, one would simply have to create a page that calls the replay gRPC command. Plugin support would then be the next reasonable extension of this feature.
+
+* Filesystem Interactions
+    * These interactions are missing one key feature with the frontend, which is that there is currently no system in place to upload and pass arbitrary files or an archive of files to the backend. Currently users have to add the files in when their image is first created if they want to be able to access them with commands. It is also highly recommended that future developers look into using virt-customize to dynamically add in specified files once they are in a database. Virt-customize has multiple commands that can add files or archives of files to a disk image. It is much easier to use than any option that PANDA or PyPANDA has to load files onto a running machine.
+
+* Network Interactions
+    * Network interactions are not missing that much in terms of functionality. The main job is storing the instructions in a database and then parsing them into the corresponding gRPC command.
+
+* GRPC Streaming
+    * This feature at one point was completely implemented, but lost due to merge conflicts. See [23-PANDA-VM-logs branch](https://github.com/panda-re/panda_studio/tree/23-PANDA-VM-logs) for more details, but the main work that needs to be done here is updating the streaming to work with the newer gRPC agent. In addition, work would need to be done to show the corresponding output to the user or pass it to whatever code in the frontend would need it.
+
+* Error Codes
+    * One nice feature of the backend is that it will return an error code and message for anything that it finds as an exception. Many common mistakes are included and the output of such mistakes can be used to inform the user as to what error their input has. Currently, the frontend just needs to report this error to the user in some way.
 
 
 ## Pull Requests
