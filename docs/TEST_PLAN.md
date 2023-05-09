@@ -30,7 +30,7 @@ To manually test the backend you must execute interactions on a specified image 
 
 1. Creating an interactions list
 
-The test for this requirement is to specify a list of interactions. The [executor](../cmd/panda_executor/panda_executor.go) already contains an interaction list that uses all implemented interactions. Currently, it runs the following serial commands:
+The test for this requirement is to specify a list of interactions. The [executor](https://github.com/panda-re/panda_studio/blob/backend-cleanup-documentation/cmd/panda_executor/panda_executor.go#L34-L39) already contains an interaction list that uses all implemented interactions. Currently, it runs the following serial commands:
 - uname -a
 - ls /
 - touch NEW_FILE.txt
@@ -40,7 +40,7 @@ The PANDA Executor acts as a frontend for the system so the backend of PANDA Stu
 
 2. Run the interactions list
 
-The following command will start the backend of PANDA Studio and execute the interactions in the executor using an x86_64 architecture. Two Docker containers should run, the executor, which is initiated in the command below, and an agent that will execute PANDA and return the output to the executor.
+The following command will start the backend of PANDA Studio and execute the interactions in the executor using an emulated x86_64 architecture. Two Docker containers should run, the executor, which is initiated in the command below, and an agent that will execute PANDA and return the output to the executor.
 
 Run the command in the panda_studio directory in the Ubuntu terminal:
 ```
@@ -102,7 +102,7 @@ The recording can be shown by running the following command:
 ```
 ls /tmp/panda-studio
 ```
-Both the files `test-rr-nondet.log` and `test-rr-snp` should be there. The files prove a recording was returned.
+Both the files `test-rr-nondet.log` and `test-rr-snp` should be there. The files' exsitence proves a recording was returned. In order to test that this recording is valid, a user can modify the panda_executor script to call the replay gRPC request instead of using a set list of interactions. An example of this call can be found in the [TestRunReplay](https://github.com/panda-re/panda_studio/blob/backend-cleanup-documentation/cmd/panda_executor_test/panda_executor_test.go#L359) function in panda_executor_test. If all you want to test is if the system itself returns valid recordings, then following this [procedure](https://github.com/panda-re/panda_studio/blob/backend-cleanup-documentation/cmd/panda_executor_test/README.md) will indicate if the system is able to run a replay from a recording it created.
 
 ## Testing Robustness
 
