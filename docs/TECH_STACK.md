@@ -33,11 +33,11 @@ A [YouTube video by user AdaLogics](https://www.youtube.com/watch?v=2HQqZZNC4P8)
 
 ## Docker Image
 
-Docker images are a template with instructions for creating a Docker container. They use a Dockerfile to specify how the image is built. Docker’s website contains a useful [guide](https://docs.docker.com/build/building/packaging/) to creating an image using a Dockerfile. The Dockerfiles for this project can be found in the [docker](../docker/) directory.
+Docker images are a template for creating a Docker container. They use a Dockerfile to specify how the image is built and what applications are to be present with the image. Docker’s website contains a useful [guide](https://docs.docker.com/build/building/packaging/) to creating an image using a Dockerfile. The Dockerfiles for this project can be found in the [docker](../docker/) directory.
 
 ## Docker Container
 
-A Docker container is a runnable instance of a Docker image. Each container is relatively isolated from its host but there are ways to communicate with the host and other containers. More information can be found on [Docker's website](https://www.docker.com/resources/what-container/) This project uses gRPC and ProtoBuf, which have their respective subsections in this document.
+A Docker container is virtual machine created from a docker image which can then run programs or be interacted with through user input. Each container is relatively isolated from its host but there are ways to communicate with the host and other containers. More information can be found on [Docker's website](https://www.docker.com/resources/what-container/) This project uses gRPC and ProtoBuf, which have their respective subsections in this document.
 
 Multiple containers can be run at once using the same image or different images. The theoretical limit is the system’s resources. This project uses Docker Compose, which is a Docker tool that helps define and share multi-container applications through the use of a `YAML` file.
 
@@ -73,12 +73,11 @@ Note that this will not boot up a GUI so this will only work with some images. T
 ```
 docker run -it -p 5900:5900 -v ~/<dir>:/<dir> pandare/panda bash
 ```
-The `-p` option will export the default VNC port outside of the container for your PC to access.
+The `-p` option will export the default VNC port outside of the container for your PC to access. This is useful for checking the docker container in cases where an error may have occured.
 Next is running a PANDA system which can be done using the command below:
 ```
-panda-system-i386 -vnc 0.0.0.0:0 /<dir>/<qcow>
+panda-system-i386 /<dir>/<qcow>
 ```
-Once that has started, connect to the display by opening VNC viewer and connecting to `127.0.0.1:5900`.
 
 # Golang
 
@@ -97,9 +96,9 @@ Go has a [package for testing](https://pkg.go.dev/testing) that was used for the
 
 [gRPC](https://grpc.io/) is a modern open-source high performance Remote Procedure Call (RPC) framework that can run in any environment. gRPC has many similarities to Protocol Buffers and uses Protocol Buffers to structure data. For more information on Protocol Buffers (ProtoBuf) refer to its section below. The main advantage of gRPC is language-neutral so a client in Go can communicate with a client in Python. The server sends a request for the client to execute a method and the client will execute it and provide a response. 
 
-This project uses gRPC and ProtoBuf to communicated between the frontend and backend. As a result, both ends use a language best suited for its implementation rather than making sacrifices for the sake of convenient communication. The frontend implementation can be seen in [grpc_agent.go](../internal/panda_controller/grpc_agent.go) and the backend implementation can be seen in [server.py](../panda_agent/server.py).
+This project uses gRPC and ProtoBuf to communicate between the frontend and backend. As a result, both ends use a language best suited for its implementation rather than making sacrifices for the sake of convenient communication. The frontend implementation can be seen in [grpc_agent.go](../internal/panda_controller/grpc_agent.go) and the backend implementation can be seen in [server.py](../panda_agent/server.py).
 
-Also, the shorter communication of gRPC allows for more flexible error handling rather than a monolithic approach that would require restarting the entire program if an exception occurs.
+GRPC also allows for more flexible error handling versus a monolithic approach that would require restarting the entire program if an exception occurs.
 
 # ProtoBuf
 
