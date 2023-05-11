@@ -1,12 +1,12 @@
 # https://github.com/djui/docker-guestfs/blob/master/Dockerfile
 FROM ubuntu:22.04
 
-WORKDIR /tmp/panda-studio/derive-image-tmp
+WORKDIR /root
 
 # -- Install Dependencies --
 RUN apt-get update && \
     apt-get install -y \
-    ligbuestfs-tools \
+    libguestfs-tools \
     qemu-utils \
     linux-image-generic
 
@@ -14,10 +14,11 @@ ENV LIBGUESTFS_BACKEND=direct \
     HOME=/root
 
 # Build arguments
-ARG NEW_IMAGE
-ARG BASE_IMAGE
-ARG DOCKER_IMAGE
-ARG SIZE
+# ENV NEW_IMAGE
+# ENV BASE_IMAGE
+# ENV DOCKER_IMAGE
+# ENV SIZE
 
-# ENTRYPOINT ["sh", "/derive_image/derive_image.sh"]
-RUN ./derive_image/derive_image.sh $NEW_IMAGE $BASE_IMAGE $DOCKER_IMAGE $SIZE
+COPY "./derive_image.sh" '/root'
+
+ENTRYPOINT ["sh", "derive_image.sh"]

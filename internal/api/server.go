@@ -11,10 +11,11 @@ import (
 //go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=server.cfg.yaml ../../api/panda_studio.yaml
 
 type PandaStudioServer struct {
-	imageRepo     repos.ImageRepository
-	recordingRepo repos.RecordingRepository
-	programRepo  repos.ProgramRepository
+	imageRepo       repos.ImageRepository
+	recordingRepo   repos.RecordingRepository
+	programRepo     repos.ProgramRepository
 	programExecutor *controller.PandaProgramExecutor
+	deriveImageJob  *controller.DeriveImageJob
 }
 
 // Ensures our implementation conforms to the correct interface
@@ -42,10 +43,16 @@ func NewPandaStudioServer() (*PandaStudioServer, error) {
 		return nil, err
 	}
 
+	deriveImageJob, err := controller.NewDeriveImageJob(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PandaStudioServer{
-		imageRepo:     imageRepo,
-		recordingRepo: recordingRepo,
-		programRepo:  programRepo,
+		imageRepo:       imageRepo,
+		recordingRepo:   recordingRepo,
+		programRepo:     programRepo,
 		programExecutor: programExecutor,
+		deriveImageJob:  deriveImageJob,
 	}, nil
 }

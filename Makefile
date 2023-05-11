@@ -17,6 +17,9 @@ initial_setup: docker_agent docker_executor
 docker_agent:
 	docker build -f ./docker/Dockerfile.panda-agent -t pandare/panda_agent ./panda_agent
 
+docker_di_agent:
+	docker build -f ./docker/Dockerfile.derive-image -t pandare/panda_di_agent ./derive_image
+
 docker_executor:
 	docker build -f docker/Dockerfile.panda-executor -t pandare/panda_executor .
 

@@ -556,7 +556,7 @@ components:
         dockerhubimagename:
           type: string
         size:
-          type: integer
+          type: string
     CreateImageFileFromUrlRequest:
       type: object
       properties:

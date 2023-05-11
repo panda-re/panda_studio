@@ -3,18 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"strconv"
-
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/panda-re/panda_studio/internal/panda_controller"
 	"github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
 )
@@ -247,107 +241,23 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string)
 		return
 	}
 
-	//assuming there is one file that makes up the image
-	var oldFileId = oldImageFile.Files[0].ID
-
-	fileReader, err := s.imageRepo.OpenImageFile(ctx, db.ParseObjectID(imageId), oldFileId)
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-	defer fileReader.Close()
-
-	sharedDir, err := os.MkdirTemp("/tmp/panda-studio", "derive-image-tmp")
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	//create new file in shared dir to copy to
-	destImageInSharedDir, err := os.Create(sharedDir + "/" + *deriveReq.Oldname)
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-	defer destImageInSharedDir.Close()
-
-	nBytes, err := io.Copy(destImageInSharedDir, fileReader)
-	if err != nil || nBytes == 0 {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-	defer cli.Close()
-
-	reader, err := cli.ImagePull(ctx, "docker.io/library/alpine", types.ImagePullOptions{})
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	defer reader.Close()
-	io.Copy(os.Stdout, reader)
-
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "alpine",
-		Cmd: []string{"docker build", "Dockerfile.derive-image",
-			" --build-arg new_image=", *deriveReq.Newname,
-			" --build-arg base_image=", *deriveReq.Oldname,
-			" --build-arg docker_image=", *deriveReq.Dockerhubimagename,
-			" --build-arg size=", strconv.Itoa(*deriveReq.Size)},
-		Tty: false,
-	}, nil, nil, nil, "")
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	//retrieve derived image
-	newImageFile, err := os.Open(sharedDir + "/" + *deriveReq.Newname)
-	if err != nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-	defer fileReader.Close()
-
-	//upload image to repo
-	created, err := s.imageRepo.Create(ctx, &models.Image{
-		Name:        *deriveReq.Newname,
-		Description: "Derived from " + *deriveReq.Oldname,
+	diExecutor, err := s.deriveImageJob.NewDeriveImageJobExecutor(ctx, &panda_controller.DeriveImageJobParams{
+		BaseImage:   oldImageFile,
+		NewImage:    *deriveReq.Newname,
+		Resize:      *deriveReq.Size, //TODO change to string in DeriveImageFileRequest
+		DockerImage: *deriveReq.Dockerhubimagename,
 	})
+
+	err = diExecutor.Run(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	imageFile, err := s.imageRepo.CreateImageFile(ctx, &models.ImageFileCreateRequest{
-		ImageID:  created.ID,
-		FileName: created.Name,
-		FileType: "qcow2",
-	})
+	//will run job, upload image to repo with new name, and
+	err = diExecutor.Run(ctx)
 	if err != nil {
-		ctx.Error(errors.WithStack(err))
+		ctx.Error(err)
 		return
 	}
-
-	fileObj, err := s.imageRepo.UploadImageFile(ctx, &models.ImageFileUploadRequest{
-		ImageId: created.ID,
-		FileId:  imageFile.ID,
-	}, newImageFile)
-	if err != nil || fileObj == nil {
-		ctx.Error(errors.WithStack(err))
-		return
-	}
-
-	return
 }

@@ -19,7 +19,7 @@ function CreateImagePage() {
             oldname: location.state.item.name,
             newname: newImageName,
             dockerhubimagename: dockerImageName,
-            size: +newSize
+            size: ""+newSize+"G" 
         };
         const fullReq = {
             data: req,
