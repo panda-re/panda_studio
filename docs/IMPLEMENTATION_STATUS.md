@@ -17,6 +17,9 @@ Below is a list of features with incomplete or no implementation:
 * Recordings can be replayed from the frontend application
   * There is currently support for recording replay in the backend, but no UI work has been done
 * Custom image derivation
-  * Blocked by a bug in running Docker, but otherwise seems to work as expected
+  * Blocked by a bug in running Docker: following install, docker daemon will not start inside the qcow image.
+  * Also currently only supports image derivation for Ubuntu images.
+  * Otherwise, full stack implementation of this is complete. 
+  * See the derive_image branch for implementation of this feature.
 * Network and filesystem interactions
   * The framework for supporting these interaction types exists in the API, but a detailed solution does not yet exist
