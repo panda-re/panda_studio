@@ -233,17 +233,17 @@ If there is time left at the end of the project, we may revisit front-end testin
 5. Navigate to the Image Dashboard
 6. Click the upload image button
 7. Enter a name for the image
-8. Enter all required config data
-9. Select local image file to upload
-10. Click create
-11. Verify that the user has been navigated back to the Image Dashboard and the image has been created
+8. Click the x86_64 button to load all default config values
+9. Delete url value that was entered by button logic
+10. Select local image file to upload
+11. Click create
+12. Verify that the user has been navigated back to the Image Dashboard and the image has been created
 
 ### Test Case: Image Upload by Url
 12. Navigate to the Image Dashboard
 13. Click the upload image button
 14. Enter a name for the image
-15. Enter all required config data
-16. Enter URL of a valid qcow image
+15. Click the x86_64 button to load all default config values
 17. Click create
 18. Verify that the user has been navigated back to the Image Dashboard and the image has been created
 
