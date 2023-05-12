@@ -24,25 +24,22 @@ then
     exit 4
 fi
 
+if kvm-ok; then
+    echo "KVM is installed and operational"
+    export LIBGUESTFS_HV=$(which qemu-system-x86_64)
+else
+    echo "KVM is not available. Execution will be slower"
+    exit 5
+fi
+
 # -- expand size of the main drive --
 cp ${BASE_IMAGE} ${NEW_IMAGE}	
 virt-resize --resize /dev/sda1=+${SIZE} ${BASE_IMAGE} ${NEW_IMAGE}
 # expands into /dev/sda3
 
 # -- Open Guestfish --
-guestfish --network << EOF
-add ${NEW_IMAGE}
-set-network true
-run
-mount /dev/sda3 /
-command "sudo apt update"
-command "sudo apt install apt-transport-https curl gnupg-agent ca-certificates software-properties-common -y"
-command "wget https://download.docker.com/linux/ubuntu/gpg" 
-command "sudo apt-key add gpg"
-command "sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
-command "sudo apt install docker-ce docker-ce-cli containerd.io cgroupfs-mount -y"
-command "sudo systemctl enable docker"
-command "sudo systemctl start docker"
-command "docker pull ${DOCKER_IMAGE}"
+guestfish --network -a ${NEW_IMAGE} -i << EOF
+copy-file-to-device /root/install-docker.sh /root/install-docker.sh
+sh "/root/install-docker.sh"
 exit
 EOF

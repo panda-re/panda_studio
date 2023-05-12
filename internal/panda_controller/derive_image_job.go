@@ -94,6 +94,7 @@ func (di *DeriveImageJobExecutor) Run(ctx context.Context) error {
 	//run the derive image job in the derive image agent
 	err = di.agent.Run(ctx)
 	if err != nil {
+		fmt.Printf("Error running the derive image job: %s\n", err.Error())
 		return err
 	}
 

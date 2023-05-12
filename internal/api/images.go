@@ -247,6 +247,10 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string)
 		Resize:      *deriveReq.Size, //TODO change to string in DeriveImageFileRequest
 		DockerImage: *deriveReq.Dockerhubimagename,
 	})
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	err = diExecutor.Run(ctx)
 	if err != nil {

@@ -18,7 +18,6 @@ import (
 type dockerPandaDIAgent struct {
 	cli         *docker.Client
 	containerId *string
-	sharedDir   *string
 	params      *PandaDIAgentParams
 }
 type PandaDIAgentParams struct {
@@ -26,7 +25,7 @@ type PandaDIAgentParams struct {
 	new_image       string
 	resize          string //size to expand vm disk - "XGB" or "XMB", where X is the amount of space to add
 	docker_image    string
-	base_image      io.Reader
+	base_image      io.ReadCloser
 	base_image_size int64
 }
 
@@ -49,16 +48,19 @@ func CreateDockerPandaDIAgent(ctx context.Context, args PandaDIAgentParams) (*do
 }
 
 func (pdia *dockerPandaDIAgent) Run(ctx context.Context) error {
+	fmt.Printf("Running dockerPandaDIAgent with params: %+v\n", pdia.params)
 	err := pdia.createContainer(ctx)
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("Copying base image to container\n")
 	err = pdia.copyImageFile(ctx)
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("Starting container\n")
 	//start container
 	err = pdia.startContainer(ctx)
 	if err != nil {
@@ -66,15 +68,19 @@ func (pdia *dockerPandaDIAgent) Run(ctx context.Context) error {
 	}
 
 	//wait for container to stop
-	wait, waitErr := pdia.cli.ContainerWait(ctx, *pdia.containerId, container.WaitConditionNotRunning)
+	wait, waitErr := pdia.cli.ContainerWait(ctx, *pdia.containerId, container.WaitConditionNextExit)
 	select {
-	case msg1 := <-wait:
-		//finished
-		fmt.Println("received", msg1)
-	case msg2 := <-waitErr:
+	case waitResult := <-wait:
+		if waitResult.StatusCode != 0 {
+			errDesc, err := pdia.getLogs(ctx)
+			if err != nil {
+				return errors.Wrap(err, "Could not get logs from container")
+			}
+			return errors.Errorf("Could not derive image:\n%s", errDesc)
+		}
+	case err = <-waitErr:
 		//error channel outputted first
-		fmt.Println("received", msg2)
-		return msg2
+		return errors.Wrap(err, "Could not wait on container")
 	}
 
 	//copying file out, and destroying the container will be done by the caller
@@ -141,6 +147,8 @@ func (pdia *dockerPandaDIAgent) OpenImageFile(ctx context.Context) (io.ReadClose
 func (pdia *dockerPandaDIAgent) Close() error {
 	ctx := context.Background()
 
+	pdia.params.base_image.Close()
+
 	err := pdia.stopContainer(ctx)
 	if err != nil {
 		return err
@@ -173,6 +181,8 @@ func (pdia *dockerPandaDIAgent) createContainer(ctx context.Context) error {
 	}, &container.HostConfig{
 		// make sure the container is removed on exit
 		AutoRemove: false,
+		// To allow for passing through KVM
+		Privileged: true,
 	}, &network.NetworkingConfig{}, nil, "")
 	if err != nil {
 		return err
@@ -206,7 +216,14 @@ func (pdia *dockerPandaDIAgent) stopContainer(ctx context.Context) error {
 		return errors.New("derive image container not started")
 	}
 
-	err := pdia.cli.ContainerStop(ctx, *pdia.containerId, nil)
+	// get the logs
+	logs, err := pdia.getLogs(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println(logs)
+
+	err = pdia.cli.ContainerStop(ctx, *pdia.containerId, nil)
 	if err != nil {
 		return err
 	}
