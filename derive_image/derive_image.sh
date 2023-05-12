@@ -41,8 +41,8 @@ command "wget https://download.docker.com/linux/ubuntu/gpg"
 command "sudo apt-key add gpg"
 command "sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
 command "sudo apt install docker-ce docker-ce-cli containerd.io cgroupfs-mount -y"
-command "sudo service docker start"
-command "docker pull ${DOCKER_IMAGE}"
+command "sudo systemctl enable docker"
+command "sudo systemctl start docker"
 command "docker pull ${DOCKER_IMAGE}"
 exit
 EOF

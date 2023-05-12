@@ -1,7 +1,6 @@
 package panda_controller
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -47,12 +46,6 @@ func (di *DeriveImageJob) NewDeriveImageJobExecutor(ctx context.Context, params 
 	return diJobExecutor, nil
 }
 
-func getSize(stream io.Reader) int { //TODO: do we need to use this for base_image_size?
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Len()
-}
-
 // setupContainer
 func (di *DeriveImageJobExecutor) setupContainer(ctx context.Context) error {
 	//download the image
@@ -72,7 +65,6 @@ func (di *DeriveImageJobExecutor) setupContainer(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open image")
 	}
-	defer fileReader.Close()
 
 	diAgent, err := CreateDockerPandaDIAgent(ctx, PandaDIAgentParams{
 		base_image_name: di.params.BaseImage.Name,

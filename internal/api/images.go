@@ -253,11 +253,4 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string)
 		ctx.Error(err)
 		return
 	}
-
-	//will run job, upload image to repo with new name, and
-	err = diExecutor.Run(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
 }

@@ -30,7 +30,8 @@ type PandaDIAgentParams struct {
 	base_image_size int64
 }
 
-const CONTAINER_DI_DATA_DIR = "/derive-image/data"
+const CONTAINER_DI_DATA_DIR = "/root"
+const DI_DOCKER_IMAGE = "pandare/panda_di_agent"
 
 func CreateDockerPandaDIAgent(ctx context.Context, args PandaDIAgentParams) (*dockerPandaDIAgent, error) {
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
@@ -145,11 +146,6 @@ func (pdia *dockerPandaDIAgent) Close() error {
 		return err
 	}
 
-	err = pdia.cli.ContainerRemove(ctx, *pdia.containerId, dockerTypes.ContainerRemoveOptions{})
-	if err != nil {
-		return err
-	}
-
 	err = pdia.cli.Close()
 	if err != nil {
 		return err
@@ -164,7 +160,7 @@ func (pdia *dockerPandaDIAgent) createContainer(ctx context.Context) error {
 	}
 
 	ccResp, err := pdia.cli.ContainerCreate(ctx, &container.Config{
-		Image:        DOCKER_IMAGE,
+		Image:        DI_DOCKER_IMAGE,
 		Tty:          true,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -214,6 +210,12 @@ func (pdia *dockerPandaDIAgent) stopContainer(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	err = pdia.cli.ContainerRemove(ctx, *pdia.containerId, dockerTypes.ContainerRemoveOptions{})
+	if err != nil {
+		return err
+	}
+
 	pdia.containerId = nil
 	return nil
 }
