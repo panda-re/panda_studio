@@ -282,13 +282,20 @@ class PandaAgent:
 
     def execute_network_command(self, request: pb.NetworkRequest):
         '''
-        Executes a network command
+        Handles execution of a network interaction. It will first construct the message based on the request
+        sent to the backend. Then it will create a socket on the requested port and PANDA_IP using the specified
+        sock_type. Finally it will send the message. 
+
+        Note: The PANDA machine has to already be listening for a connection on the requested port, otherwise
+        the connection will fail. If you want to start the network interaction first or have it try multiple
+        times, look at the Non-Blocking-Network branch on Github which starts the connection in another process
+        and retries the connection if it fails. This does bring with it the loss of the response however.
 
         Args:
             request: gRPC request containing the networking information such as application, command, etc.
         
         Returns:
-            bytes: Response
+            bytes: Response message of the PANDA Machine
         '''
         response = b''
         message = b''
