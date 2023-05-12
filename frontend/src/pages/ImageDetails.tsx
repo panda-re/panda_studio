@@ -389,14 +389,14 @@ function CreateImageDetailsPage() {
 
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
-          <EuiFlexItem grow={false}>
+          {/* <EuiFlexItem grow={false}>
             <EuiButton 
             style={buttonStyle}
             onClick={() => {
               navigate('/createImage', {state:{item:location.state.item}})
             }}
             >Derive New Image</EuiButton>
-          </EuiFlexItem>
+          </EuiFlexItem> */}
           <EuiFlexItem grow={false}>
           <EuiButton 
               style={buttonStyle}
