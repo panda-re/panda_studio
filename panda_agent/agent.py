@@ -3,6 +3,7 @@ from enum import Enum
 import queue
 import pb.panda_agent_pb2 as pb
 import socket
+import subprocess
 
 PANDA_IP = '127.0.0.1'
 
@@ -282,15 +283,18 @@ class PandaAgent:
 
     def execute_network_command(self, request: pb.NetworkRequest):
         '''
-        Executes a network command
+        Handles execution of a network interaction. It will first construct the message based on the request
+        sent to the backend and then start a seperate process to try to connect and send the command. The
+        reason for the seperate process is to make the code non-blocking.
 
         Args:
             request: gRPC request containing the networking information such as application, command, etc.
         
         Returns:
-            bytes: Response
+            string: Response indicating process started correctly
         '''
-        response = b''
+
+        #response = b''
         message = b''
 
         if request.application == "HTTP" or request.application == "http":
@@ -323,10 +327,15 @@ class PandaAgent:
         else:
             message = bytes(request.customPacket, encoding='utf-8')
 
-        with socket.socket(socket.AF_INET, request.socketType) as con:
-            con.connect((PANDA_IP, request.port))
-            con.send(message)
-            response = con.recv(4096)
-            con.close()
         
-        return response
+        
+        subprocess.Popen(["python3","networkCommand.py", message, request.port, PANDA_IP, request.socketType])
+
+
+        # with socket.socket(socket.AF_INET, request.socketType) as con:
+        #     con.connect((PANDA_IP, request.port))
+        #     con.send(message)
+        #     response = con.recv(4096)
+        #     con.close()
+        
+        return "Network Request Started"
