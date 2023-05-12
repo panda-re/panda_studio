@@ -1,5 +1,9 @@
 # Deployment Instructions
 
+This guide is recommended if you wish to deploy PANDA Studio on a server or other system, which is useful for granting multiple people access to the installation.
+
+If you wish to test and develop PANDA Studio, refer to the getting started [instructions](../README.md).
+
 ## 1. Install Docker
 
 Instructions to install Docker may be different depending on your system.

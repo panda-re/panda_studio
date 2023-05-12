@@ -26,7 +26,7 @@ cd panda_studio
 
 ## Deploying PANDA Studio
 
-If you wish to deploy PANDA Studio, refer to the [deployment guide](./docs/DEPLOYMENT.md). If you wish to test and develop PANDA Studio, continue.
+If you wish to deploy PANDA Studio, refer to the [deployment guide](./docs/DEPLOYMENT.md). If you wish to test and develop PANDA Studio, continue here.
 
 ## PANDA Studio Backend 
 
