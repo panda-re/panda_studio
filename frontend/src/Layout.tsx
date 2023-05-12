@@ -43,7 +43,7 @@ function Layout() {
             items: [
               <EuiHeaderLogo iconType={pandaLogo}>PANDA Studio</EuiHeaderLogo>,
               <EuiHeaderLinks aria-label="App navigation dark theme example">
-                <EuiHeaderLink isActive>Docs</EuiHeaderLink>
+                <EuiHeaderLink isActive href='https://github.com/panda-re/panda_studio#readme'>Docs</EuiHeaderLink>
                 <EuiHeaderLink isActive href='https://github.com/panda-re/panda_studio'>Code</EuiHeaderLink>
               </EuiHeaderLinks>,
             ],

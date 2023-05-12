@@ -1,16 +1,28 @@
-import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiConfirmModal, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
+import {copyToClipboard, EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiConfirmModal, EuiFieldText, EuiModal, EuiModalBody, EuiModalFooter, EuiModalHeader, EuiModalHeaderTitle, EuiOverlayMask, EuiPageTemplate, EuiSelect, EuiSpacer, EuiText, EuiToolTip, useGeneratedHtmlId} from '@elastic/eui';
 import {ReactElement, useState} from "react";
 import {EuiFlexGroup, EuiFlexItem} from '@elastic/eui';
 import {useLocation, useNavigate} from "react-router";
 import prettyBytes from 'pretty-bytes';
-import { ImageFile, PandaConfig } from '../api';
+import { downloadImageFile, ImageFile, PandaConfig } from '../api';
 import { archOptions } from '../components/DefaultImageData';
+
+function downloadHandler (imageId: string, file: ImageFile){
+  downloadImageFile(imageId, file.id ?? "").then((data) => {
+    const fileURL = window.URL.createObjectURL(data);
+    let alink = document.createElement('a');
+    alink.href = fileURL;
+    alink.download = file.file_name ?? "defaultName";
+    alink.click();
+  });
+}
 
 function CreateImageDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
 
   const [isTextCopied, setTextCopied] = useState(false);
+  const [isLinkCopied, setLinkCopied] = useState(false);
+  const [isFileDownloading, setFileDownloading] = useState(false);
 
   // Modal Constants
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -276,7 +288,7 @@ function CreateImageDetailsPage() {
                   {(file.size != null) ? prettyBytes(file.size, { maximumFractionDigits: 2 }) : "0"}
                 </EuiText>
               </EuiFlexItem>
-              <EuiFlexItem >
+              <EuiFlexItem>
                 <EuiText textAlign='center'>
                   <strong>Hash:</strong>
                 </EuiText>
@@ -285,9 +297,7 @@ function CreateImageDetailsPage() {
                     content={isTextCopied ? 'Hash copied to clipboard' : 'Copy hash'}>
                     <EuiButtonEmpty 
                       color='text'
-                      onBlur={() => {
-                        setTextCopied(false);
-                      }}             
+                      onBlur={() => setTextCopied(false)}             
                       onClick={() => {
                         copyToClipboard(file.sha256 ?? "");
                         setTextCopied(true);
@@ -296,7 +306,32 @@ function CreateImageDetailsPage() {
                     </EuiButtonEmpty>
                   </EuiToolTip>
                 </EuiText>
-              </EuiFlexItem>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                <EuiText textAlign='center'>
+                  <strong>Download:</strong>
+                </EuiText>
+                <EuiText textAlign='center'>
+                <EuiToolTip content={isFileDownloading ? 'File downloading, could take a few seconds' : 'Download file'}>
+                <EuiButtonIcon
+                    iconType={"download"}
+                    onBlur={() => setFileDownloading(false)}
+                    onClick={(value: React.MouseEvent) => {
+                      downloadHandler(location.state.item.id, file)
+                      setFileDownloading(true)}}>
+                </EuiButtonIcon>
+                </EuiToolTip>
+                <EuiToolTip content={isLinkCopied ? 'Link copied to clipboard' : 'Copy link'}>
+                  <EuiButtonIcon
+                      iconType={"link"}
+                      onBlur={() => setLinkCopied(false)}
+                      onClick={(value: React.MouseEvent) => {
+                        copyToClipboard(`http://localhost:8080/api/images/${location.state.item.id}/files/${file.id}`);
+                        setLinkCopied(true)}}>
+                  </EuiButtonIcon>
+                </EuiToolTip>
+                </EuiText>
+                </EuiFlexItem>
             </EuiFlexGroup>)}
     return items;
   }
@@ -354,14 +389,14 @@ function CreateImageDetailsPage() {
 
       <EuiFlexItem>
         <EuiFlexGroup direction={"column"}>
-          <EuiFlexItem grow={false}>
+          {/* <EuiFlexItem grow={false}>
             <EuiButton 
             style={buttonStyle}
             onClick={() => {
               navigate('/createImage', {state:{item:location.state.item}})
             }}
             >Derive New Image</EuiButton>
-          </EuiFlexItem>
+          </EuiFlexItem> */}
           <EuiFlexItem grow={false}>
           <EuiButton 
               style={buttonStyle}

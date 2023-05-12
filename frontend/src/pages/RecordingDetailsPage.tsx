@@ -1,4 +1,4 @@
-import {EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiConfirmModal, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, formatDate} from '@elastic/eui';
+import { copyToClipboard, EuiButton, EuiButtonEmpty, EuiButtonIcon, EuiConfirmModal, EuiFlexGroup, EuiFlexItem, EuiPageTemplate, EuiSpacer, EuiText, EuiToolTip, formatDate} from '@elastic/eui';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import { ReactElement, useState } from 'react';
@@ -20,6 +20,8 @@ function RecordingDetailsPage() {
   const navigate = useNavigate()
   
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+
+  const [isLinkCopied, setLinkCopied] = useState(false);
 
   const buttonStyle = {
     marginRight: "25px",
@@ -69,6 +71,15 @@ function RecordingDetailsPage() {
                     onClick={(value: React.MouseEvent) => {
                       downloadHandler(value, location.state.item.id, file)}}>
                   </EuiButtonIcon>
+                  <EuiToolTip content={isLinkCopied ? 'Link copied to clipboard' : 'Copy link'}>
+                    <EuiButtonIcon
+                      iconType={"link"}
+                      onBlur={() => setLinkCopied(false)}
+                      onClick={(value: React.MouseEvent) => {
+                        copyToClipboard(`http://localhost:8080/api/recordings/${location.state.item.id}/files/${file.id}`)
+                        setLinkCopied(true);}}>
+                    </EuiButtonIcon>
+                  </EuiToolTip>
                 </EuiText>
               </EuiFlexItem>
             </EuiFlexGroup>)
