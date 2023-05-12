@@ -23,3 +23,4 @@ Below is a list of features with incomplete or no implementation:
   * See the derive_image branch for implementation of this feature.
 * Network and filesystem interactions
   * The framework for supporting these interaction types exists in the API, but a detailed solution does not yet exist
+* To interface with the backend directly you can try out the [executor](/cmd/panda_executor/panda_executor.go).
