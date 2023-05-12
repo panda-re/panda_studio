@@ -95,6 +95,31 @@ paths:
                 $ref: "#/components/schemas/Image"
         "404":
           $ref: "#/components/responses/NotFoundResponse"
+    post:
+      tags:
+        - image
+        - file
+      summary: Derive new image
+      operationId: createDerivedImage
+      parameters:
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeriveImageFileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: success
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        "409":
+          $ref: "#/components/responses/ConflictResponse"
   /images/{imageId}/files:
     post:
       tags:
@@ -519,7 +544,19 @@ components:
         file:
           type: string
           format: binary
-
+    DeriveImageFileRequest:
+      type: object
+      properties:
+        imageid:
+          type: string
+        oldname:
+          type: string
+        newname:
+          type: string
+        dockerhubimagename:
+          type: string
+        size:
+          type: string
     CreateImageFileFromUrlRequest:
       type: object
       properties:
@@ -529,7 +566,6 @@ components:
           $ref: "#/components/schemas/ImageFileType"
         url:
           type: string
-    
     Recording:
       type: object
       properties:

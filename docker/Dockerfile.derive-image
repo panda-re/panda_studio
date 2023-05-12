@@ -1,0 +1,24 @@
+# https://github.com/djui/docker-guestfs/blob/master/Dockerfile
+FROM ubuntu:22.04
+
+WORKDIR /root
+
+# -- Install Dependencies --
+RUN apt-get update && \
+    apt-get install -y \
+    libguestfs-tools \
+    qemu-utils \
+    linux-image-generic
+
+ENV LIBGUESTFS_BACKEND=direct \
+    HOME=/root
+
+# Build arguments
+# ENV NEW_IMAGE
+# ENV BASE_IMAGE
+# ENV DOCKER_IMAGE
+# ENV SIZE
+
+COPY "./derive_image.sh" '/root'
+
+ENTRYPOINT ["sh", "derive_image.sh"]

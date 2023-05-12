@@ -3,12 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/panda-re/panda_studio/internal/db"
 	"github.com/panda-re/panda_studio/internal/db/models"
+	"github.com/panda-re/panda_studio/internal/panda_controller"
 	"github.com/panda-re/panda_studio/panda_agent/pb"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 func (s *PandaStudioServer) FindAllImages(ctx *gin.Context) {
@@ -223,4 +225,32 @@ func (s *PandaStudioServer) DeleteImageFile(ctx *gin.Context, imageId ImageId, f
 	}
 
 	ctx.JSON(http.StatusOK, imgFile)
+}
+
+func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string) {
+	var deriveReq DeriveImageFileRequest
+	err := ctx.BindJSON(&deriveReq)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "invalid request"))
+		return
+	}
+
+	oldImageFile, err := s.imageRepo.FindOne(ctx, db.ParseObjectID(imageId))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	diExecutor, err := s.deriveImageJob.NewDeriveImageJobExecutor(ctx, &panda_controller.DeriveImageJobParams{
+		BaseImage:   oldImageFile,
+		NewImage:    *deriveReq.Newname,
+		Resize:      *deriveReq.Size, //TODO change to string in DeriveImageFileRequest
+		DockerImage: *deriveReq.Dockerhubimagename,
+	})
+
+	err = diExecutor.Run(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 }
