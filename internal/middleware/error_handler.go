@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/rs/zerolog"
 )
 
 var ErrorMapping = map[error]int{
@@ -29,12 +30,15 @@ type ErrorMessage struct {
 	Details string	`json:"stack,omitempty"`
 }
 
-func ErrorHandler() gin.HandlerFunc {
-	type stackTracer interface {
-		StackTrace() errors.StackTrace
-	}
+type stackTracer interface {
+	StackTrace() errors.StackTrace
+}
 
-	return func(c *gin.Context) {
+const _ gin.HandlerFunc = ErrorHandler
+
+func ErrorHandler() gin.HandlerFunc {
+
+	return errorHandler
 		if ok, panicVal := func() (ok bool, panicVal any) {
 			defer func() {
 				if r := recover(); r != nil {
@@ -73,6 +77,8 @@ func ErrorHandler() gin.HandlerFunc {
 			Details: details,
 		}
 
+
+		zerolog.ctx(c)
 		// todo: return correct error code
 		c.AbortWithStatusJSON(statusCode, gin.H{"error": errResponse })
 	}

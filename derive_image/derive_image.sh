@@ -24,25 +24,32 @@ then
     exit 4
 fi
 
+if kvm-ok; then
+    echo "KVM is installed and operational"
+    export LIBGUESTFS_HV=$(which qemu-system-x86_64)
+else
+    echo "KVM is not installed... Defaulting to slower emulation mode"
+    exit 5
+fi
+
 # -- expand size of the main drive --
 cp ${BASE_IMAGE} ${NEW_IMAGE}	
-virt-resize --resize /dev/sda1=+${SIZE} ${BASE_IMAGE} ${NEW_IMAGE}
+# virt-resize --resize /dev/sda1=+${SIZE} ${BASE_IMAGE} ${NEW_IMAGE}
 # expands into /dev/sda3
 
+APT_PACKAGES="apt-transport-https curl gnupg-agent ca-certificates software-properties-common"
+DOCKER_APT_PACKAGES="docker-ce docker-ce-cli containerd.io cgroupfs-mount"
+
 # -- Open Guestfish --
-guestfish --network << EOF
-add ${NEW_IMAGE}
-set-network true
-run
-mount /dev/sda3 /
+guestfish --network -a ${NEW_IMAGE} -i << EOF
+setenv DEBIAN_FRONTEND noninteractive
 command "sudo apt update"
-command "sudo apt install apt-transport-https curl gnupg-agent ca-certificates software-properties-common -y"
+command "apt install -y ${APT_PACKAGES}"
 command "wget https://download.docker.com/linux/ubuntu/gpg" 
-command "sudo apt-key add gpg"
-command "sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
-command "sudo apt install docker-ce docker-ce-cli containerd.io cgroupfs-mount -y"
-command "sudo service docker start"
-command "docker pull ${DOCKER_IMAGE}"
+command "apt-key add gpg"
+command "add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
+command "apt install -y ${DOCKER_APT_PACKAGES}"
+command "service docker start"
 command "docker pull ${DOCKER_IMAGE}"
 exit
 EOF

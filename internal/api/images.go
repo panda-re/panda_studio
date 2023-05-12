@@ -247,14 +247,11 @@ func (s *PandaStudioServer) CreateDerivedImage(ctx *gin.Context, imageId string)
 		Resize:      *deriveReq.Size, //TODO change to string in DeriveImageFileRequest
 		DockerImage: *deriveReq.Dockerhubimagename,
 	})
-
-	err = diExecutor.Run(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	//will run job, upload image to repo with new name, and
 	err = diExecutor.Run(ctx)
 	if err != nil {
 		ctx.Error(err)
