@@ -20,5 +20,6 @@ ENV LIBGUESTFS_BACKEND=direct \
 # ENV SIZE
 
 COPY "./derive_image.sh" '/root'
+COPY "./install-docker.sh" '/root'
 
 ENTRYPOINT ["sh", "derive_image.sh"]

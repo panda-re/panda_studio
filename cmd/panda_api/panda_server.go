@@ -23,7 +23,7 @@ func main() {
 func runServer() error {
 	r := gin.Default()
 
-	r.Use(middleware.ErrorHandler())
+	r.Use(middleware.ErrorHandler)
 
 	swagger, err := api.GetSwagger()
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/rs/zerolog"
 )
 
 var ErrorMapping = map[error]int{
@@ -34,52 +34,49 @@ type stackTracer interface {
 	StackTrace() errors.StackTrace
 }
 
-const _ gin.HandlerFunc = ErrorHandler
+var _ gin.HandlerFunc = ErrorHandler
 
-func ErrorHandler() gin.HandlerFunc {
+func ErrorHandler(c *gin.Context) {
+	if ok, panicVal := func() (ok bool, panicVal any) {
+		defer func() {
+			if r := recover(); r != nil {
+				panicVal = r
+				ok = false
+			}
+		}()
 
-	return errorHandler
-		if ok, panicVal := func() (ok bool, panicVal any) {
-			defer func() {
-				if r := recover(); r != nil {
-					panicVal = r
-					ok = false
-				}
-			}()
+		c.Next()
 
-			c.Next()
-
-			return true, nil
-		}(); !ok {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": ErrorMessage{
-					Message: fmt.Sprintf("%+v", panicVal),
-				},
-			})
-		}
-
-		if len(c.Errors) == 0 {
-			return
-		}
-
-		err := c.Errors[0]
-		details := ""
-
-		statusCode := 500//getErrorCode(errors.Cause(err.Err))
-
-		if err, ok := err.Err.(stackTracer); ok {
-			stack := err.StackTrace()
-			details = fmt.Sprintf("%+v", stack)
-		}
-
-		errResponse := ErrorMessage{
-			Message: fmt.Sprintf("%s", err.Err),
-			Details: details,
-		}
-
-
-		zerolog.ctx(c)
-		// todo: return correct error code
-		c.AbortWithStatusJSON(statusCode, gin.H{"error": errResponse })
+		return true, nil
+	}(); !ok {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": ErrorMessage{
+				Message: fmt.Sprintf("%+v", panicVal),
+			},
+		})
 	}
+
+	if len(c.Errors) == 0 {
+		return
+	}
+
+	err := c.Errors[0]
+	details := ""
+
+	statusCode := 500//getErrorCode(errors.Cause(err.Err))
+
+	if err, ok := err.Err.(stackTracer); ok {
+		stack := err.StackTrace()
+		details = fmt.Sprintf("%+v", stack)
+	}
+
+	errResponse := ErrorMessage{
+		Message: fmt.Sprintf("%s", err.Err),
+		Details: details,
+	}
+
+	log.Error().Msg(errResponse.Details)
+
+	// todo: return correct error code
+	c.AbortWithStatusJSON(statusCode, gin.H{"error": errResponse })
 }

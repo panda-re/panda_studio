@@ -28,7 +28,7 @@ if kvm-ok; then
     echo "KVM is installed and operational"
     export LIBGUESTFS_HV=$(which qemu-system-x86_64)
 else
-    echo "KVM is not installed... Defaulting to slower emulation mode"
+    echo "KVM is not available. Execution will be slower"
     exit 5
 fi
 
@@ -37,19 +37,9 @@ cp ${BASE_IMAGE} ${NEW_IMAGE}
 # virt-resize --resize /dev/sda1=+${SIZE} ${BASE_IMAGE} ${NEW_IMAGE}
 # expands into /dev/sda3
 
-APT_PACKAGES="apt-transport-https curl gnupg-agent ca-certificates software-properties-common"
-DOCKER_APT_PACKAGES="docker-ce docker-ce-cli containerd.io cgroupfs-mount"
-
 # -- Open Guestfish --
 guestfish --network -a ${NEW_IMAGE} -i << EOF
-setenv DEBIAN_FRONTEND noninteractive
-command "sudo apt update"
-command "apt install -y ${APT_PACKAGES}"
-command "wget https://download.docker.com/linux/ubuntu/gpg" 
-command "apt-key add gpg"
-command "add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'"
-command "apt install -y ${DOCKER_APT_PACKAGES}"
-command "service docker start"
-command "docker pull ${DOCKER_IMAGE}"
+copy-file-to-device /root/install-docker.sh /root/install-docker.sh
+sh "/root/install-docker.sh"
 exit
 EOF
