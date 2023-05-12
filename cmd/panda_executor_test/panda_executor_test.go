@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -10,7 +11,12 @@ import (
 	"testing"
 
 	controller "github.com/panda-re/panda_studio/internal/panda_controller"
+	"github.com/pkg/errors"
 )
+
+const QCOW_NAME = "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2"
+
+var QCOW_LOCAL = fmt.Sprintf("/root/.panda/%s", QCOW_NAME)
 
 // Each enum represents the state panda was in that caused the exception
 // Enum should match that in /panda_agent/agent.py
@@ -27,12 +33,32 @@ var error_to_string [6]string = [6]string{"RUNNING", "NOT_RUNNING", "RECORDING",
 
 // Extracts the error number from an err from agent
 func getError(err error) int {
-	// Find the numbers in the error message
-	re := regexp.MustCompile("[0-9]+")
-	// Return the first one as an integer
-	nums := re.FindAllString(err.Error(), -1)
-	num, _ := strconv.Atoi(nums[0])
+	// Upon error, the following regex will be in the message
+	re := regexp.MustCompile(`<ErrorCode\.\w+: `)
+	// Regex splits right before error number
+	nums := re.Split(err.Error(), -1)
+	// Check if error matches regex. If not, it's not from agent
+	if len(nums) < 2 {
+		return -1
+	}
+	// Extract the error number from the message
+	num, err := strconv.Atoi(nums[1][0:1])
+	if err != nil {
+		return -1
+	}
 	return num
+}
+
+// Checks if the error matches what is expected
+// Prints a message if not
+func checkError(err error, err_expected int, t *testing.T) {
+	err_num := getError(err)
+	if err_num != err_expected {
+		if err_num != -1 {
+			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
+		}
+		t.Error(err)
+	}
 }
 
 var num_passed int = 0
@@ -42,23 +68,29 @@ var num_tests int = 0
 // Prints the number of tests and success rate
 func TestMain(t *testing.T) {
 	t.Cleanup(func() {
-		fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
+		if num_tests != 0 {
+			fmt.Printf("Number of tests: %d\nNumber passed: %d\nSuccess rate: %d%%\n", num_tests, num_passed, 100*num_passed/num_tests)
+		}
 	})
 	t.Run("Agent", TestAgent)
-	if t.Failed() {
-		t.Fatal("Agent unsuccessful")
-	}
 	t.Run("Recording", TestRecord)
-	if t.Failed() {
-		t.Fatal("Recording unsuccessful")
-	}
 	t.Run("Replay", TestReplay)
 }
 
-var agent controller.PandaAgent
+// Wrapper function for tallying number of tests and passes
+func runSubtest(t *testing.T, name string, f func(t *testing.T)) {
+	num_tests++
+	if t.Run(name, f) {
+		num_passed++
+	}
+}
+
+var agent *controller.DockerPandaAgent
 
 // Recording name for testing record and replay
-var recording_name string = "panda_executor_test"
+const RECORDING_NAME string = "panda_executor_test"
+
+const DEFAULT_QCOW_SIZE = 17711104
 
 // Consistent commands to run
 var commands = []string{
@@ -79,6 +111,11 @@ var ctx = context.Background()
 // Tests premature execution and that commands return properly
 func TestAgent(t *testing.T) {
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Cleanup(func() {
 		err = agent.StopAgent(ctx)
 		if err != nil {
@@ -89,52 +126,27 @@ func TestAgent(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	imageFile, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, imageFile)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	t.Run("PreCommand", TestPrematureCommand)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("PreStop", TestPrematureStop)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "PreCommand", TestPrematureCommand)
+	runSubtest(t, "PreStop", TestPrematureStop)
 	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Run("ExtraStart", TestExtraStart)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("Commands", TestCommands)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "ExtraStart", TestExtraStart)
+	runSubtest(t, "Commands", TestCommands)
+	runSubtest(t, "RunExtraReplay", TestRunExtraReplay)
 }
 
 // Tests executing a command before the agent has started
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartAgent
 func TestPrematureCommand(t *testing.T) {
-	num_tests++
 	_, err := agent.RunCommand(ctx, "")
 	if err == nil {
 		t.Fatal("Did not prevent premature command")
 	} else {
-		err_num := getError(err)
-		err_expected := NOT_RUNNING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, NOT_RUNNING, t)
 	}
 }
 
@@ -142,7 +154,6 @@ func TestPrematureCommand(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartAgent
 func TestPrematureStop(t *testing.T) {
-	num_tests++
 	err := agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent premature stop")
@@ -160,24 +171,17 @@ func TestPrematureStop(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run after agent.StartAgent
 func TestExtraStart(t *testing.T) {
-	num_tests++
 	err := agent.StartAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent a second PANDA start")
 	} else {
-		err_num := getError(err)
-		err_expected := RUNNING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, RUNNING, t)
 	}
 }
 
 // Tests sending serial commands
 // Should be run after agent.StartAgent
 func TestCommands(t *testing.T) {
-	num_tests++
 	for i, cmd := range commands {
 		response, err := agent.RunCommand(ctx, cmd)
 		if err != nil {
@@ -195,79 +199,53 @@ func TestCommands(t *testing.T) {
 // Tests premature start and stop and proper recording
 func TestRecord(t *testing.T) {
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Cleanup(func() {
+		err = agent.StopAgent(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
-	imageFile, err := os.Open("/root/.panda/bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	agent, err = controller.CreateDefaultDockerPandaAgent(ctx, imageFile)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	err = agent.StartAgent(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Run("PreStop", TestPrematureStopRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("StartRecording", TestStartRecording)
+	runSubtest(t, "PreStop", TestPrematureStopRecording)
+
+	runSubtest(t, "StartRecording", TestStartRecording)
 	if t.Failed() {
 		t.FailNow()
-	} else {
-		num_passed++
 	}
-	t.Run("ExtraStart", TestExtraStartRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("Commands", TestCommands)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("StopRecording", TestStopRecording)
-	if !t.Failed() {
-		num_passed++
-	}
-	err = agent.StartRecording(ctx, "_")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Run("HangingStop", TestHangingRecording)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "ExtraStart", TestExtraStartRecording)
+	runSubtest(t, "Commands", TestCommands)
+	runSubtest(t, "StopRecording", TestStopRecording)
+	runSubtest(t, "HangingStop", TestHangingRecording)
 }
 
 // Tests attempting to stop recording before a recording has started
 // The agent should prevent this from happening with an exception
 // Should be run before agent.StartRecording
 func TestPrematureStopRecording(t *testing.T) {
-	num_tests++
 	_, err := agent.StopRecording(ctx)
 	if err == nil {
 		t.Fatal("Did not prevent stopping a non-existant recording")
 	} else {
-		err_num := getError(err)
-		err_expected := NOT_RECORDING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, NOT_RECORDING, t)
 	}
 }
 
 // Test that a recording can be started without error
 func TestStartRecording(t *testing.T) {
-	num_tests++
-	if err := agent.StartRecording(ctx, recording_name); err != nil {
+	if err := agent.StartRecording(ctx, RECORDING_NAME); err != nil {
 		t.Error(err)
 	}
 }
@@ -276,39 +254,34 @@ func TestStartRecording(t *testing.T) {
 // The agent should prevent this from happening with an exception
 // Should be run after agent.StartRecording
 func TestExtraStartRecording(t *testing.T) {
-	num_tests++
-	err := agent.StartRecording(ctx, recording_name)
+	err := agent.StartRecording(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent starting a second concurrent recording")
 	} else {
-		err_num := getError(err)
-		err_expected := RECORDING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, RECORDING, t)
 	}
 }
 
 // Tests that a recording can be stopped without error
 // Checks the returned recording name
 func TestStopRecording(t *testing.T) {
-	num_tests++
 	recording, err := agent.StopRecording(ctx)
 	if err != nil {
 		t.Error(err)
 	}
 	if recording != nil {
-		if recording.RecordingName != recording_name {
-			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", recording_name, recording.RecordingName)
+		if recording.Name() != RECORDING_NAME {
+			t.Errorf("Did not return correct recording name. Expected: '%s' Got: '%s'", RECORDING_NAME, recording.Name())
 		}
-		snapshotName := fmt.Sprintf("%s/%s-rr-snp", recording.Location, recording_name)
-		if recording.GetSnapshotFileLocation() != snapshotName {
-			t.Errorf("Did not return correct snaphot name. Expected: '%s' Got: '%s'", snapshotName, recording.GetSnapshotFileLocation())
+		ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.NdlogFilename())
+		err = copyFileFromContainerHelper(ctx, recording.NdlogFilename(), ndl_dest, agent)
+		if err != nil {
+			panic(err)
 		}
-		ndLogName := fmt.Sprintf("%s/%s-rr-nondet.log", recording.Location, recording_name)
-		if recording.GetNdlogFileLocation() != ndLogName {
-			t.Errorf("Did not return correct nondet log name. Expected: '%s' Got: '%s'", ndLogName, recording.GetNdlogFileLocation())
+		snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, recording.SnapshotFilename())
+		err = copyFileFromContainerHelper(ctx, recording.SnapshotFilename(), snp_dest, agent)
+		if err != nil {
+			panic(err)
 		}
 	} else {
 		t.Fatal("Did not return recording")
@@ -319,82 +292,72 @@ func TestStopRecording(t *testing.T) {
 // The agent should stop the recording and raise a warning
 // Should be run after agent.StartRecording
 func TestHangingRecording(t *testing.T) {
-	num_tests++
-	err := agent.StopAgent(ctx)
+	err := agent.StartRecording(ctx, "_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = agent.StopAgent(ctx)
 	if err == nil {
 		t.Fatal("Did not receive warning for stopping a hanging recording")
 	} else {
-		err_num := getError(err)
-		err_expected := RECORDING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, RECORDING, t)
 	}
 }
-
-var replay_agent controller.PandaReplayAgent
 
 // Tests to ensure the agent can replay properly
 // Tests premature stop and proper replay
 func TestReplay(t *testing.T) {
 	var err error
+	agent, err = setupContainer(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(func() {
-		err = replay_agent.StopAgent(ctx)
+		err = agent.StopAgent(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = replay_agent.Close()
+		err = agent.Close()
 		if err != nil {
 			t.Fatal(err)
 		}
 	})
 
-	replay_agent, err = controller.CreateReplayDockerPandaAgent(ctx)
+	// Copy snapshot and nondet log to container for replay
+	snp_name := fmt.Sprintf("%s-rr-snp", RECORDING_NAME)
+	snp_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, snp_name)
+	err = copyFileToContainerHelper(ctx, snp_dest, snp_name, agent)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
+	}
+	ndl_name := fmt.Sprintf("%s-rr-nondet.log", RECORDING_NAME)
+	ndl_dest := fmt.Sprintf("%s/%s", controller.PANDA_STUDIO_TEMP_DIR, ndl_name)
+	err = copyFileToContainerHelper(ctx, ndl_dest, ndl_name, agent)
+	if err != nil {
+		panic(err)
 	}
 
-	t.Run("PreStop", TestPrematureReplayStop)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("WrongReplay", TestNonexistantReplay)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("RunReplay", TestRunReplay)
-	if !t.Failed() {
-		num_passed++
-	}
-	t.Run("RunExtraReplay", TestRunExtraReplay)
-	if !t.Failed() {
-		num_passed++
-	}
+	runSubtest(t, "PreStop", TestPrematureReplayStop)
+	runSubtest(t, "WrongReplay", TestNonexistantReplay)
+	runSubtest(t, "RunReplay", TestRunReplay)
+	runSubtest(t, "RunExtraReplay", TestRunExtraReplay)
 }
 
 // Tests attempting to stop a replay when one is not in progress
 // The agent should prevent this from happening with an exception
-// Should be run before replay_agent.StartReplayAgent
+// Should be run before agent.StartReplay
 func TestPrematureReplayStop(t *testing.T) {
-	num_tests++
-	_, err := replay_agent.StopReplay(ctx)
+	_, err := agent.StopReplay(ctx)
 	if err == nil {
 		t.Error("Did not prevent premature stop")
 	} else {
-		err_num := getError(err)
-		err_expected := NOT_REPLAYING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, NOT_REPLAYING, t)
 	}
 }
 
 // Tests that a recording can be replayed without error
 func TestRunReplay(t *testing.T) {
-	num_tests++
-	replay, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	replay, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -434,32 +397,84 @@ func TestRunReplay(t *testing.T) {
 
 // Tests attempting to start a replay after one has started
 // The agent should prevent this from happening with an exception
-// Should be run before replay_agent.StartReplayAgent
+// Should be run before agent.StartReplayAgent
 func TestRunExtraReplay(t *testing.T) {
-	num_tests++
-	_, err := replay_agent.StartReplayAgent(ctx, recording_name)
+	_, err := agent.StartReplay(ctx, RECORDING_NAME)
 	if err == nil {
 		t.Fatal("Did not prevent extra replay")
 	} else {
-		err_num := getError(err)
-		err_expected := RUNNING
-		if err_num != err_expected {
-			t.Errorf("Received wrong error. Expected: %s Got: %s", error_to_string[err_expected], error_to_string[err_num])
-			t.Error(err)
-		}
+		checkError(err, RUNNING, t)
 	}
 }
 
 // Tests attempting to start a replay that does not exist
 // This should be prevented with an exception
 func TestNonexistantReplay(t *testing.T) {
-	num_tests++
-	_, err := replay_agent.StartReplayAgent(ctx, " ")
+	_, err := agent.StartReplay(ctx, " ")
 	if err == nil {
 		t.Fatal("Did not prevent nonexistant replay")
-	} else if !strings.Contains(err.Error(), "Error in copying snapshot for replay") {
-		// Error happens before agent enumeration
-		t.Error("Incorrect error message")
-		t.Error(err)
+	} else {
+		checkError(err, REPLAYING, t)
 	}
+}
+
+// Sets up the container for each test
+// Uses the default config and qcow
+func setupContainer(ctx context.Context) (*controller.DockerPandaAgent, error) {
+	agent, err := controller.CreateDockerPandaAgent2(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create panda agent")
+	}
+	err = agent.Connect(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to connect to agent")
+	}
+	err = copyFileToContainerHelper(ctx, QCOW_LOCAL, QCOW_NAME, agent)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy qcow to agent")
+	}
+	return agent, nil
+}
+
+// ctx - context
+// srcFilePath - file path on local machine
+// dstFilePath - name of the file in the container
+// agent - PandaAgent to container to copy into
+func copyFileToContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
+	fileReader, err := os.Open(srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer fileReader.Close()
+	fileInfo, err := fileReader.Stat()
+	if err != nil {
+		return err
+	}
+	err = agent.CopyFileToContainer(ctx, fileReader, fileInfo.Size(), dstFilePath)
+	return err
+}
+
+// ctx - context
+// srcFilePath - file path in container to copy from
+// dstFilePath - file path on local machine to copy to
+// agent - PandaAgent to container to copy from
+func copyFileFromContainerHelper(ctx context.Context, srcFilePath string, dstFilePath string, agent *controller.DockerPandaAgent) error {
+	src, err := agent.CopyFileFromContainer(ctx, srcFilePath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Create(dstFilePath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+	nBytes, err := io.Copy(dst, src)
+	if err != nil {
+		return err
+	}
+	if nBytes == 0 {
+		return errors.New("did not copy file")
+	}
+	return nil
 }

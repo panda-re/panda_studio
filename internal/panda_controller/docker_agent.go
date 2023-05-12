@@ -19,21 +19,34 @@ import (
 	"github.com/pkg/errors"
 )
 
-type dockerPandaAgent struct {
+type DockerPandaAgent struct {
 	grpcAgent   PandaAgent
 	cli         *docker.Client
 	containerId *string
 	sharedDir   *string
 }
 
-var _ PandaAgent = &dockerPandaAgent{}
+var _ PandaAgent = &DockerPandaAgent{}
+
+// See https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/qcows.json
+var DEFAULT_CONFIG = pb.PandaConfig{
+	Qcowfilename: "bionic-server-cloudimg-amd64-noaslr-nokaslr.qcow2",
+	Arch:         "x86_64",
+	Os:           "linux-64-ubuntu:4.15.0-72-generic-noaslr-nokaslr",
+	Prompt:       "root@ubuntu:.*#",
+	Cdrom:        "ide1-cd0",
+	Snapshot:     "root",
+	Memory:       "1024",
+	Extraargs:    "-display none",
+}
 
 const PANDA_STUDIO_TEMP_DIR = "/tmp/panda-studio"
 const CONTAINER_SHARED_DIR = "/panda/shared"
 const CONTAINER_DATA_DIR = "/panda/data"
 const DOCKER_IMAGE = "pandare/panda_agent"
 
-func CreateDockerPandaAgent2(ctx context.Context) (*dockerPandaAgent, error) {
+// Creates a PandaAgent inside a Docker client
+func CreateDockerPandaAgent2(ctx context.Context) (*DockerPandaAgent, error) {
 	// Connect to docker daemon
 	cli, err := docker.NewClientWithOpts(docker.FromEnv)
 	if err != nil {
@@ -41,7 +54,7 @@ func CreateDockerPandaAgent2(ctx context.Context) (*dockerPandaAgent, error) {
 	}
 
 	// Initialize agent
-	agent := &dockerPandaAgent{
+	agent := &DockerPandaAgent{
 		grpcAgent:   nil,
 		cli:         cli,
 		containerId: nil,
@@ -50,7 +63,8 @@ func CreateDockerPandaAgent2(ctx context.Context) (*dockerPandaAgent, error) {
 	return agent, nil
 }
 
-func (pa *dockerPandaAgent) Connect(ctx context.Context) error {
+// Starts the Docker container and connects it to the gRPC agent
+func (pa *DockerPandaAgent) Connect(ctx context.Context) error {
 	// start the container
 	err := pa.startContainer(ctx)
 	if err != nil {
@@ -70,7 +84,8 @@ func (pa *dockerPandaAgent) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) connectGrpc(ctx context.Context) error {
+// Connects to the gRPC agent in the Docker container that is spun up
+func (pa *DockerPandaAgent) connectGrpc(ctx context.Context) error {
 	grpcSocketPath := path.Join(*pa.sharedDir, "panda-agent.sock")
 	grpcSocketUrl := fmt.Sprintf("unix://%s", grpcSocketPath)
 	grpcAgent, err := CreateGrpcPandaAgent(grpcSocketUrl)
@@ -83,7 +98,7 @@ func (pa *dockerPandaAgent) connectGrpc(ctx context.Context) error {
 }
 
 // See documentation for docker CopyToContainer
-func (pa *dockerPandaAgent) CopyFileToContainer(ctx context.Context, data io.Reader, size int64, file string) error {
+func (pa *DockerPandaAgent) CopyFileToContainer(ctx context.Context, data io.Reader, size int64, file string) error {
 	r, w := io.Pipe()
 	tarWriter := tar.NewWriter(w)
 	go func() {
@@ -107,7 +122,7 @@ func (pa *dockerPandaAgent) CopyFileToContainer(ctx context.Context, data io.Rea
 }
 
 // See documentation for docker CopyFromContainer
-func (pa *dockerPandaAgent) CopyFileFromContainer(ctx context.Context, file string) (io.ReadCloser, error) {
+func (pa *DockerPandaAgent) CopyFileFromContainer(ctx context.Context, file string) (io.ReadCloser, error) {
 	r, w := io.Pipe()
 
 	srcFile := path.Join(CONTAINER_DATA_DIR, file)
@@ -137,18 +152,18 @@ func (pa *dockerPandaAgent) CopyFileFromContainer(ctx context.Context, file stri
 	return r, nil
 }
 
-func (pa *dockerPandaAgent) OpenRecordingSnapshot(ctx context.Context, recordingName string) (io.ReadCloser, error) {
+func (pa *DockerPandaAgent) OpenRecordingSnapshot(ctx context.Context, recordingName string) (io.ReadCloser, error) {
 	snapshotFileName := fmt.Sprintf("%s-rr-snp", recordingName)
 	return pa.CopyFileFromContainer(ctx, snapshotFileName)
 }
 
-func (pa *dockerPandaAgent) OpenRecordingNdlog(ctx context.Context, recordingName string) (io.ReadCloser, error) {
+func (pa *DockerPandaAgent) OpenRecordingNdlog(ctx context.Context, recordingName string) (io.ReadCloser, error) {
 	ndlogFileName := fmt.Sprintf("%s-rr-nondet.log", recordingName)
 	return pa.CopyFileFromContainer(ctx, ndlogFileName)
 }
 
 // Close implements PandaAgent
-func (pa *dockerPandaAgent) Close() error {
+func (pa *DockerPandaAgent) Close() error {
 	// Close grpc connection
 	if pa.grpcAgent != nil {
 		err := pa.grpcAgent.Close()
@@ -179,7 +194,7 @@ func (pa *dockerPandaAgent) Close() error {
 }
 
 // RunCommand implements PandaAgent
-func (pa *dockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
+func (pa *DockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error) {
 	resp, err := pa.grpcAgent.RunCommand(ctx, cmd)
 	if err != nil {
 		logs, logErr := pa.getLogs(ctx)
@@ -193,12 +208,13 @@ func (pa *dockerPandaAgent) RunCommand(ctx context.Context, cmd string) (*PandaA
 }
 
 // StartAgent implements PandaAgent
-func (*dockerPandaAgent) StartAgent(ctx context.Context) error {
-	// todo: Starts the agent using the default x86_64 image
-	panic("unimplemented")
+// Uses x86_64 generic defaults
+func (pa *DockerPandaAgent) StartAgent(ctx context.Context) error {
+	return pa.grpcAgent.StartAgentWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG})
 }
 
-func (pa *dockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
+// StartAgentWithOpts implements PandaAgent
+func (pa *DockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.StartAgentRequest) error {
 	err := pa.grpcAgent.StartAgentWithOpts(ctx, opts)
 	if err != nil {
 		logs, logErr := pa.getLogs(ctx)
@@ -212,7 +228,7 @@ func (pa *dockerPandaAgent) StartAgentWithOpts(ctx context.Context, opts *pb.Sta
 }
 
 // StartRecording implements PandaAgent
-func (pa *dockerPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
+func (pa *DockerPandaAgent) StartRecording(ctx context.Context, recordingName string) error {
 	err := pa.grpcAgent.StartRecording(ctx, recordingName)
 	if err != nil {
 		logs, logErr := pa.getLogs(ctx)
@@ -226,7 +242,7 @@ func (pa *dockerPandaAgent) StartRecording(ctx context.Context, recordingName st
 }
 
 // StopAgent implements PandaAgent
-func (pa *dockerPandaAgent) StopAgent(ctx context.Context) error {
+func (pa *DockerPandaAgent) StopAgent(ctx context.Context) error {
 	err := pa.grpcAgent.StopAgent(ctx)
 	if err != nil {
 		logs, logErr := pa.getLogs(ctx)
@@ -240,7 +256,7 @@ func (pa *dockerPandaAgent) StopAgent(ctx context.Context) error {
 }
 
 // StopRecording implements PandaAgent
-func (pa *dockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
+func (pa *DockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecording, error) {
 	innerRec, err := pa.grpcAgent.StopRecording(ctx)
 	if err != nil {
 		logs, logErr := pa.getLogs(ctx)
@@ -260,7 +276,23 @@ func (pa *dockerPandaAgent) StopRecording(ctx context.Context) (PandaAgentRecord
 	return &newRecording, nil
 }
 
-func (pa *dockerPandaAgent) createTempDir() error {
+// StartReplay implements PandaAgent
+// Uses x86_64 generic defaults
+func (pa *DockerPandaAgent) StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StartReplayWithOpts(ctx, &pb.StartAgentRequest{Config: &DEFAULT_CONFIG}, recordingName)
+}
+
+// StartReplayWithOpts implements PandaAgent
+func (pa *DockerPandaAgent) StartReplayWithOpts(ctx context.Context, opts *pb.StartAgentRequest, recordingName string) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StartReplayWithOpts(ctx, opts, recordingName)
+}
+
+// StopReplay implements PandaAgent
+func (pa *DockerPandaAgent) StopReplay(ctx context.Context) (*PandaAgentReplayResult, error) {
+	return pa.grpcAgent.StopReplay(ctx)
+}
+
+func (pa *DockerPandaAgent) createTempDir() error {
 	if pa.sharedDir != nil {
 		return nil
 	}
@@ -275,7 +307,7 @@ func (pa *dockerPandaAgent) createTempDir() error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) removeTempDir() error {
+func (pa *DockerPandaAgent) removeTempDir() error {
 	if pa.sharedDir == nil {
 		return nil
 	}
@@ -290,7 +322,7 @@ func (pa *dockerPandaAgent) removeTempDir() error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) startContainer(ctx context.Context) error {
+func (pa *DockerPandaAgent) startContainer(ctx context.Context) error {
 	if pa.containerId != nil {
 		return errors.New("container already started")
 	}
@@ -335,7 +367,7 @@ func (pa *dockerPandaAgent) startContainer(ctx context.Context) error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) stopContainer(ctx context.Context) error {
+func (pa *DockerPandaAgent) stopContainer(ctx context.Context) error {
 	if pa.containerId == nil {
 		return errors.New("container not started")
 	}
@@ -347,7 +379,7 @@ func (pa *dockerPandaAgent) stopContainer(ctx context.Context) error {
 	return nil
 }
 
-func (pa *dockerPandaAgent) getLogs(ctx context.Context) (string, error) {
+func (pa *DockerPandaAgent) getLogs(ctx context.Context) (string, error) {
 	if pa.containerId == nil {
 		return "", errors.New("container not started")
 	}

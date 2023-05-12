@@ -11,25 +11,22 @@ import (
 
 type StartAgentRequest = pb.StartAgentRequest
 
+// Various gRPC messages and the ProtoBuf protocols that make the agent
 type PandaAgent interface {
-	// todo: add options such as architecture, image, networking, etc. to pass
-	// to the agent
 	StartAgent(ctx context.Context) error
 	StartAgentWithOpts(ctx context.Context, opts *StartAgentRequest) error
 	StopAgent(ctx context.Context) error
 	RunCommand(ctx context.Context, cmd string) (*PandaAgentRunCommandResult, error)
 	StartRecording(ctx context.Context, recordingName string) error
 	StopRecording(ctx context.Context) (PandaAgentRecording, error)
+	StartReplay(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
+	StartReplayWithOpts(ctx context.Context, opts *StartAgentRequest, recordingName string) (*PandaAgentReplayResult, error)
+	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
 	//SendNetworkCommand(ctx context.Context, network_request *NetworkRequest) (*NetworkResponse, error)
 	Close() error
 }
 
-type PandaReplayAgent interface {
-	StartReplayAgent(ctx context.Context, recordingName string) (*PandaAgentReplayResult, error)
-	StopAgent(ctx context.Context) error
-	StopReplay(ctx context.Context) (*PandaAgentReplayResult, error)
-	Close() error
-}
+// Structs match the types in panda_agent.proto
 
 type PandaAgentRunCommandResult struct {
 	Logs string
@@ -53,6 +50,8 @@ type NetworkResponse struct {
 	Output     string
 }
 
+// Interface for interacting with PANDA recordings
+// Includes helper functions
 type PandaAgentRecording interface {
 	Name() string
 	SnapshotFilename() string
@@ -66,7 +65,6 @@ type GenericPandaAgentRecordingConcrete struct {
 }
 
 var _ PandaAgentRecording = &GenericPandaAgentRecordingConcrete{}
-
 
 func (r *GenericPandaAgentRecordingConcrete) Name() string {
 	return r.RecordingName
@@ -90,7 +88,7 @@ func (r *GenericPandaAgentRecordingConcrete) OpenNdlog(ctx context.Context) (io.
 
 type DockerPandaAgentRecording struct {
 	GenericPandaAgentRecordingConcrete
-	agent *dockerPandaAgent
+	agent *DockerPandaAgent
 }
 
 var _ PandaAgentRecording = &DockerPandaAgentRecording{}
